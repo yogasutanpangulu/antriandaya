@@ -28,15 +28,23 @@
         
         /* Daftar Tunggu & History */
         .waiting-list-container { background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; }
-        .badge { display: inline-block; padding: 5px 10px; margin: 5px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px;}
+        .badge { display: inline-block; padding: 6px 12px; margin: 5px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px;}
         .badge-booking { background: #28a745; }
         .badge-non { background: #17a2b8; }
 
         .history-box { background: #f8f9fa; margin: 10px 0; padding: 10px; border-radius: 5px; border-left: 4px solid #007bff; text-align: left;}
-        .btn-hist-book { background: #28a745; color: white; border: none; padding: 5px 10px; margin: 3px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; font-weight: normal; }
-        .btn-hist-non { background: #17a2b8; color: white; border: none; padding: 5px 10px; margin: 3px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; font-weight: normal;}
+        
+        /* Tampilan History Menurun (Vertikal) */
+        .btn-hist-book { background: #28a745; color: white; border: none; padding: 8px 10px; margin: 4px 0; border-radius: 4px; cursor: pointer; font-size: 14px; width: 100%; text-align: left; font-weight: bold; display: block; }
+        .btn-hist-non { background: #17a2b8; color: white; border: none; padding: 8px 10px; margin: 4px 0; border-radius: 4px; cursor: pointer; font-size: 14px; width: 100%; text-align: left; font-weight: bold; display: block;}
         .btn-hist-book:hover { background: #218838; }
         .btn-hist-non:hover { background: #138496; }
+
+        /* Area Salin Nopol */
+        .nopol-box { display: flex; align-items: center; justify-content: center; background: #e2e3e5; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: none; }
+        .btn-copy { background: #6c757d; padding: 8px 15px; width: auto; margin: 0 15px 0 0; font-size: 14px; display: inline-block; }
+        .btn-copy:hover { background: #5a6268; }
+        #last-nopol { font-size: 24px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -61,7 +69,10 @@
     <!-- HALAMAN VALEY -->
     <div id="valey-view" class="container">
         <h2>Petugas Valey</h2>
-        <p>Berikan nomor antrian ke pelanggan:</p>
+        <p style="margin-bottom: 5px; font-weight: bold;">1. Ketik Nomor Polisi Kendaraan:</p>
+        <input type="text" id="nopol-input" placeholder="Contoh: B 1234 ABC" style="text-transform: uppercase; font-weight: bold; text-align: center; font-size: 18px;">
+        
+        <p style="margin-bottom: 5px; font-weight: bold;">2. Pilih Kategori Antrian:</p>
         <button class="btn-booking" onclick="tambahAntrianValey('Booking')">+ Tambah Antrian Booking</button>
         <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking')">+ Tambah Antrian Non Booking</button>
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
@@ -86,15 +97,22 @@
         <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')">Panggil Non Booking Berikutnya</button>
         
         <hr>
-        <p>Terakhir Dipanggil: <strong id="last-called">Belum ada</strong></p>
+        <p style="margin-bottom: 5px;">Terakhir Dipanggil: <strong id="last-called">Belum ada</strong></p>
+        
+        <!-- KOTAK SALIN NOPOL -->
+        <div id="nopol-display-area" class="nopol-box">
+            <button class="btn-copy" onclick="salinNopol()">📋 Salin</button> 
+            <strong id="last-nopol">-</strong>
+        </div>
+
         <button class="btn-recall" onclick="panggilUlang()">Panggil Ulang Nomor Ini</button>
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <!-- HALAMAN HISTORY (Tampil di Valey & Counter) -->
+    <!-- HALAMAN HISTORY -->
     <div id="history-view" class="container">
         <h3>History & Panggilan Unit Selesai</h3>
-        <p style="font-size: 13px; color: #555;">(Klik nomor di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai. Hanya bisa diklik oleh Counter yang memegang unit tersebut).</p>
+        <p style="font-size: 13px; color: #555;">(Klik list menurun di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
         
         <div class="history-box"><strong>Counter 2:</strong> <div id="hist-Counter 2">Kosong</div></div>
         <div class="history-box"><strong>Counter 3:</strong> <div id="hist-Counter 3">Kosong</div></div>
@@ -123,9 +141,9 @@
         
         let sessionUser = "";
         let dataPanggilanTerakhirKu = null;
-        let lastPlayedTimestamp = 0; // Memori penahan suara ganda di Layar Monitor
+        let lastPlayedTimestamp = 0;
 
-        // --- 1. LOGIKA SESSl & LOGIN OTOMATIS ---
+        // --- 1. LOGIKA SESSl & LOGIN ---
         window.onload = function() {
             cekLoginSebelumnya();
         };
@@ -179,7 +197,6 @@
             }
         }
 
-        // --- 2. LOGIKA LOGOUT ---
         function logoutAkun() {
             let konfirmasi = confirm("Anda yakin ingin keluar dari akun ini?");
             if (konfirmasi) {
@@ -189,19 +206,36 @@
             }
         }
 
-        // --- 3. LOGIKA VALEY (INPUT TIKET) ---
+        // --- 2. LOGIKA VALEY (INPUT NOPOL & TIKET) ---
         function tambahAntrianValey(jenis) {
+            const nopolInput = document.getElementById('nopol-input');
+            const nopolValue = nopolInput.value.trim().toUpperCase();
+
+            // Cegah antrian masuk jika nopol kosong
+            if (nopolValue === "") {
+                alert("Harap ketik Nomor Polisi terlebih dahulu!");
+                nopolInput.focus();
+                return;
+            }
+
             const dbRef = db.ref('antrian/terakhir_' + jenis);
             dbRef.once('value', (snapshot) => {
                 let nomorBaru = (snapshot.val() || 0) + 1;
                 dbRef.set(nomorBaru);
+                
                 db.ref('antrian/menunggu').push({
-                    jenis: jenis, nomor: nomorBaru, timestamp: Date.now()
+                    jenis: jenis, 
+                    nomor: nomorBaru, 
+                    nopol: nopolValue, // Simpan Nopol ke database
+                    timestamp: Date.now()
                 });
+
+                // Kosongkan kolom input setelah berhasil dipencet
+                nopolInput.value = ""; 
             });
         }
 
-        // --- 4. LOGIKA COUNTER (TARIK TIKET) ---
+        // --- 3. LOGIKA COUNTER (TARIK TIKET) ---
         function panggilAntrian(jenis) {
             db.ref('antrian/menunggu').orderByChild('timestamp').once('value', (snapshot) => {
                 let ditemukan = false;
@@ -216,9 +250,10 @@
                         dataPanggilanTerakhirKu = {
                             jenis: dataAntrian.jenis,
                             nomor: dataAntrian.nomor,
+                            nopol: dataAntrian.nopol || "-", // Bawa data nopol
                             counter: sessionUser,
                             status: 'baru', 
-                            timestamp: Date.now() // Timestamp ini unik per klik
+                            timestamp: Date.now() 
                         };
                         
                         db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
@@ -226,6 +261,7 @@
                         db.ref('antrian/history/' + sessionUser).push({
                             jenis: dataAntrian.jenis,
                             nomor: dataAntrian.nomor,
+                            nopol: dataAntrian.nopol || "-",
                             timestamp: Date.now()
                         });
                     }
@@ -237,10 +273,23 @@
             });
         }
 
-        // --- 5. LOGIKA PANGGIL ULANG ---
+        // --- 4. FUNGSI SALIN NOPOL ---
+        function salinNopol() {
+            const teksNopol = document.getElementById('last-nopol').innerText;
+            if (teksNopol && teksNopol !== "-") {
+                navigator.clipboard.writeText(teksNopol).then(() => {
+                    // Tampilkan feedback sementara di tombol
+                    let btn = document.querySelector('.btn-copy');
+                    let textAsli = btn.innerText;
+                    btn.innerText = "✔️ Tersalin!";
+                    setTimeout(() => { btn.innerText = textAsli; }, 1500);
+                });
+            }
+        }
+
+        // --- 5. LOGIKA PANGGIL ULANG & UNIT SELESAI ---
         function panggilUlang() {
             if (dataPanggilanTerakhirKu) {
-                // Beri waktu baru supaya sistem Monitor menganggap ini panggilan baru
                 dataPanggilanTerakhirKu.timestamp = Date.now();
                 db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
             } else {
@@ -248,8 +297,7 @@
             }
         }
 
-        // --- 6. LOGIKA PANGGIL UNIT SELESAI ---
-        function panggilUnitSelesai(counterPemilik, jenis, nomor) {
+        function panggilUnitSelesai(counterPemilik, jenis, nomor, nopol) {
             if (sessionUser !== counterPemilik) {
                 alert(`MAAF! Anda login sebagai ${sessionUser}. Hanya ${counterPemilik} yang bisa memanggil unit ini untuk diserahkan.`);
                 return;
@@ -258,13 +306,14 @@
             db.ref('antrian/panggilan_aktif').set({
                 jenis: jenis,
                 nomor: nomor,
+                nopol: nopol || "-",
                 counter: sessionUser,
                 status: 'selesai',
                 timestamp: Date.now()
             });
         }
 
-        // --- 7. LISTENER FIREBASE (REALTIME) ---
+        // --- 6. LISTENER FIREBASE (REALTIME) ---
         function mulaiMendengarkanDaftarTunggu() {
             db.ref('antrian/menunggu').orderByChild('timestamp').on('value', (snapshot) => {
                 let htmlTunggu = "<strong>Daftar Pelanggan Menunggu:</strong><br><br>";
@@ -273,7 +322,8 @@
                     adaAntrian = true;
                     let d = child.val();
                     let classBadge = d.jenis === 'Booking' ? 'badge-booking' : 'badge-non';
-                    htmlTunggu += `<span class="badge ${classBadge}">${d.jenis} ${d.nomor}</span> `;
+                    let teksNopol = d.nopol ? ` | ${d.nopol}` : ''; // Tampilkan nopol di antrian
+                    htmlTunggu += `<span class="badge ${classBadge}">${d.jenis} ${d.nomor}${teksNopol}</span> `;
                 });
                 if (!adaAntrian) htmlTunggu += "<i>Saat ini tidak ada pelanggan yang menunggu.</i>";
                 
@@ -292,7 +342,9 @@
                         counterSnapshot.forEach((antrianSnapshot) => {
                             let d = antrianSnapshot.val();
                             let classBtn = d.jenis === 'Booking' ? 'btn-hist-book' : 'btn-hist-non';
-                            historyData[cName] += `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor})">${d.jenis} ${d.nomor}</button> `;
+                            let teksNopol = d.nopol ? ` - [ ${d.nopol} ]` : '';
+                            // Desain tombol sekarang menurun / display block
+                            historyData[cName] += `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor}, '${d.nopol || ''}')">${d.jenis} ${d.nomor}${teksNopol}</button>`;
                         });
                     }
                 });
@@ -314,7 +366,6 @@
                     const teksTampilan = `${data.jenis} - ${data.nomor}`;
                     let teksPanggilan = "";
 
-                    // PERUBAHAN TEKS PANGGILAN DI SINI
                     if (data.status === 'selesai') {
                         teksPanggilan = `Unit Selesai. Antrian ${data.jenis} ${data.nomor} di ${data.counter}`;
                     } else {
@@ -330,21 +381,24 @@
                             document.getElementById('display-counter').innerText = data.counter;
                         }
                         
-                        // CEGAH PEMANGGILAN GANDA DI SINI
                         if (data.timestamp !== lastPlayedTimestamp) {
-                            lastPlayedTimestamp = data.timestamp; // Ingat waktu panggilan terakhir
-                            window.speechSynthesis.cancel(); // Hentikan suara yang sedang menggantung (jika ada)
+                            lastPlayedTimestamp = data.timestamp;
+                            window.speechSynthesis.cancel();
                             mainkanSuara(teksPanggilan);
                         }
 
                     } else if (sessionUser === data.counter && data.status !== 'selesai') {
+                        // Tampilkan di dashboard Counter
                         document.getElementById('last-called').innerText = teksTampilan;
+                        // Tampilkan Nopol dan tombol salin
+                        document.getElementById('nopol-display-area').style.display = 'flex';
+                        document.getElementById('last-nopol').innerText = data.nopol || "-";
                     }
                 }
             });
         }
 
-        // --- 8. SUARA ---
+        // --- 7. SUARA ---
         function mainkanSuara(teks) {
             const utterance = new SpeechSynthesisUtterance(teks);
             utterance.lang = 'id-ID'; 
