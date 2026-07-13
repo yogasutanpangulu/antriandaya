@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Antrian Service Daya Toyota</title>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     
@@ -73,6 +74,7 @@
 </head>
 <body>
 
+    <!-- HALAMAN LOGIN -->
     <div id="login-section" class="container" style="max-width: 500px;">
         <h2>Login Sistem Antrian</h2>
         <select id="login-id" style="width: 100%;">
@@ -89,9 +91,11 @@
         <p id="login-error" style="color:red; display:none;">Password salah!</p>
     </div>
 
+    <!-- HALAMAN VALEY -->
     <div id="valey-view" class="container" style="max-width: 600px;">
         <h2>Petugas Valey</h2>
         
+        <!-- INPUT MANUAL 2 KOLOM -->
         <div class="valey-input-grid">
             <div>
                 <label for="nopol-input">1. Nomor Polisi:</label>
@@ -112,6 +116,7 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
+    <!-- HALAMAN MONITOR -->
     <div id="monitor-view" class="container">
         <h2>Layar Monitor Utama</h2>
         <button id="btn-enable-audio" onclick="aktifkanSuaraMonitor()">🔊 Klik di Sini Aktifkan Suara Monitor</button>
@@ -121,6 +126,7 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
+    <!-- HALAMAN COUNTER -->
     <div id="counter-view" class="container" style="max-width: 600px;">
         <h2 id="counter-name-display">Counter</h2>
         <hr>
@@ -132,6 +138,7 @@
         <p style="margin-bottom: 5px;">Terakhir Dipanggil: <strong id="last-called">Belum ada</strong></p>
         <div id="waktu-tunggu-counter" class="waktu-tunggu-info"></div>
         
+        <!-- KOTAK SALIN NOPOL -->
         <div id="nopol-display-area" class="nopol-box">
             <button class="btn-copy" onclick="salinNopol()">📋 Salin</button> 
             <strong id="last-nopol">-</strong>
@@ -141,6 +148,7 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
+    <!-- HALAMAN HISTORY -->
     <div id="history-view" class="container">
         <h3>History & Panggilan Unit Selesai</h3>
         <p style="font-size: 13px; color: #555;">(Klik nomor di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
@@ -170,6 +178,7 @@
         </div>
     </div>
 
+    <!-- TOMBOL LOGOUT GLOBAL -->
     <div style="text-align: center; margin-bottom: 30px;">
         <button id="btn-logout" onclick="logoutAkun()">Keluar Akun</button>
     </div>
@@ -201,6 +210,37 @@
         let daftarAntrianMenunggu = [];
         let timerInterval = null;
 
+        // --- HELPER Dapatkan Tanggal Hari Ini (YYYY-MM-DD) ---
+        function getTanggalHariIni() {
+            let d = new Date();
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            let year = d.getFullYear();
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        }
+
+        // --- OTOMATISASI RESET HARIAN TERPUSAT ---
+        function cekAtauResetHariBaru() {
+            let tanggalHariIni = getTanggalHariIni();
+            
+            db.ref('tanggal_sistem').once('value', (snapshot) => {
+                let tanggalTersimpan = snapshot.val();
+                
+                // Jika tanggal di database belum ada atau beda dengan hari ini
+                if (!tanggalTersimpan || tanggalTersimpan !== tanggalHariIni) {
+                    // Bersihkan seluruh data antrian
+                    db.ref('antrian').remove().then(() => {
+                        // Update tanggal sistem ke tanggal baru
+                        db.ref('tanggal_sistem').set(tanggalHariIni);
+                    });
+                }
+            });
+        }
+
         // --- HELPER FORMAT WAKTU ---
         function formatWaktuLalu(ms) {
             if (!ms || ms < 0) return "00:00";
@@ -226,6 +266,11 @@
 
         // --- 1. LOGIKA SESI & LOGIN ---
         window.onload = function() {
+            cekAtauResetHariBaru(); // Cek reset tanggal saat pertama aplikasi dimuat
+            
+            // Pantau juga tanggal secara otomatis secara berkala (tiap 1 menit)
+            setInterval(cekAtauResetHariBaru, 60000);
+
             cekLoginSebelumnya();
             mulaiTimerRealtime();
         };
@@ -233,7 +278,7 @@
         function cekLoginSebelumnya() {
             let savedUser = localStorage.getItem("sesi_user_antriandaya");
             let savedDate = localStorage.getItem("tanggal_login_antriandaya");
-            let hariIni = new Date().toDateString();
+            let hariIni = getTanggalHariIni();
 
             if (savedUser && savedDate === hariIni) {
                 document.getElementById('login-id').value = savedUser;
@@ -250,7 +295,7 @@
                 sessionUser = id;
                 
                 localStorage.setItem("sesi_user_antriandaya", id);
-                localStorage.setItem("tanggal_login_antriandaya", new Date().toDateString());
+                localStorage.setItem("tanggal_login_antriandaya", getTanggalHariIni());
 
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('btn-logout').style.display = 'inline-block';
@@ -293,6 +338,8 @@
 
         // --- 2. LOGIKA VALEY (INPUT MANUAL NOPOL & NOMOR ANTRIAN) ---
         function tambahAntrianValey(jenis) {
+            cekAtauResetHariBaru();
+
             const nopolInput = document.getElementById('nopol-input');
             const nomorInput = document.getElementById('nomor-input');
 
@@ -332,6 +379,8 @@
 
         // --- 3. LOGIKA COUNTER (TARIK TIKET) ---
         function panggilAntrian(jenis) {
+            cekAtauResetHariBaru();
+
             db.ref('antrian/menunggu').orderByChild('timestamp').once('value', (snapshot) => {
                 let ditemukan = false;
                 
@@ -583,6 +632,16 @@
                         } else {
                             document.getElementById('waktu-tunggu-counter').innerText = "";
                         }
+                    }
+                } else {
+                    // Jika data panggilan aktif kosong (karena reset)
+                    if (sessionUser === 'Monitor') {
+                        document.getElementById('display-number').innerText = "--";
+                        document.getElementById('display-counter').innerText = "Menunggu Panggilan...";
+                    } else if (sessionUser.includes('Counter')) {
+                        document.getElementById('last-called').innerText = "Belum ada";
+                        document.getElementById('nopol-display-area').style.display = 'none';
+                        document.getElementById('waktu-tunggu-counter').innerText = "";
                     }
                 }
             });
