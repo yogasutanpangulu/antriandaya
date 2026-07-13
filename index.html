@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Antrian Service Daya Toyota</title>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     
@@ -32,6 +31,9 @@
         .btn-copy:hover { background: #5a6268; }
         #last-nopol { font-size: 24px; letter-spacing: 2px; }
 
+        /* Waktu Tunggu Display */
+        .waktu-tunggu-info { font-size: 14px; color: #555; margin-top: 5px; font-weight: bold; }
+
         /* DAFTAR TUNGGU (Kiri Booking, Kanan Non Booking) */
         .waiting-list-container { margin-top: 20px; text-align: left; }
         .waiting-grid { display: flex; gap: 15px; margin-top: 10px; }
@@ -53,11 +55,11 @@
         .btn-hist-book:hover { background: #218838; }
         .btn-hist-non:hover { background: #138496; }
         .hist-nopol { display: block; font-size: 10px; font-weight: normal; margin-top: 2px; background: rgba(0,0,0,0.1); padding: 2px; border-radius: 2px; }
+        .hist-time { display: block; font-size: 9px; font-weight: normal; margin-top: 2px; color: #fff; background: rgba(0,0,0,0.2); padding: 2px; border-radius: 2px; }
     </style>
 </head>
 <body>
 
-    <!-- HALAMAN LOGIN -->
     <div id="login-section" class="container" style="max-width: 500px;">
         <h2>Login Sistem Antrian</h2>
         <select id="login-id" style="width: 100%;">
@@ -74,7 +76,6 @@
         <p id="login-error" style="color:red; display:none;">Password salah!</p>
     </div>
 
-    <!-- HALAMAN VALEY -->
     <div id="valey-view" class="container" style="max-width: 600px;">
         <h2>Petugas Valey</h2>
         <p style="margin-bottom: 5px; font-weight: bold;">1. Ketik Nomor Polisi Kendaraan:</p>
@@ -86,7 +87,6 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <!-- HALAMAN MONITOR -->
     <div id="monitor-view" class="container">
         <h2>Layar Monitor Utama</h2>
         <p style="font-size:12px; color:#666;">(Jika suara tidak muncul, klik sembarang tempat di area putih ini satu kali)</p>
@@ -96,7 +96,6 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <!-- HALAMAN COUNTER -->
     <div id="counter-view" class="container" style="max-width: 600px;">
         <h2 id="counter-name-display">Counter</h2>
         <hr>
@@ -106,8 +105,8 @@
         
         <hr>
         <p style="margin-bottom: 5px;">Terakhir Dipanggil: <strong id="last-called">Belum ada</strong></p>
+        <div id="waktu-tunggu-counter" class="waktu-tunggu-info"></div>
         
-        <!-- KOTAK SALIN NOPOL -->
         <div id="nopol-display-area" class="nopol-box">
             <button class="btn-copy" onclick="salinNopol()">📋 Salin</button> 
             <strong id="last-nopol">-</strong>
@@ -117,7 +116,6 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <!-- HALAMAN HISTORY -->
     <div id="history-view" class="container">
         <h3>History & Panggilan Unit Selesai</h3>
         <p style="font-size: 13px; color: #555;">(Klik nomor di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
@@ -147,7 +145,6 @@
         </div>
     </div>
 
-    <!-- TOMBOL LOGOUT GLOBAL -->
     <div style="text-align: center; margin-bottom: 30px;">
         <button id="btn-logout" onclick="logoutAkun()">Keluar Akun</button>
     </div>
@@ -171,7 +168,23 @@
         let dataPanggilanTerakhirKu = null;
         let lastPlayedTimestamp = 0;
 
-        // --- 1. LOGIKA SESSl & LOGIN ---
+        // --- SISTEM ANTREAN SUARA (MONITOR) ---
+        let queueSuara = [];
+        let sedangMemutarSuara = false;
+
+        // --- HELPER FORMAT WAKTU TUNGGU ---
+        function formatWaktuTunggu(ms) {
+            if (!ms || ms < 0) return "-";
+            let totalDetik = Math.floor(ms / 1000);
+            let menit = Math.floor(totalDetik / 60);
+            let detik = totalDetik % 60;
+            if (menit > 0) {
+                return `${menit} mnt ${detik} dtk`;
+            }
+            return `${detik} dtk`;
+        }
+
+        // --- 1. LOGIKA SESI & LOGIN ---
         window.onload = function() {
             cekLoginSebelumnya();
         };
@@ -250,11 +263,13 @@
                 let nomorBaru = (snapshot.val() || 0) + 1;
                 dbRef.set(nomorBaru);
                 
+                let waktuSekarang = Date.now();
                 db.ref('antrian/menunggu').push({
                     jenis: jenis, 
                     nomor: nomorBaru, 
                     nopol: nopolValue, 
-                    timestamp: Date.now()
+                    timestamp: waktuSekarang,
+                    waktuMasuk: waktuSekarang // DIKIRIM KE DATABASE SAAT INPUT VALEY
                 });
 
                 nopolInput.value = ""; 
@@ -270,6 +285,10 @@
                     if (!ditemukan && child.val().jenis === jenis) {
                         ditemukan = true;
                         let dataAntrian = child.val();
+                        let waktuPanggil = Date.now();
+                        
+                        // HITUNG WAKTU TUNGGU S.D DIPANGGIL
+                        let durasiTunggu = waktuPanggil - (dataAntrian.waktuMasuk || dataAntrian.timestamp);
                         
                         child.ref.remove();
                         
@@ -279,7 +298,9 @@
                             nopol: dataAntrian.nopol || "-", 
                             counter: sessionUser,
                             status: 'baru', 
-                            timestamp: Date.now() 
+                            timestamp: waktuPanggil,
+                            waktuMasuk: dataAntrian.waktuMasuk || dataAntrian.timestamp,
+                            waktuTunggu: durasiTunggu
                         };
                         
                         db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
@@ -288,7 +309,8 @@
                             jenis: dataAntrian.jenis,
                             nomor: dataAntrian.nomor,
                             nopol: dataAntrian.nopol || "-",
-                            timestamp: Date.now()
+                            timestamp: waktuPanggil,
+                            waktuTunggu: durasiTunggu
                         });
                     }
                 });
@@ -338,13 +360,11 @@
 
         // --- 4. LISTENER FIREBASE (REALTIME) ---
         
-        // FUNGSI DAFTAR TUNGGU DIPERBARUI DENGAN GRID 2 KOLOM
         function mulaiMendengarkanDaftarTunggu() {
             db.ref('antrian/menunggu').orderByChild('timestamp').on('value', (snapshot) => {
                 let htmlBooking = "";
                 let htmlNonBooking = "";
 
-                // Ekstrak data dan pisahkan berdasarkan jenis
                 snapshot.forEach((child) => {
                     let d = child.val();
                     let teksNopol = d.nopol ? ` | ${d.nopol}` : '';
@@ -356,11 +376,9 @@
                     }
                 });
 
-                // Jika kosong, berikan teks informatif
                 if (htmlBooking === "") htmlBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Booking</i>";
                 if (htmlNonBooking === "") htmlNonBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Non Booking</i>";
 
-                // Rangkai menjadi HTML 2 kolom
                 let finalHtml = `
                     <strong>Daftar Pelanggan Menunggu:</strong>
                     <div class="waiting-grid">
@@ -401,8 +419,9 @@
                             let d = antrianSnapshot.val();
                             let classBtn = d.jenis === 'Booking' ? 'btn-hist-book' : 'btn-hist-non';
                             let teksNopol = d.nopol && d.nopol !== "-" ? `<span class="hist-nopol">${d.nopol}</span>` : '';
+                            let teksWaktu = d.waktuTunggu ? `<span class="hist-time">⏱️ Tunggu: ${formatWaktuTunggu(d.waktuTunggu)}</span>` : '';
                             
-                            let tombolHtml = `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor}, '${d.nopol || '-'}')">${d.jenis} ${d.nomor}${teksNopol}</button>`;
+                            let tombolHtml = `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor}, '${d.nopol || '-'}')">${d.jenis} ${d.nomor}${teksNopol}${teksWaktu}</button>`;
                             
                             if (d.jenis === 'Booking') {
                                 dataTabel[cName].booking.push(tombolHtml);
@@ -461,48 +480,64 @@
                             document.getElementById('display-counter').innerText = data.counter;
                         }
                         
+                        // CEK TIMESTAMP DAN TAMBAHKAN KE ANTREAN SUARA
                         if (data.timestamp !== lastPlayedTimestamp) {
                             lastPlayedTimestamp = data.timestamp;
-                            window.speechSynthesis.cancel();
-                            mainkanSuara(teksPanggilan);
+                            tambahKeAntreanSuara(teksPanggilan);
                         }
 
                     } else if (sessionUser === data.counter && data.status !== 'selesai') {
                         document.getElementById('last-called').innerText = teksTampilan;
                         document.getElementById('nopol-display-area').style.display = 'flex';
                         document.getElementById('last-nopol').innerText = data.nopol || "-";
+                        
+                        if (data.waktuTunggu) {
+                            document.getElementById('waktu-tunggu-counter').innerText = `⏱️ Waktu Tunggu Pelanggan: ${formatWaktuTunggu(data.waktuTunggu)}`;
+                        } else {
+                            document.getElementById('waktu-tunggu-counter').innerText = "";
+                        }
                     }
                 }
             });
         }
 
-        // --- 5. SUARA ---
-        let timerSuara = null; // Memori untuk mencegah antrean suara ganda
+        // --- 5. LOGIKA ANTREAN SUARA (QUEUE SYSTEM) ---
+        function tambahKeAntreanSuara(teks) {
+            queueSuara.push(teks);
+            prosesAntreanSuara();
+        }
 
-        function mainkanSuara(teks) {
-            // 1. Matikan paksa semua suara yang mungkin sedang nyangkut di memori Chrome
-            window.speechSynthesis.cancel();
-            
-            // 2. Batalkan perintah suara sebelumnya jika terjadi double-klik atau bentrok server
-            if (timerSuara !== null) {
-                clearTimeout(timerSuara);
+        function prosesAntreanSuara() {
+            if (sedangMemutarSuara || queueSuara.length === 0) return;
+
+            sedangMemutarSuara = true;
+            const teksYangDiputar = queueSuara.shift();
+
+            const utterance = new SpeechSynthesisUtterance(teksYangDiputar);
+            utterance.lang = 'id-ID';
+            utterance.rate = 1.1;
+
+            let daftarSuara = window.speechSynthesis.getVoices();
+            let suaraIndo = daftarSuara.filter(voice => voice.lang === 'id-ID' || voice.lang === 'id_ID');
+
+            if (suaraIndo.length > 0) {
+                utterance.voice = suaraIndo[0];
             }
-            
-            // 3. Beri jeda seperempat detik (250ms) sebelum membunyikan suara baru
-            timerSuara = setTimeout(() => {
-                const utterance = new SpeechSynthesisUtterance(teks);
-                utterance.lang = 'id-ID'; 
-                utterance.rate = 1.1; 
-                
-                let daftarSuara = window.speechSynthesis.getVoices();
-                let suaraIndo = daftarSuara.filter(voice => voice.lang === 'id-ID' || voice.lang === 'id_ID');
 
-                if (suaraIndo.length > 0) {
-                    utterance.voice = suaraIndo[0]; 
-                }
+            // KETIKA SUARA SELESAI, LANJUTKAN KE SUARA BERIKUTNYA DI ANTREAN
+            utterance.onend = function() {
+                sedangMemutarSuara = false;
+                setTimeout(() => {
+                    prosesAntreanSuara();
+                }, 300); // Jeda antar panggilan 300ms
+            };
 
-                window.speechSynthesis.speak(utterance);
-            }, 250);
+            utterance.onerror = function() {
+                sedangMemutarSuara = false;
+                prosesAntreanSuara();
+            };
+
+            window.speechSynthesis.speak(utterance);
         }
         
         // Pancingan agar suara bisa jalan di Monitor jika halaman direfresh tanpa sengaja
