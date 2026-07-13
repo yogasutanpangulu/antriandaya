@@ -31,7 +31,6 @@
         .btn-copy:hover { background: #5a6268; }
         #last-nopol { font-size: 24px; letter-spacing: 2px; }
 
-        /* Waktu Tunggu Display */
         .waktu-tunggu-info { font-size: 14px; color: #555; margin-top: 5px; font-weight: bold; }
 
         /* DAFTAR TUNGGU (Kiri Booking, Kanan Non Booking) */
@@ -39,11 +38,15 @@
         .waiting-grid { display: flex; gap: 15px; margin-top: 10px; }
         .waiting-col { flex: 1; background: #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
         .waiting-col h4 { margin-top: 0; margin-bottom: 10px; font-size: 15px; }
-        .badge-waiting { display: block; padding: 8px; margin-bottom: 5px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px; text-align: center; }
+        
+        .badge-waiting { display: block; padding: 8px; margin-bottom: 6px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px; text-align: center; }
         .badge-booking { background: #28a745; }
         .badge-non { background: #17a2b8; }
+        
+        /* Timer di dalam badge antrean */
+        .live-timer { display: inline-block; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 6px; font-family: monospace; }
 
-        /* TABEL HISTORY (Menyamping & Menurun) */
+        /* TABEL HISTORY */
         .table-responsive { overflow-x: auto; margin-top: 15px; }
         .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .history-table th, .history-table td { border: 1px solid #999; padding: 5px; vertical-align: top; text-align: center; width: 10%; }
@@ -56,6 +59,10 @@
         .btn-hist-non:hover { background: #138496; }
         .hist-nopol { display: block; font-size: 10px; font-weight: normal; margin-top: 2px; background: rgba(0,0,0,0.1); padding: 2px; border-radius: 2px; }
         .hist-time { display: block; font-size: 9px; font-weight: normal; margin-top: 2px; color: #fff; background: rgba(0,0,0,0.2); padding: 2px; border-radius: 2px; }
+        
+        /* Tombol Suara Monitor */
+        #btn-enable-audio { background: #fd7e14; color: white; padding: 10px 20px; font-size: 15px; border-radius: 5px; border: none; cursor: pointer; margin-bottom: 10px; }
+        #btn-enable-audio:hover { background: #e8590c; }
     </style>
 </head>
 <body>
@@ -89,7 +96,7 @@
 
     <div id="monitor-view" class="container">
         <h2>Layar Monitor Utama</h2>
-        <p style="font-size:12px; color:#666;">(Jika suara tidak muncul, klik sembarang tempat di area putih ini satu kali)</p>
+        <button id="btn-enable-audio" onclick="aktifkanSuaraMonitor()">🔊 Klik di Sini Aktifkan Suara Monitor</button>
         <div class="calling-counter">PANGGILAN SAAT INI</div>
         <div class="big-number" id="display-number">--</div>
         <div class="calling-counter" id="display-counter">Menunggu Panggilan...</div>
@@ -168,11 +175,27 @@
         let dataPanggilanTerakhirKu = null;
         let lastPlayedTimestamp = 0;
 
-        // --- SISTEM ANTREAN SUARA (MONITOR) ---
+        // --- SISTEM ANTREAN SUARA (KHUSUS MONITOR) ---
         let queueSuara = [];
         let sedangMemutarSuara = false;
+        let suaraSiap = false;
 
-        // --- HELPER FORMAT WAKTU TUNGGU ---
+        // --- DATA LOKAL UNTUK TIMER LIVE ---
+        let daftarAntrianMenunggu = [];
+        let timerInterval = null;
+
+        // --- HELPER FORMAT WAKTU ---
+        function formatWaktuLalu(ms) {
+            if (!ms || ms < 0) return "00:00";
+            let totalDetik = Math.floor(ms / 1000);
+            let menit = Math.floor(totalDetik / 60);
+            let detik = totalDetik % 60;
+            
+            let mStr = menit < 10 ? "0" + menit : menit;
+            let dStr = detik < 10 ? "0" + detik : detik;
+            return `${mStr}:${dStr}`;
+        }
+
         function formatWaktuTunggu(ms) {
             if (!ms || ms < 0) return "-";
             let totalDetik = Math.floor(ms / 1000);
@@ -187,6 +210,7 @@
         // --- 1. LOGIKA SESI & LOGIN ---
         window.onload = function() {
             cekLoginSebelumnya();
+            mulaiTimerRealtime();
         };
 
         function cekLoginSebelumnya() {
@@ -213,11 +237,6 @@
 
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('btn-logout').style.display = 'inline-block';
-                
-                if (!isAuto) {
-                    let dummyUtterance = new SpeechSynthesisUtterance('');
-                    window.speechSynthesis.speak(dummyUtterance);
-                }
 
                 if (id === 'Monitor') {
                     document.getElementById('monitor-view').style.display = 'block';
@@ -247,6 +266,15 @@
             }
         }
 
+        function aktifkanSuaraMonitor() {
+            suaraSiap = true;
+            let wakeUp = new SpeechSynthesisUtterance('Suara monitor aktif');
+            wakeUp.lang = 'id-ID';
+            window.speechSynthesis.speak(wakeUp);
+            document.getElementById('btn-enable-audio').innerText = "✅ Suara Monitor Aktif";
+            document.getElementById('btn-enable-audio').style.background = "#28a745";
+        }
+
         // --- 2. LOGIKA VALEY (INPUT NOPOL & TIKET) ---
         function tambahAntrianValey(jenis) {
             const nopolInput = document.getElementById('nopol-input');
@@ -269,7 +297,7 @@
                     nomor: nomorBaru, 
                     nopol: nopolValue, 
                     timestamp: waktuSekarang,
-                    waktuMasuk: waktuSekarang // DIKIRIM KE DATABASE SAAT INPUT VALEY
+                    waktuMasuk: waktuSekarang
                 });
 
                 nopolInput.value = ""; 
@@ -287,8 +315,8 @@
                         let dataAntrian = child.val();
                         let waktuPanggil = Date.now();
                         
-                        // HITUNG WAKTU TUNGGU S.D DIPANGGIL
-                        let durasiTunggu = waktuPanggil - (dataAntrian.waktuMasuk || dataAntrian.timestamp);
+                        let waktuMasukAwal = dataAntrian.waktuMasuk || dataAntrian.timestamp;
+                        let durasiTunggu = waktuPanggil - waktuMasukAwal;
                         
                         child.ref.remove();
                         
@@ -299,7 +327,7 @@
                             counter: sessionUser,
                             status: 'baru', 
                             timestamp: waktuPanggil,
-                            waktuMasuk: dataAntrian.waktuMasuk || dataAntrian.timestamp,
+                            waktuMasuk: waktuMasukAwal,
                             waktuTunggu: durasiTunggu
                         };
                         
@@ -358,46 +386,81 @@
             });
         }
 
-        // --- 4. LISTENER FIREBASE (REALTIME) ---
-        
+        // --- 4. LISTENER FIREBASE & REALTIME WAIT TIMER ---
         function mulaiMendengarkanDaftarTunggu() {
             db.ref('antrian/menunggu').orderByChild('timestamp').on('value', (snapshot) => {
-                let htmlBooking = "";
-                let htmlNonBooking = "";
-
+                daftarAntrianMenunggu = [];
                 snapshot.forEach((child) => {
-                    let d = child.val();
-                    let teksNopol = d.nopol ? ` | ${d.nopol}` : '';
-                    
-                    if (d.jenis === 'Booking') {
-                        htmlBooking += `<div class="badge-waiting badge-booking">${d.jenis} ${d.nomor}${teksNopol}</div>`;
-                    } else {
-                        htmlNonBooking += `<div class="badge-waiting badge-non">${d.jenis} ${d.nomor}${teksNopol}</div>`;
-                    }
+                    let item = child.val();
+                    item.key = child.key;
+                    daftarAntrianMenunggu.push(item);
                 });
+                renderDaftarTunggu();
+            });
+        }
 
-                if (htmlBooking === "") htmlBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Booking</i>";
-                if (htmlNonBooking === "") htmlNonBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Non Booking</i>";
+        function renderDaftarTunggu() {
+            let htmlBooking = "";
+            let htmlNonBooking = "";
+            let sekarang = Date.now();
 
-                let finalHtml = `
-                    <strong>Daftar Pelanggan Menunggu:</strong>
-                    <div class="waiting-grid">
-                        <div class="waiting-col">
-                            <h4 style="color: #218838;">KOLOM BOOKING</h4>
-                            ${htmlBooking}
-                        </div>
-                        <div class="waiting-col">
-                            <h4 style="color: #138496;">KOLOM NON BOOKING</h4>
-                            ${htmlNonBooking}
-                        </div>
-                    </div>
-                `;
-                
-                let elements = document.getElementsByClassName('waiting-list-container');
-                for(let i=0; i<elements.length; i++) {
-                    elements[i].innerHTML = finalHtml;
+            daftarAntrianMenunggu.forEach((d) => {
+                let teksNopol = d.nopol ? ` | ${d.nopol}` : '';
+                let waktuAwal = d.waktuMasuk || d.timestamp || sekarang;
+                let durasiMs = sekarang - waktuAwal;
+                let strTimer = formatWaktuLalu(durasiMs);
+
+                let badgeHtml = `
+                    <div class="badge-waiting ${d.jenis === 'Booking' ? 'badge-booking' : 'badge-non'}">
+                        ${d.jenis} ${d.nomor}${teksNopol} 
+                        <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
+                    </div>`;
+
+                if (d.jenis === 'Booking') {
+                    htmlBooking += badgeHtml;
+                } else {
+                    htmlNonBooking += badgeHtml;
                 }
             });
+
+            if (htmlBooking === "") htmlBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Booking</i>";
+            if (htmlNonBooking === "") htmlNonBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Non Booking</i>";
+
+            let finalHtml = `
+                <strong>Daftar Pelanggan Menunggu:</strong>
+                <div class="waiting-grid">
+                    <div class="waiting-col">
+                        <h4 style="color: #218838;">KOLOM BOOKING</h4>
+                        ${htmlBooking}
+                    </div>
+                    <div class="waiting-col">
+                        <h4 style="color: #138496;">KOLOM NON BOOKING</h4>
+                        ${htmlNonBooking}
+                    </div>
+                </div>
+            `;
+            
+            let elements = document.getElementsByClassName('waiting-list-container');
+            for(let i=0; i<elements.length; i++) {
+                elements[i].innerHTML = finalHtml;
+            }
+        }
+
+        // TIMER INTERVAL UPDATE SETIAP DETIK (REALTIME)
+        function mulaiTimerRealtime() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                let sekarang = Date.now();
+                daftarAntrianMenunggu.forEach((d) => {
+                    let el = document.querySelectorAll(`[id="timer-${d.key}"]`);
+                    if (el && el.length > 0) {
+                        let waktuAwal = d.waktuMasuk || d.timestamp || sekarang;
+                        let durasiMs = sekarang - waktuAwal;
+                        let strTimer = formatWaktuLalu(durasiMs);
+                        el.forEach(e => e.innerText = `⏱️ ${strTimer}`);
+                    }
+                });
+            }, 1000);
         }
 
         function mulaiMendengarkanHistory() {
@@ -471,6 +534,7 @@
                         teksPanggilan = `Antrian ${data.jenis} ${data.nomor} di ${data.counter}`;
                     }
 
+                    // HANYA LAYAR MONITOR YANG MEMUTAR SUARA DAN MENAMPILKAN JUDUL MONITOR
                     if (sessionUser === 'Monitor') {
                         document.getElementById('display-number').innerText = teksTampilan;
                         
@@ -480,7 +544,7 @@
                             document.getElementById('display-counter').innerText = data.counter;
                         }
                         
-                        // CEK TIMESTAMP DAN TAMBAHKAN KE ANTREAN SUARA
+                        // TAMBAH SUARA HANYA BILA LOGIN SEBAGAI MONITOR
                         if (data.timestamp !== lastPlayedTimestamp) {
                             lastPlayedTimestamp = data.timestamp;
                             tambahKeAntreanSuara(teksPanggilan);
@@ -492,7 +556,7 @@
                         document.getElementById('last-nopol').innerText = data.nopol || "-";
                         
                         if (data.waktuTunggu) {
-                            document.getElementById('waktu-tunggu-counter').innerText = `⏱️ Waktu Tunggu Pelanggan: ${formatWaktuTunggu(data.waktuTunggu)}`;
+                            document.getElementById('waktu-tunggu-counter').innerText = `⏱️ Total Waktu Tunggu: ${formatWaktuTunggu(data.waktuTunggu)}`;
                         } else {
                             document.getElementById('waktu-tunggu-counter').innerText = "";
                         }
@@ -501,13 +565,17 @@
             });
         }
 
-        // --- 5. LOGIKA ANTREAN SUARA (QUEUE SYSTEM) ---
+        // --- 5. LOGIKA ANTREAN SUARA (KHUSUS MONITOR) ---
         function tambahKeAntreanSuara(teks) {
+            // KEAMANAN KETAT: JIKA BUKAN MONITOR, SAMA SEKALI JANGAN DITERUSKAN
+            if (sessionUser !== 'Monitor') return;
+
             queueSuara.push(teks);
             prosesAntreanSuara();
         }
 
         function prosesAntreanSuara() {
+            if (sessionUser !== 'Monitor') return;
             if (sedangMemutarSuara || queueSuara.length === 0) return;
 
             sedangMemutarSuara = true;
@@ -515,7 +583,7 @@
 
             const utterance = new SpeechSynthesisUtterance(teksYangDiputar);
             utterance.lang = 'id-ID';
-            utterance.rate = 1.1;
+            utterance.rate = 1.0;
 
             let daftarSuara = window.speechSynthesis.getVoices();
             let suaraIndo = daftarSuara.filter(voice => voice.lang === 'id-ID' || voice.lang === 'id_ID');
@@ -524,12 +592,11 @@
                 utterance.voice = suaraIndo[0];
             }
 
-            // KETIKA SUARA SELESAI, LANJUTKAN KE SUARA BERIKUTNYA DI ANTREAN
             utterance.onend = function() {
                 sedangMemutarSuara = false;
                 setTimeout(() => {
                     prosesAntreanSuara();
-                }, 300); // Jeda antar panggilan 300ms
+                }, 400); // Jeda antar panggilan 0.4 detik
             };
 
             utterance.onerror = function() {
@@ -539,15 +606,6 @@
 
             window.speechSynthesis.speak(utterance);
         }
-        
-        // Pancingan agar suara bisa jalan di Monitor jika halaman direfresh tanpa sengaja
-        document.body.addEventListener('click', function() {
-            if (sessionUser === 'Monitor' && window.speechSynthesis.getVoices().length > 0) {
-                let wakeUp = new SpeechSynthesisUtterance('');
-                wakeUp.volume = 0;
-                window.speechSynthesis.speak(wakeUp);
-            }
-        });
     </script>
 </body>
 </html>
