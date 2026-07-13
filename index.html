@@ -20,15 +20,21 @@
         .btn-recall { background: #ffc107; color: black; }
 
         /* Tampilan Layar */
-        #monitor-view, #counter-view, #valey-view { display: none; }
+        #monitor-view, #counter-view, #valey-view, #history-view { display: none; }
         .big-number { font-size: 80px; font-weight: bold; color: #d9534f; margin: 20px 0; }
         .calling-counter { font-size: 30px; font-weight: bold; color: #333; }
         
-        /* Daftar Tunggu */
+        /* Daftar Tunggu & History */
         .waiting-list-container { background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; }
         .badge { display: inline-block; padding: 5px 10px; margin: 5px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px;}
         .badge-booking { background: #28a745; }
         .badge-non { background: #17a2b8; }
+
+        .history-box { background: #f8f9fa; margin: 10px 0; padding: 10px; border-radius: 5px; border-left: 4px solid #007bff; text-align: left;}
+        .btn-hist-book { background: #28a745; color: white; border: none; padding: 5px 10px; margin: 3px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; font-weight: normal; }
+        .btn-hist-non { background: #17a2b8; color: white; border: none; padding: 5px 10px; margin: 3px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; font-weight: normal;}
+        .btn-hist-book:hover { background: #218838; }
+        .btn-hist-non:hover { background: #138496; }
     </style>
 </head>
 <body>
@@ -45,7 +51,7 @@
             <option value="Counter 6">Counter 6</option>
             <option value="Monitor">Layar Monitor</option>
         </select>
-        <input type="password" id="login-pass" placeholder="Password = Nama ID (cth: Valey)">
+        <input type="password" id="login-pass" placeholder="Password = Nama ID (cth: Counter 2)">
         <button onclick="login()">Masuk</button>
         <p id="login-error" style="color:red; display:none;">Password salah!</p>
     </div>
@@ -82,8 +88,20 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
+    <!-- HALAMAN HISTORY (Tampil di Valey & Counter) -->
+    <div id="history-view" class="container">
+        <h3>History & Panggilan Unit Selesai</h3>
+        <p style="font-size: 13px; color: #555;">(Klik nomor di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai. Hanya bisa diklik oleh Counter yang memegang unit tersebut).</p>
+        
+        <div class="history-box"><strong>Counter 2:</strong> <div id="hist-Counter 2">Kosong</div></div>
+        <div class="history-box"><strong>Counter 3:</strong> <div id="hist-Counter 3">Kosong</div></div>
+        <div class="history-box"><strong>Counter 4:</strong> <div id="hist-Counter 4">Kosong</div></div>
+        <div class="history-box"><strong>Counter 5:</strong> <div id="hist-Counter 5">Kosong</div></div>
+        <div class="history-box"><strong>Counter 6:</strong> <div id="hist-Counter 6">Kosong</div></div>
+    </div>
+
     <script>
-        // --- KONFIGURASI FIREBASE ANDA ---
+        // --- KONFIGURASI FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBGsylncIZxoRmJ9YD_f4CNc7R83QbBMg4",
             authDomain: "antrian-service-daya-toyota.firebaseapp.com",
@@ -97,7 +115,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let sessionUser = "";
-        let dataPanggilanTerakhirKu = null; // Menyimpan memori untuk tombol panggil ulang
+        let dataPanggilanTerakhirKu = null;
 
         // --- 1. LOGIKA LOGIN ---
         function login() {
@@ -108,7 +126,6 @@
                 sessionUser = id;
                 document.getElementById('login-section').style.display = 'none';
                 
-                // Aktifkan suara browser
                 let dummyUtterance = new SpeechSynthesisUtterance('');
                 window.speechSynthesis.speak(dummyUtterance);
 
@@ -116,39 +133,35 @@
                     document.getElementById('monitor-view').style.display = 'block';
                 } else if (id === 'Valey') {
                     document.getElementById('valey-view').style.display = 'block';
+                    document.getElementById('history-view').style.display = 'block'; // Tampilkan history di Valey
                 } else {
                     document.getElementById('counter-view').style.display = 'block';
+                    document.getElementById('history-view').style.display = 'block'; // Tampilkan history di Counter
                     document.getElementById('counter-name-display').innerText = id;
                 }
                 
                 mulaiMendengarkanPanggilanAktif();
                 mulaiMendengarkanDaftarTunggu();
+                mulaiMendengarkanHistory();
             } else {
                 document.getElementById('login-error').style.display = 'block';
             }
         }
 
-        // --- 2. LOGIKA VALEY (MEMBUAT TIKET) ---
+        // --- 2. LOGIKA VALEY (INPUT TIKET) ---
         function tambahAntrianValey(jenis) {
             const dbRef = db.ref('antrian/terakhir_' + jenis);
             dbRef.once('value', (snapshot) => {
                 let nomorBaru = (snapshot.val() || 0) + 1;
-                
-                // Simpan nomor terakhir
                 dbRef.set(nomorBaru);
-                
-                // Dorong ke "Daftar Tunggu" agar bisa dilihat dan ditarik counter
                 db.ref('antrian/menunggu').push({
-                    jenis: jenis,
-                    nomor: nomorBaru,
-                    timestamp: Date.now()
+                    jenis: jenis, nomor: nomorBaru, timestamp: Date.now()
                 });
             });
         }
 
-        // --- 3. LOGIKA COUNTER (MENARIK TIKET DARI DAFTAR TUNGGU) ---
+        // --- 3. LOGIKA COUNTER (TARIK TIKET) ---
         function panggilAntrian(jenis) {
-            // Cari data di daftar tunggu
             db.ref('antrian/menunggu').orderByChild('timestamp').once('value', (snapshot) => {
                 let ditemukan = false;
                 
@@ -157,17 +170,26 @@
                         ditemukan = true;
                         let dataAntrian = child.val();
                         
-                        // Hapus dari daftar tunggu karena sudah dipanggil counter
+                        // Hapus dari daftar tunggu
                         child.ref.remove();
                         
-                        // Broadcast ke monitor (panggilan aktif)
                         dataPanggilanTerakhirKu = {
                             jenis: dataAntrian.jenis,
                             nomor: dataAntrian.nomor,
                             counter: sessionUser,
+                            status: 'baru', // Penanda panggilan pendaftaran awal
                             timestamp: Date.now()
                         };
+                        
+                        // Bunyikan di monitor
                         db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
+                        
+                        // Simpan ke History Counter yang bersangkutan
+                        db.ref('antrian/history/' + sessionUser).push({
+                            jenis: dataAntrian.jenis,
+                            nomor: dataAntrian.nomor,
+                            timestamp: Date.now()
+                        });
                     }
                 });
 
@@ -177,69 +199,113 @@
             });
         }
 
-        // --- 4. LOGIKA PANGGIL ULANG ---
+        // --- 4. LOGIKA PANGGIL ULANG (DAFTAR AWAL) ---
         function panggilUlang() {
             if (dataPanggilanTerakhirKu) {
-                // Perbarui timestamp agar monitor mendeteksi perubahan dan membunyikan suara lagi
                 dataPanggilanTerakhirKu.timestamp = Date.now();
                 db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
             } else {
-                alert("Anda belum memanggil siapapun!");
+                alert("Anda belum menarik antrian baru!");
             }
         }
 
-        // --- 5. TAMPILKAN DAFTAR TUNGGU REALTIME ---
+        // --- 5. LOGIKA PANGGIL UNIT SELESAI (KLIK DARI HISTORY) ---
+        function panggilUnitSelesai(counterPemilik, jenis, nomor) {
+            // Validasi Kunci Keamanan
+            if (sessionUser !== counterPemilik) {
+                alert(`MAAF! Anda login sebagai ${sessionUser}. Hanya ${counterPemilik} yang bisa memanggil unit ini untuk diserahkan.`);
+                return;
+            }
+
+            // Kirim ke monitor dengan status 'selesai' agar suaranya berbeda
+            db.ref('antrian/panggilan_aktif').set({
+                jenis: jenis,
+                nomor: nomor,
+                counter: sessionUser,
+                status: 'selesai', // Penanda panggilan pengambilan unit
+                timestamp: Date.now()
+            });
+        }
+
+        // --- 6. LISTENER FIREBASE (REALTIME) ---
         function mulaiMendengarkanDaftarTunggu() {
             db.ref('antrian/menunggu').orderByChild('timestamp').on('value', (snapshot) => {
                 let htmlTunggu = "<strong>Daftar Pelanggan Menunggu:</strong><br><br>";
                 let adaAntrian = false;
-                
                 snapshot.forEach((child) => {
                     adaAntrian = true;
                     let d = child.val();
                     let classBadge = d.jenis === 'Booking' ? 'badge-booking' : 'badge-non';
                     htmlTunggu += `<span class="badge ${classBadge}">${d.jenis} ${d.nomor}</span> `;
                 });
+                if (!adaAntrian) htmlTunggu += "<i>Saat ini tidak ada pelanggan yang menunggu.</i>";
                 
-                if (!adaAntrian) {
-                    htmlTunggu += "<i>Saat ini tidak ada pelanggan yang menunggu.</i>";
-                }
-                
-                // Tampilkan daftar ke semua class 'waiting-list-container'
                 let elements = document.getElementsByClassName('waiting-list-container');
-                for(let i=0; i<elements.length; i++) {
-                    elements[i].innerHTML = htmlTunggu;
+                for(let i=0; i<elements.length; i++) elements[i].innerHTML = htmlTunggu;
+            });
+        }
+
+        function mulaiMendengarkanHistory() {
+            db.ref('antrian/history').on('value', (snapshot) => {
+                let historyData = { "Counter 2": "", "Counter 3": "", "Counter 4": "", "Counter 5": "", "Counter 6": "" };
+                
+                snapshot.forEach((counterSnapshot) => {
+                    let cName = counterSnapshot.key;
+                    if(historyData[cName] !== undefined) {
+                        counterSnapshot.forEach((antrianSnapshot) => {
+                            let d = antrianSnapshot.val();
+                            let classBtn = d.jenis === 'Booking' ? 'btn-hist-book' : 'btn-hist-non';
+                            historyData[cName] += `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor})">${d.jenis} ${d.nomor}</button> `;
+                        });
+                    }
+                });
+
+                for(let i=2; i<=6; i++) {
+                    let targetID = 'hist-Counter ' + i;
+                    let el = document.getElementById(targetID);
+                    if(el) {
+                        el.innerHTML = historyData['Counter ' + i] || "<i>Belum ada antrian yang diproses.</i>";
+                    }
                 }
             });
         }
 
-        // --- 6. TAMPILKAN PANGGILAN AKTIF & SUARA REALTIME ---
         function mulaiMendengarkanPanggilanAktif() {
             db.ref('antrian/panggilan_aktif').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     const teksTampilan = `${data.jenis} - ${data.nomor}`;
-                    const teksPanggilan = `Nomor antrian ${data.jenis}, ${data.nomor}, ditunggu di ${data.counter}`;
+                    let teksPanggilan = "";
 
-                    // Update Layar Monitor
+                    // Bedakan kalimat suara antara pendaftaran baru vs unit selesai
+                    if (data.status === 'selesai') {
+                        teksPanggilan = `Pemberitahuan. Nomor antrian ${data.jenis}, ${data.nomor}. Unit kendaraan telah selesai, dipersilahkan menuju ${data.counter}`;
+                    } else {
+                        teksPanggilan = `Nomor antrian ${data.jenis}, ${data.nomor}, ditunggu di ${data.counter}`;
+                    }
+
                     if (sessionUser === 'Monitor') {
                         document.getElementById('display-number').innerText = teksTampilan;
-                        document.getElementById('display-counter').innerText = data.counter;
+                        
+                        if (data.status === 'selesai') {
+                            document.getElementById('display-counter').innerText = `Unit Selesai -> ${data.counter}`;
+                        } else {
+                            document.getElementById('display-counter').innerText = data.counter;
+                        }
+                        
                         mainkanSuara(teksPanggilan);
-                    } 
-                    // Update Layar Counter yang Memanggil
-                    else if (sessionUser === data.counter) {
+                    } else if (sessionUser === data.counter && data.status !== 'selesai') {
                         document.getElementById('last-called').innerText = teksTampilan;
                     }
                 }
             });
         }
 
-        // --- 7. SUARA TEXT-TO-SPEECH ---
+        // --- 7. SUARA ---
         function mainkanSuara(teks) {
             const utterance = new SpeechSynthesisUtterance(teks);
             utterance.lang = 'id-ID'; 
-            utterance.rate = 0.85; // Diperlambat sedikit agar jelas
+            utterance.rate = 0.85; 
             window.speechSynthesis.speak(utterance);
         }
     </script>
