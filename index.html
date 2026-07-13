@@ -120,8 +120,10 @@
         
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        
         let sessionUser = "";
         let dataPanggilanTerakhirKu = null;
+        let lastPlayedTimestamp = 0; // Memori penahan suara ganda di Layar Monitor
 
         // --- 1. LOGIKA SESSl & LOGIN OTOMATIS ---
         window.onload = function() {
@@ -216,7 +218,7 @@
                             nomor: dataAntrian.nomor,
                             counter: sessionUser,
                             status: 'baru', 
-                            timestamp: Date.now()
+                            timestamp: Date.now() // Timestamp ini unik per klik
                         };
                         
                         db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
@@ -238,6 +240,7 @@
         // --- 5. LOGIKA PANGGIL ULANG ---
         function panggilUlang() {
             if (dataPanggilanTerakhirKu) {
+                // Beri waktu baru supaya sistem Monitor menganggap ini panggilan baru
                 dataPanggilanTerakhirKu.timestamp = Date.now();
                 db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
             } else {
@@ -311,11 +314,11 @@
                     const teksTampilan = `${data.jenis} - ${data.nomor}`;
                     let teksPanggilan = "";
 
-                    // PERUBAHAN FORMAT SUARA DISINI (LEBIH LANGSUNG DAN CEPAT)
+                    // PERUBAHAN TEKS PANGGILAN DI SINI
                     if (data.status === 'selesai') {
-                        teksPanggilan = `Unit Selesai. ${data.jenis} ${data.nomor}, di ${data.counter}`;
+                        teksPanggilan = `Unit Selesai. Antrian ${data.jenis} ${data.nomor} di ${data.counter}`;
                     } else {
-                        teksPanggilan = `${data.jenis} ${data.nomor}, di ${data.counter}`;
+                        teksPanggilan = `Antrian ${data.jenis} ${data.nomor} di ${data.counter}`;
                     }
 
                     if (sessionUser === 'Monitor') {
@@ -327,7 +330,13 @@
                             document.getElementById('display-counter').innerText = data.counter;
                         }
                         
-                        mainkanSuara(teksPanggilan);
+                        // CEGAH PEMANGGILAN GANDA DI SINI
+                        if (data.timestamp !== lastPlayedTimestamp) {
+                            lastPlayedTimestamp = data.timestamp; // Ingat waktu panggilan terakhir
+                            window.speechSynthesis.cancel(); // Hentikan suara yang sedang menggantung (jika ada)
+                            mainkanSuara(teksPanggilan);
+                        }
+
                     } else if (sessionUser === data.counter && data.status !== 'selesai') {
                         document.getElementById('last-called').innerText = teksTampilan;
                     }
@@ -339,7 +348,6 @@
         function mainkanSuara(teks) {
             const utterance = new SpeechSynthesisUtterance(teks);
             utterance.lang = 'id-ID'; 
-            // PERUBAHAN KECEPATAN SUARA (Dari 0.85 ke 1.1)
             utterance.rate = 1.1; 
             window.speechSynthesis.speak(utterance);
         }
