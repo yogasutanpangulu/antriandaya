@@ -131,13 +131,12 @@
         function cekLoginSebelumnya() {
             let savedUser = localStorage.getItem("sesi_user_antriandaya");
             let savedDate = localStorage.getItem("tanggal_login_antriandaya");
-            let hariIni = new Date().toDateString(); // Contoh output: "Tue May 23 2026"
+            let hariIni = new Date().toDateString();
 
-            // Jika ada sesi tersimpan dan tanggalnya adalah hari ini, maka auto login
             if (savedUser && savedDate === hariIni) {
                 document.getElementById('login-id').value = savedUser;
                 document.getElementById('login-pass').value = savedUser;
-                loginProses(true); // Parameter true menandakan ini adalah auto-login
+                loginProses(true);
             }
         }
 
@@ -148,20 +147,17 @@
             if (id === pass) {
                 sessionUser = id;
                 
-                // Simpan memori login ke browser (untuk 1 hari)
                 localStorage.setItem("sesi_user_antriandaya", id);
                 localStorage.setItem("tanggal_login_antriandaya", new Date().toDateString());
 
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('btn-logout').style.display = 'inline-block';
                 
-                // Pancingan engine suara (Hanya aktif sempurna jika ini login manual hasil klik user)
                 if (!isAuto) {
                     let dummyUtterance = new SpeechSynthesisUtterance('');
                     window.speechSynthesis.speak(dummyUtterance);
                 }
 
-                // Tampilkan Tampilan Berdasarkan ID
                 if (id === 'Monitor') {
                     document.getElementById('monitor-view').style.display = 'block';
                 } else if (id === 'Valey') {
@@ -173,7 +169,6 @@
                     document.getElementById('counter-name-display').innerText = id;
                 }
                 
-                // Mulai sambungan sinkronisasi
                 mulaiMendengarkanPanggilanAktif();
                 mulaiMendengarkanDaftarTunggu();
                 mulaiMendengarkanHistory();
@@ -188,7 +183,7 @@
             if (konfirmasi) {
                 localStorage.removeItem("sesi_user_antriandaya");
                 localStorage.removeItem("tanggal_login_antriandaya");
-                location.reload(); // Muat ulang halaman ke tampilan awal
+                location.reload(); 
             }
         }
 
@@ -214,21 +209,18 @@
                         ditemukan = true;
                         let dataAntrian = child.val();
                         
-                        // Hapus dari daftar tunggu
                         child.ref.remove();
                         
                         dataPanggilanTerakhirKu = {
                             jenis: dataAntrian.jenis,
                             nomor: dataAntrian.nomor,
                             counter: sessionUser,
-                            status: 'baru', // Penanda panggilan pendaftaran awal
+                            status: 'baru', 
                             timestamp: Date.now()
                         };
                         
-                        // Bunyikan di monitor
                         db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
                         
-                        // Simpan ke History Counter yang bersangkutan
                         db.ref('antrian/history/' + sessionUser).push({
                             jenis: dataAntrian.jenis,
                             nomor: dataAntrian.nomor,
@@ -243,7 +235,7 @@
             });
         }
 
-        // --- 5. LOGIKA PANGGIL ULANG (DAFTAR AWAL) ---
+        // --- 5. LOGIKA PANGGIL ULANG ---
         function panggilUlang() {
             if (dataPanggilanTerakhirKu) {
                 dataPanggilanTerakhirKu.timestamp = Date.now();
@@ -253,9 +245,8 @@
             }
         }
 
-        // --- 6. LOGIKA PANGGIL UNIT SELESAI (KLIK DARI HISTORY) ---
+        // --- 6. LOGIKA PANGGIL UNIT SELESAI ---
         function panggilUnitSelesai(counterPemilik, jenis, nomor) {
-            // Validasi Kunci Keamanan
             if (sessionUser !== counterPemilik) {
                 alert(`MAAF! Anda login sebagai ${sessionUser}. Hanya ${counterPemilik} yang bisa memanggil unit ini untuk diserahkan.`);
                 return;
@@ -265,7 +256,7 @@
                 jenis: jenis,
                 nomor: nomor,
                 counter: sessionUser,
-                status: 'selesai', // Penanda panggilan pengambilan unit
+                status: 'selesai',
                 timestamp: Date.now()
             });
         }
@@ -320,10 +311,11 @@
                     const teksTampilan = `${data.jenis} - ${data.nomor}`;
                     let teksPanggilan = "";
 
+                    // PERUBAHAN FORMAT SUARA DISINI (LEBIH LANGSUNG DAN CEPAT)
                     if (data.status === 'selesai') {
-                        teksPanggilan = `Pemberitahuan. Nomor antrian ${data.jenis}, ${data.nomor}. Unit kendaraan telah selesai, dipersilahkan menuju ${data.counter}`;
+                        teksPanggilan = `Unit Selesai. ${data.jenis} ${data.nomor}, di ${data.counter}`;
                     } else {
-                        teksPanggilan = `Nomor antrian ${data.jenis}, ${data.nomor}, ditunggu di ${data.counter}`;
+                        teksPanggilan = `${data.jenis} ${data.nomor}, di ${data.counter}`;
                     }
 
                     if (sessionUser === 'Monitor') {
@@ -347,14 +339,13 @@
         function mainkanSuara(teks) {
             const utterance = new SpeechSynthesisUtterance(teks);
             utterance.lang = 'id-ID'; 
-            utterance.rate = 0.85; 
+            // PERUBAHAN KECEPATAN SUARA (Dari 0.85 ke 1.1)
+            utterance.rate = 1.1; 
             window.speechSynthesis.speak(utterance);
         }
         
-        // Pancingan agar suara bisa jalan di Monitor jika halaman direfresh tanpa sengaja
         document.body.addEventListener('click', function() {
             if (sessionUser === 'Monitor' && window.speechSynthesis.getVoices().length > 0) {
-                // Membangunkan engine suara secara diam-diam
                 let wakeUp = new SpeechSynthesisUtterance('');
                 wakeUp.volume = 0;
                 window.speechSynthesis.speak(wakeUp);
