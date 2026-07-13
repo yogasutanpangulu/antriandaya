@@ -10,12 +10,12 @@
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 20px; }
         .container { max-width: 95%; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
-        input, select, button { padding: 10px; margin: 10px 0; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+        input, select, button { padding: 10px; margin: 10px 0; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
         button { background: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
         button:hover { background: #0056b3; }
         
-        .btn-booking { background: #28a745; width: 45%; display: inline-block; }
-        .btn-non-booking { background: #17a2b8; width: 45%; display: inline-block; }
+        .btn-booking { background: #28a745; width: 48%; display: inline-block; }
+        .btn-non-booking { background: #17a2b8; width: 48%; display: inline-block; }
         .btn-recall { background: #ffc107; color: black; width: 90%; }
         #btn-logout { background: #dc3545; width: auto; padding: 8px 20px; font-weight: normal; font-size: 14px; display: none; }
         #btn-logout:hover { background: #c82333; }
@@ -25,6 +25,12 @@
         .big-number { font-size: 80px; font-weight: bold; color: #d9534f; margin: 20px 0; }
         .calling-counter { font-size: 30px; font-weight: bold; color: #333; }
         
+        /* Layout Input Valey 2 Kolom */
+        .valey-input-grid { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+        .valey-input-grid div { flex: 1; text-align: left; }
+        .valey-input-grid label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 3px; }
+        .valey-input-grid input { width: 100%; text-align: center; font-weight: bold; font-size: 18px; margin: 0; }
+
         /* Area Salin Nopol */
         .nopol-box { display: flex; align-items: center; justify-content: center; background: #e2e3e5; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: none; }
         .btn-copy { background: #6c757d; padding: 8px 15px; width: auto; margin: 0 15px 0 0; font-size: 14px; display: inline-block; }
@@ -33,7 +39,7 @@
 
         .waktu-tunggu-info { font-size: 14px; color: #555; margin-top: 5px; font-weight: bold; }
 
-        /* DAFTAR TUNGGU (Kiri Booking, Kanan Non Booking) */
+        /* DAFTAR TUNGGU */
         .waiting-list-container { margin-top: 20px; text-align: left; }
         .waiting-grid { display: flex; gap: 15px; margin-top: 10px; }
         .waiting-col { flex: 1; background: #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
@@ -85,12 +91,24 @@
 
     <div id="valey-view" class="container" style="max-width: 600px;">
         <h2>Petugas Valey</h2>
-        <p style="margin-bottom: 5px; font-weight: bold;">1. Ketik Nomor Polisi Kendaraan:</p>
-        <input type="text" id="nopol-input" placeholder="Contoh: B 1234 ABC" style="text-transform: uppercase; font-weight: bold; text-align: center; font-size: 18px; width: 90%;">
         
-        <p style="margin-bottom: 5px; font-weight: bold;">2. Pilih Kategori Antrian:</p>
-        <button class="btn-booking" onclick="tambahAntrianValey('Booking')">+ Antrian Booking</button>
-        <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking')">+ Antrian Non Booking</button>
+        <div class="valey-input-grid">
+            <div>
+                <label for="nopol-input">1. Nomor Polisi:</label>
+                <input type="text" id="nopol-input" placeholder="B 1234 ABC" style="text-transform: uppercase;">
+            </div>
+            <div>
+                <label for="nomor-input">2. Nomor Antrian:</label>
+                <input type="number" id="nomor-input" placeholder="Contoh: 1" min="1">
+            </div>
+        </div>
+
+        <p style="margin: 15px 0 5px 0; font-weight: bold;">3. Pilih Kategori Antrian:</p>
+        <div style="display: flex; gap: 4%; justify-content: center;">
+            <button class="btn-booking" onclick="tambahAntrianValey('Booking')">+ Antrian Booking</button>
+            <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking')">+ Antrian Non Booking</button>
+        </div>
+        
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
@@ -178,7 +196,6 @@
         // --- SISTEM ANTREAN SUARA (KHUSUS MONITOR) ---
         let queueSuara = [];
         let sedangMemutarSuara = false;
-        let suaraSiap = false;
 
         // --- DATA LOKAL UNTUK TIMER LIVE ---
         let daftarAntrianMenunggu = [];
@@ -267,7 +284,6 @@
         }
 
         function aktifkanSuaraMonitor() {
-            suaraSiap = true;
             let wakeUp = new SpeechSynthesisUtterance('Suara monitor aktif');
             wakeUp.lang = 'id-ID';
             window.speechSynthesis.speak(wakeUp);
@@ -275,10 +291,13 @@
             document.getElementById('btn-enable-audio').style.background = "#28a745";
         }
 
-        // --- 2. LOGIKA VALEY (INPUT NOPOL & TIKET) ---
+        // --- 2. LOGIKA VALEY (INPUT MANUAL NOPOL & NOMOR ANTRIAN) ---
         function tambahAntrianValey(jenis) {
             const nopolInput = document.getElementById('nopol-input');
+            const nomorInput = document.getElementById('nomor-input');
+
             const nopolValue = nopolInput.value.trim().toUpperCase();
+            const nomorValue = nomorInput.value.trim();
 
             if (nopolValue === "") {
                 alert("Harap ketik Nomor Polisi terlebih dahulu!");
@@ -286,21 +305,28 @@
                 return;
             }
 
-            const dbRef = db.ref('antrian/terakhir_' + jenis);
-            dbRef.once('value', (snapshot) => {
-                let nomorBaru = (snapshot.val() || 0) + 1;
-                dbRef.set(nomorBaru);
-                
-                let waktuSekarang = Date.now();
-                db.ref('antrian/menunggu').push({
-                    jenis: jenis, 
-                    nomor: nomorBaru, 
-                    nopol: nopolValue, 
-                    timestamp: waktuSekarang,
-                    waktuMasuk: waktuSekarang
-                });
+            if (nomorValue === "" || isNaN(nomorValue) || parseInt(nomorValue) <= 0) {
+                alert("Harap ketik Nomor Antrian yang valid!");
+                nomorInput.focus();
+                return;
+            }
 
-                nopolInput.value = ""; 
+            let waktuSekarang = Date.now();
+            
+            // SIMPAN DATA KE FIREBASE
+            db.ref('antrian/menunggu').push({
+                jenis: jenis, 
+                nomor: parseInt(nomorValue), 
+                nopol: nopolValue, 
+                timestamp: waktuSekarang,
+                waktuMasuk: waktuSekarang
+            }).then(() => {
+                // RESET FORM INPUT JIKA BERHASIL
+                nopolInput.value = "";
+                nomorInput.value = "";
+                nopolInput.focus();
+            }).catch((err) => {
+                alert("Gagal menambahkan antrian: " + err.message);
             });
         }
 
@@ -446,7 +472,6 @@
             }
         }
 
-        // TIMER INTERVAL UPDATE SETIAP DETIK (REALTIME)
         function mulaiTimerRealtime() {
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
@@ -534,7 +559,6 @@
                         teksPanggilan = `Antrian ${data.jenis} ${data.nomor} di ${data.counter}`;
                     }
 
-                    // HANYA LAYAR MONITOR YANG MEMUTAR SUARA DAN MENAMPILKAN JUDUL MONITOR
                     if (sessionUser === 'Monitor') {
                         document.getElementById('display-number').innerText = teksTampilan;
                         
@@ -544,7 +568,6 @@
                             document.getElementById('display-counter').innerText = data.counter;
                         }
                         
-                        // TAMBAH SUARA HANYA BILA LOGIN SEBAGAI MONITOR
                         if (data.timestamp !== lastPlayedTimestamp) {
                             lastPlayedTimestamp = data.timestamp;
                             tambahKeAntreanSuara(teksPanggilan);
@@ -567,7 +590,6 @@
 
         // --- 5. LOGIKA ANTREAN SUARA (KHUSUS MONITOR) ---
         function tambahKeAntreanSuara(teks) {
-            // KEAMANAN KETAT: JIKA BUKAN MONITOR, SAMA SEKALI JANGAN DITERUSKAN
             if (sessionUser !== 'Monitor') return;
 
             queueSuara.push(teks);
@@ -596,7 +618,7 @@
                 sedangMemutarSuara = false;
                 setTimeout(() => {
                     prosesAntreanSuara();
-                }, 400); // Jeda antar panggilan 0.4 detik
+                }, 400);
             };
 
             utterance.onerror = function() {
