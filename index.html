@@ -9,7 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     
     <style>
-        /* Lebar container diperbesar agar tabel history muat ke samping */
         body { font-family: Arial, sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 20px; }
         .container { max-width: 95%; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
         input, select, button { padding: 10px; margin: 10px 0; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
@@ -27,26 +26,28 @@
         .big-number { font-size: 80px; font-weight: bold; color: #d9534f; margin: 20px 0; }
         .calling-counter { font-size: 30px; font-weight: bold; color: #333; }
         
-        /* Daftar Tunggu */
-        .waiting-list-container { background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; }
-        .badge { display: inline-block; padding: 6px 12px; margin: 5px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px;}
-        .badge-booking { background: #28a745; }
-        .badge-non { background: #17a2b8; }
-
         /* Area Salin Nopol */
         .nopol-box { display: flex; align-items: center; justify-content: center; background: #e2e3e5; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: none; }
         .btn-copy { background: #6c757d; padding: 8px 15px; width: auto; margin: 0 15px 0 0; font-size: 14px; display: inline-block; }
         .btn-copy:hover { background: #5a6268; }
         #last-nopol { font-size: 24px; letter-spacing: 2px; }
 
-        /* TABEL HISTORY BARU (Menyamping & Menurun) */
+        /* DAFTAR TUNGGU (Kiri Booking, Kanan Non Booking) */
+        .waiting-list-container { margin-top: 20px; text-align: left; }
+        .waiting-grid { display: flex; gap: 15px; margin-top: 10px; }
+        .waiting-col { flex: 1; background: #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
+        .waiting-col h4 { margin-top: 0; margin-bottom: 10px; font-size: 15px; }
+        .badge-waiting { display: block; padding: 8px; margin-bottom: 5px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px; text-align: center; }
+        .badge-booking { background: #28a745; }
+        .badge-non { background: #17a2b8; }
+
+        /* TABEL HISTORY (Menyamping & Menurun) */
         .table-responsive { overflow-x: auto; margin-top: 15px; }
         .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .history-table th, .history-table td { border: 1px solid #999; padding: 5px; vertical-align: top; text-align: center; width: 10%; }
         .history-table th { background: #d1ecf1; color: #0c5460; font-weight: bold; }
         .history-table .sub-header th { font-size: 12px; background: #f8f9fa; color: #333; }
         
-        /* Tombol di dalam Tabel History */
         .btn-hist-book { background: #28a745; color: white; border: none; padding: 6px; margin: 2px 0; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box; }
         .btn-hist-non { background: #17a2b8; color: white; border: none; padding: 6px; margin: 2px 0; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box;}
         .btn-hist-book:hover { background: #218838; }
@@ -116,7 +117,7 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <!-- HALAMAN HISTORY (TABEL MENYAMPING) -->
+    <!-- HALAMAN HISTORY -->
     <div id="history-view" class="container">
         <h3>History & Panggilan Unit Selesai</h3>
         <p style="font-size: 13px; color: #555;">(Klik nomor di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
@@ -336,29 +337,53 @@
         }
 
         // --- 4. LISTENER FIREBASE (REALTIME) ---
+        
+        // FUNGSI DAFTAR TUNGGU DIPERBARUI DENGAN GRID 2 KOLOM
         function mulaiMendengarkanDaftarTunggu() {
             db.ref('antrian/menunggu').orderByChild('timestamp').on('value', (snapshot) => {
-                let htmlTunggu = "<strong>Daftar Pelanggan Menunggu:</strong><br><br>";
-                let adaAntrian = false;
+                let htmlBooking = "";
+                let htmlNonBooking = "";
+
+                // Ekstrak data dan pisahkan berdasarkan jenis
                 snapshot.forEach((child) => {
-                    adaAntrian = true;
                     let d = child.val();
-                    let classBadge = d.jenis === 'Booking' ? 'badge-booking' : 'badge-non';
                     let teksNopol = d.nopol ? ` | ${d.nopol}` : '';
-                    htmlTunggu += `<span class="badge ${classBadge}">${d.jenis} ${d.nomor}${teksNopol}</span> `;
+                    
+                    if (d.jenis === 'Booking') {
+                        htmlBooking += `<div class="badge-waiting badge-booking">${d.jenis} ${d.nomor}${teksNopol}</div>`;
+                    } else {
+                        htmlNonBooking += `<div class="badge-waiting badge-non">${d.jenis} ${d.nomor}${teksNopol}</div>`;
+                    }
                 });
-                if (!adaAntrian) htmlTunggu += "<i>Saat ini tidak ada pelanggan yang menunggu.</i>";
+
+                // Jika kosong, berikan teks informatif
+                if (htmlBooking === "") htmlBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Booking</i>";
+                if (htmlNonBooking === "") htmlNonBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Non Booking</i>";
+
+                // Rangkai menjadi HTML 2 kolom
+                let finalHtml = `
+                    <strong>Daftar Pelanggan Menunggu:</strong>
+                    <div class="waiting-grid">
+                        <div class="waiting-col">
+                            <h4 style="color: #218838;">KOLOM BOOKING</h4>
+                            ${htmlBooking}
+                        </div>
+                        <div class="waiting-col">
+                            <h4 style="color: #138496;">KOLOM NON BOOKING</h4>
+                            ${htmlNonBooking}
+                        </div>
+                    </div>
+                `;
                 
                 let elements = document.getElementsByClassName('waiting-list-container');
-                for(let i=0; i<elements.length; i++) elements[i].innerHTML = htmlTunggu;
+                for(let i=0; i<elements.length; i++) {
+                    elements[i].innerHTML = finalHtml;
+                }
             });
         }
 
-        // LISTENER HISTORY DIPERBARUI UNTUK FORMAT TABEL MENYAMPING
         function mulaiMendengarkanHistory() {
             db.ref('antrian/history').on('value', (snapshot) => {
-                
-                // Menyiapkan wadah data per Counter dan per Jenis
                 let dataTabel = {
                     "Counter 2": { booking: [], nonBooking: [] },
                     "Counter 3": { booking: [], nonBooking: [] },
@@ -369,7 +394,6 @@
 
                 let maxBaris = 0;
 
-                // Ekstrak data dari Firebase ke dalam wadah array
                 snapshot.forEach((counterSnapshot) => {
                     let cName = counterSnapshot.key;
                     if(dataTabel[cName]) {
@@ -387,7 +411,6 @@
                             }
                         });
                         
-                        // Cari baris terpanjang untuk menentukan tinggi tabel
                         let panjangMaksCounterIni = Math.max(dataTabel[cName].booking.length, dataTabel[cName].nonBooking.length);
                         if (panjangMaksCounterIni > maxBaris) {
                             maxBaris = panjangMaksCounterIni;
@@ -395,7 +418,6 @@
                     }
                 });
 
-                // Render array data ke dalam format HTML <tr> dan <td>
                 let tbodyHtml = "";
                 for (let i = 0; i < maxBaris; i++) {
                     tbodyHtml += "<tr>";
