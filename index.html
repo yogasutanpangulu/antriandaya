@@ -3,25 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Antrian Service</title>
-    <!-- Script ini menghubungkan web dengan Firebase -->
+    <title>Sistem Antrian Service Daya Toyota</title>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .container { max-width: 650px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
         input, select, button { padding: 10px; margin: 10px 0; width: 90%; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
         button { background: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
         button:hover { background: #0056b3; }
         
-        #monitor-view { display: none; }
+        .btn-booking { background: #28a745; }
+        .btn-non-booking { background: #17a2b8; }
+        .btn-recall { background: #ffc107; color: black; }
+
+        /* Tampilan Layar */
+        #monitor-view, #counter-view, #valey-view { display: none; }
         .big-number { font-size: 80px; font-weight: bold; color: #d9534f; margin: 20px 0; }
         .calling-counter { font-size: 30px; font-weight: bold; color: #333; }
         
-        #counter-view { display: none; }
-        .btn-booking { background: #28a745; }
-        .btn-non-booking { background: #17a2b8; }
+        /* Daftar Tunggu */
+        .waiting-list-container { background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; }
+        .badge { display: inline-block; padding: 5px 10px; margin: 5px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px;}
+        .badge-booking { background: #28a745; }
+        .badge-non { background: #17a2b8; }
     </style>
 </head>
 <body>
@@ -30,16 +37,26 @@
     <div id="login-section" class="container">
         <h2>Login Sistem Antrian</h2>
         <select id="login-id">
+            <option value="Valey">Valey (Input Antrian)</option>
             <option value="Counter 2">Counter 2</option>
             <option value="Counter 3">Counter 3</option>
             <option value="Counter 4">Counter 4</option>
             <option value="Counter 5">Counter 5</option>
             <option value="Counter 6">Counter 6</option>
-            <option value="Monitor">Monitor</option>
+            <option value="Monitor">Layar Monitor</option>
         </select>
-        <input type="password" id="login-pass" placeholder="Password = Nama ID">
+        <input type="password" id="login-pass" placeholder="Password = Nama ID (cth: Valey)">
         <button onclick="login()">Masuk</button>
         <p id="login-error" style="color:red; display:none;">Password salah!</p>
+    </div>
+
+    <!-- HALAMAN VALEY -->
+    <div id="valey-view" class="container">
+        <h2>Petugas Valey</h2>
+        <p>Berikan nomor antrian ke pelanggan:</p>
+        <button class="btn-booking" onclick="tambahAntrianValey('Booking')">+ Tambah Antrian Booking</button>
+        <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking')">+ Tambah Antrian Non Booking</button>
+        <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
     <!-- HALAMAN MONITOR -->
@@ -47,17 +64,22 @@
         <h2>Layar Monitor Utama</h2>
         <div class="calling-counter">PANGGILAN SAAT INI</div>
         <div class="big-number" id="display-number">--</div>
-        <div class="calling-counter" id="display-counter">Menunggu...</div>
+        <div class="calling-counter" id="display-counter">Menunggu Panggilan...</div>
+        <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
     <!-- HALAMAN COUNTER -->
     <div id="counter-view" class="container">
         <h2 id="counter-name-display">Counter</h2>
         <hr>
-        <button class="btn-booking" onclick="panggilAntrian('Booking')">Panggil Booking</button>
-        <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')">Panggil Non Booking</button>
+        <h3>Tarik Antrian dari Daftar Tunggu</h3>
+        <button class="btn-booking" onclick="panggilAntrian('Booking')">Panggil Booking Berikutnya</button>
+        <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')">Panggil Non Booking Berikutnya</button>
+        
         <hr>
         <p>Terakhir Dipanggil: <strong id="last-called">Belum ada</strong></p>
+        <button class="btn-recall" onclick="panggilUlang()">Panggil Ulang Nomor Ini</button>
+        <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
     <script>
@@ -71,69 +93,153 @@
             messagingSenderId: "421850738338",
             appId: "1:421850738338:web:21d5d24822e7902923b1fb"
         };
-        // --------------------------------------------------------
         
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let sessionUser = "";
+        let dataPanggilanTerakhirKu = null; // Menyimpan memori untuk tombol panggil ulang
 
+        // --- 1. LOGIKA LOGIN ---
         function login() {
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
 
-            // Password dibuat sama dengan ID (misal: pilih Counter 2, ketik password: Counter 2)
             if (id === pass) {
                 sessionUser = id;
                 document.getElementById('login-section').style.display = 'none';
                 
+                // Aktifkan suara browser
                 let dummyUtterance = new SpeechSynthesisUtterance('');
                 window.speechSynthesis.speak(dummyUtterance);
 
                 if (id === 'Monitor') {
                     document.getElementById('monitor-view').style.display = 'block';
+                } else if (id === 'Valey') {
+                    document.getElementById('valey-view').style.display = 'block';
                 } else {
                     document.getElementById('counter-view').style.display = 'block';
                     document.getElementById('counter-name-display').innerText = id;
                 }
-                mulaiMendengarkanFirebase();
+                
+                mulaiMendengarkanPanggilanAktif();
+                mulaiMendengarkanDaftarTunggu();
             } else {
                 document.getElementById('login-error').style.display = 'block';
             }
         }
 
-        function panggilAntrian(jenis) {
+        // --- 2. LOGIKA VALEY (MEMBUAT TIKET) ---
+        function tambahAntrianValey(jenis) {
             const dbRef = db.ref('antrian/terakhir_' + jenis);
             dbRef.once('value', (snapshot) => {
                 let nomorBaru = (snapshot.val() || 0) + 1;
+                
+                // Simpan nomor terakhir
                 dbRef.set(nomorBaru);
-                db.ref('antrian/panggilan_aktif').set({
-                    jenis: jenis, nomor: nomorBaru, counter: sessionUser, timestamp: Date.now()
+                
+                // Dorong ke "Daftar Tunggu" agar bisa dilihat dan ditarik counter
+                db.ref('antrian/menunggu').push({
+                    jenis: jenis,
+                    nomor: nomorBaru,
+                    timestamp: Date.now()
                 });
             });
         }
 
-        function mulaiMendengarkanFirebase() {
+        // --- 3. LOGIKA COUNTER (MENARIK TIKET DARI DAFTAR TUNGGU) ---
+        function panggilAntrian(jenis) {
+            // Cari data di daftar tunggu
+            db.ref('antrian/menunggu').orderByChild('timestamp').once('value', (snapshot) => {
+                let ditemukan = false;
+                
+                snapshot.forEach((child) => {
+                    if (!ditemukan && child.val().jenis === jenis) {
+                        ditemukan = true;
+                        let dataAntrian = child.val();
+                        
+                        // Hapus dari daftar tunggu karena sudah dipanggil counter
+                        child.ref.remove();
+                        
+                        // Broadcast ke monitor (panggilan aktif)
+                        dataPanggilanTerakhirKu = {
+                            jenis: dataAntrian.jenis,
+                            nomor: dataAntrian.nomor,
+                            counter: sessionUser,
+                            timestamp: Date.now()
+                        };
+                        db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
+                    }
+                });
+
+                if (!ditemukan) {
+                    alert(`Belum ada pelanggan untuk kategori ${jenis} yang diinput oleh Valey!`);
+                }
+            });
+        }
+
+        // --- 4. LOGIKA PANGGIL ULANG ---
+        function panggilUlang() {
+            if (dataPanggilanTerakhirKu) {
+                // Perbarui timestamp agar monitor mendeteksi perubahan dan membunyikan suara lagi
+                dataPanggilanTerakhirKu.timestamp = Date.now();
+                db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
+            } else {
+                alert("Anda belum memanggil siapapun!");
+            }
+        }
+
+        // --- 5. TAMPILKAN DAFTAR TUNGGU REALTIME ---
+        function mulaiMendengarkanDaftarTunggu() {
+            db.ref('antrian/menunggu').orderByChild('timestamp').on('value', (snapshot) => {
+                let htmlTunggu = "<strong>Daftar Pelanggan Menunggu:</strong><br><br>";
+                let adaAntrian = false;
+                
+                snapshot.forEach((child) => {
+                    adaAntrian = true;
+                    let d = child.val();
+                    let classBadge = d.jenis === 'Booking' ? 'badge-booking' : 'badge-non';
+                    htmlTunggu += `<span class="badge ${classBadge}">${d.jenis} ${d.nomor}</span> `;
+                });
+                
+                if (!adaAntrian) {
+                    htmlTunggu += "<i>Saat ini tidak ada pelanggan yang menunggu.</i>";
+                }
+                
+                // Tampilkan daftar ke semua class 'waiting-list-container'
+                let elements = document.getElementsByClassName('waiting-list-container');
+                for(let i=0; i<elements.length; i++) {
+                    elements[i].innerHTML = htmlTunggu;
+                }
+            });
+        }
+
+        // --- 6. TAMPILKAN PANGGILAN AKTIF & SUARA REALTIME ---
+        function mulaiMendengarkanPanggilanAktif() {
             db.ref('antrian/panggilan_aktif').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     const teksTampilan = `${data.jenis} - ${data.nomor}`;
                     const teksPanggilan = `Nomor antrian ${data.jenis}, ${data.nomor}, ditunggu di ${data.counter}`;
 
+                    // Update Layar Monitor
                     if (sessionUser === 'Monitor') {
                         document.getElementById('display-number').innerText = teksTampilan;
                         document.getElementById('display-counter').innerText = data.counter;
                         mainkanSuara(teksPanggilan);
-                    } else {
-                        document.getElementById('last-called').innerText = `${teksTampilan} (oleh ${data.counter})`;
+                    } 
+                    // Update Layar Counter yang Memanggil
+                    else if (sessionUser === data.counter) {
+                        document.getElementById('last-called').innerText = teksTampilan;
                     }
                 }
             });
         }
 
+        // --- 7. SUARA TEXT-TO-SPEECH ---
         function mainkanSuara(teks) {
             const utterance = new SpeechSynthesisUtterance(teks);
             utterance.lang = 'id-ID'; 
-            utterance.rate = 0.9; 
+            utterance.rate = 0.85; // Diperlambat sedikit agar jelas
             window.speechSynthesis.speak(utterance);
         }
     </script>
