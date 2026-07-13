@@ -477,12 +477,19 @@
         }
 
         // --- 5. SUARA ---
+        let timerSuara = null; // Memori untuk mencegah antrean suara ganda
+
         function mainkanSuara(teks) {
             // 1. Matikan paksa semua suara yang mungkin sedang nyangkut di memori Chrome
             window.speechSynthesis.cancel();
             
-            // 2. Beri jeda 100 milidetik agar Chrome benar-benar selesai membersihkan memorinya
-            setTimeout(() => {
+            // 2. Batalkan perintah suara sebelumnya jika terjadi double-klik atau bentrok server
+            if (timerSuara !== null) {
+                clearTimeout(timerSuara);
+            }
+            
+            // 3. Beri jeda seperempat detik (250ms) sebelum membunyikan suara baru
+            timerSuara = setTimeout(() => {
                 const utterance = new SpeechSynthesisUtterance(teks);
                 utterance.lang = 'id-ID'; 
                 utterance.rate = 1.1; 
@@ -495,7 +502,7 @@
                 }
 
                 window.speechSynthesis.speak(utterance);
-            }, 100);
+            }, 250);
         }
         
         // Pancingan agar suara bisa jalan di Monitor jika halaman direfresh tanpa sengaja
