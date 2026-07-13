@@ -9,15 +9,16 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     
     <style>
+        /* Lebar container diperbesar agar tabel history muat ke samping */
         body { font-family: Arial, sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 650px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
-        input, select, button { padding: 10px; margin: 10px 0; width: 90%; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+        .container { max-width: 95%; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
+        input, select, button { padding: 10px; margin: 10px 0; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
         button { background: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
         button:hover { background: #0056b3; }
         
-        .btn-booking { background: #28a745; }
-        .btn-non-booking { background: #17a2b8; }
-        .btn-recall { background: #ffc107; color: black; }
+        .btn-booking { background: #28a745; width: 45%; display: inline-block; }
+        .btn-non-booking { background: #17a2b8; width: 45%; display: inline-block; }
+        .btn-recall { background: #ffc107; color: black; width: 90%; }
         #btn-logout { background: #dc3545; width: auto; padding: 8px 20px; font-weight: normal; font-size: 14px; display: none; }
         #btn-logout:hover { background: #c82333; }
 
@@ -26,33 +27,39 @@
         .big-number { font-size: 80px; font-weight: bold; color: #d9534f; margin: 20px 0; }
         .calling-counter { font-size: 30px; font-weight: bold; color: #333; }
         
-        /* Daftar Tunggu & History */
+        /* Daftar Tunggu */
         .waiting-list-container { background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; }
         .badge { display: inline-block; padding: 6px 12px; margin: 5px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px;}
         .badge-booking { background: #28a745; }
         .badge-non { background: #17a2b8; }
-
-        .history-box { background: #f8f9fa; margin: 10px 0; padding: 10px; border-radius: 5px; border-left: 4px solid #007bff; text-align: left;}
-        
-        /* Tampilan History Menurun (Vertikal) */
-        .btn-hist-book { background: #28a745; color: white; border: none; padding: 8px 10px; margin: 4px 0; border-radius: 4px; cursor: pointer; font-size: 14px; width: 100%; text-align: left; font-weight: bold; display: block; }
-        .btn-hist-non { background: #17a2b8; color: white; border: none; padding: 8px 10px; margin: 4px 0; border-radius: 4px; cursor: pointer; font-size: 14px; width: 100%; text-align: left; font-weight: bold; display: block;}
-        .btn-hist-book:hover { background: #218838; }
-        .btn-hist-non:hover { background: #138496; }
 
         /* Area Salin Nopol */
         .nopol-box { display: flex; align-items: center; justify-content: center; background: #e2e3e5; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: none; }
         .btn-copy { background: #6c757d; padding: 8px 15px; width: auto; margin: 0 15px 0 0; font-size: 14px; display: inline-block; }
         .btn-copy:hover { background: #5a6268; }
         #last-nopol { font-size: 24px; letter-spacing: 2px; }
+
+        /* TABEL HISTORY BARU (Menyamping & Menurun) */
+        .table-responsive { overflow-x: auto; margin-top: 15px; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .history-table th, .history-table td { border: 1px solid #999; padding: 5px; vertical-align: top; text-align: center; width: 10%; }
+        .history-table th { background: #d1ecf1; color: #0c5460; font-weight: bold; }
+        .history-table .sub-header th { font-size: 12px; background: #f8f9fa; color: #333; }
+        
+        /* Tombol di dalam Tabel History */
+        .btn-hist-book { background: #28a745; color: white; border: none; padding: 6px; margin: 2px 0; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box; }
+        .btn-hist-non { background: #17a2b8; color: white; border: none; padding: 6px; margin: 2px 0; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box;}
+        .btn-hist-book:hover { background: #218838; }
+        .btn-hist-non:hover { background: #138496; }
+        .hist-nopol { display: block; font-size: 10px; font-weight: normal; margin-top: 2px; background: rgba(0,0,0,0.1); padding: 2px; border-radius: 2px; }
     </style>
 </head>
 <body>
 
     <!-- HALAMAN LOGIN -->
-    <div id="login-section" class="container">
+    <div id="login-section" class="container" style="max-width: 500px;">
         <h2>Login Sistem Antrian</h2>
-        <select id="login-id">
+        <select id="login-id" style="width: 100%;">
             <option value="Valey">Valey (Input Antrian)</option>
             <option value="Counter 2">Counter 2</option>
             <option value="Counter 3">Counter 3</option>
@@ -61,20 +68,20 @@
             <option value="Counter 6">Counter 6</option>
             <option value="Monitor">Layar Monitor</option>
         </select>
-        <input type="password" id="login-pass" placeholder="Password = Nama ID (cth: Counter 2)">
-        <button onclick="loginProses()">Masuk</button>
+        <input type="password" id="login-pass" placeholder="Password = Nama ID (cth: Counter 2)" style="width: 95%;">
+        <button onclick="loginProses()" style="width: 100%;">Masuk</button>
         <p id="login-error" style="color:red; display:none;">Password salah!</p>
     </div>
 
     <!-- HALAMAN VALEY -->
-    <div id="valey-view" class="container">
+    <div id="valey-view" class="container" style="max-width: 600px;">
         <h2>Petugas Valey</h2>
         <p style="margin-bottom: 5px; font-weight: bold;">1. Ketik Nomor Polisi Kendaraan:</p>
-        <input type="text" id="nopol-input" placeholder="Contoh: B 1234 ABC" style="text-transform: uppercase; font-weight: bold; text-align: center; font-size: 18px;">
+        <input type="text" id="nopol-input" placeholder="Contoh: B 1234 ABC" style="text-transform: uppercase; font-weight: bold; text-align: center; font-size: 18px; width: 90%;">
         
         <p style="margin-bottom: 5px; font-weight: bold;">2. Pilih Kategori Antrian:</p>
-        <button class="btn-booking" onclick="tambahAntrianValey('Booking')">+ Tambah Antrian Booking</button>
-        <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking')">+ Tambah Antrian Non Booking</button>
+        <button class="btn-booking" onclick="tambahAntrianValey('Booking')">+ Antrian Booking</button>
+        <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking')">+ Antrian Non Booking</button>
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
@@ -89,12 +96,12 @@
     </div>
 
     <!-- HALAMAN COUNTER -->
-    <div id="counter-view" class="container">
+    <div id="counter-view" class="container" style="max-width: 600px;">
         <h2 id="counter-name-display">Counter</h2>
         <hr>
         <h3>Tarik Antrian dari Daftar Tunggu</h3>
-        <button class="btn-booking" onclick="panggilAntrian('Booking')">Panggil Booking Berikutnya</button>
-        <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')">Panggil Non Booking Berikutnya</button>
+        <button class="btn-booking" onclick="panggilAntrian('Booking')">Panggil Booking</button>
+        <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')">Panggil Non Booking</button>
         
         <hr>
         <p style="margin-bottom: 5px;">Terakhir Dipanggil: <strong id="last-called">Belum ada</strong></p>
@@ -109,20 +116,40 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <!-- HALAMAN HISTORY -->
+    <!-- HALAMAN HISTORY (TABEL MENYAMPING) -->
     <div id="history-view" class="container">
         <h3>History & Panggilan Unit Selesai</h3>
-        <p style="font-size: 13px; color: #555;">(Klik list menurun di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
+        <p style="font-size: 13px; color: #555;">(Klik nomor di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
         
-        <div class="history-box"><strong>Counter 2:</strong> <div id="hist-Counter 2">Kosong</div></div>
-        <div class="history-box"><strong>Counter 3:</strong> <div id="hist-Counter 3">Kosong</div></div>
-        <div class="history-box"><strong>Counter 4:</strong> <div id="hist-Counter 4">Kosong</div></div>
-        <div class="history-box"><strong>Counter 5:</strong> <div id="hist-Counter 5">Kosong</div></div>
-        <div class="history-box"><strong>Counter 6:</strong> <div id="hist-Counter 6">Kosong</div></div>
+        <div class="table-responsive">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th colspan="2">COUNTER 2</th>
+                        <th colspan="2">COUNTER 3</th>
+                        <th colspan="2">COUNTER 4</th>
+                        <th colspan="2">COUNTER 5</th>
+                        <th colspan="2">COUNTER 6</th>
+                    </tr>
+                    <tr class="sub-header">
+                        <th>BOOKING</th> <th>NON BOOKING</th>
+                        <th>BOOKING</th> <th>NON BOOKING</th>
+                        <th>BOOKING</th> <th>NON BOOKING</th>
+                        <th>BOOKING</th> <th>NON BOOKING</th>
+                        <th>BOOKING</th> <th>NON BOOKING</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body">
+                    <tr><td colspan="10">Memuat history...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- TOMBOL LOGOUT GLOBAL -->
-    <button id="btn-logout" onclick="logoutAkun()">Keluar Akun</button>
+    <div style="text-align: center; margin-bottom: 30px;">
+        <button id="btn-logout" onclick="logoutAkun()">Keluar Akun</button>
+    </div>
 
     <script>
         // --- KONFIGURASI FIREBASE ---
@@ -211,7 +238,6 @@
             const nopolInput = document.getElementById('nopol-input');
             const nopolValue = nopolInput.value.trim().toUpperCase();
 
-            // Cegah antrian masuk jika nopol kosong
             if (nopolValue === "") {
                 alert("Harap ketik Nomor Polisi terlebih dahulu!");
                 nopolInput.focus();
@@ -226,11 +252,10 @@
                 db.ref('antrian/menunggu').push({
                     jenis: jenis, 
                     nomor: nomorBaru, 
-                    nopol: nopolValue, // Simpan Nopol ke database
+                    nopol: nopolValue, 
                     timestamp: Date.now()
                 });
 
-                // Kosongkan kolom input setelah berhasil dipencet
                 nopolInput.value = ""; 
             });
         }
@@ -250,7 +275,7 @@
                         dataPanggilanTerakhirKu = {
                             jenis: dataAntrian.jenis,
                             nomor: dataAntrian.nomor,
-                            nopol: dataAntrian.nopol || "-", // Bawa data nopol
+                            nopol: dataAntrian.nopol || "-", 
                             counter: sessionUser,
                             status: 'baru', 
                             timestamp: Date.now() 
@@ -273,21 +298,18 @@
             });
         }
 
-        // --- 4. FUNGSI SALIN NOPOL ---
         function salinNopol() {
             const teksNopol = document.getElementById('last-nopol').innerText;
             if (teksNopol && teksNopol !== "-") {
                 navigator.clipboard.writeText(teksNopol).then(() => {
-                    // Tampilkan feedback sementara di tombol
                     let btn = document.querySelector('.btn-copy');
                     let textAsli = btn.innerText;
-                    btn.innerText = "✔️ Tersalin!";
+                    btn.innerText = "✔️ Tersalin";
                     setTimeout(() => { btn.innerText = textAsli; }, 1500);
                 });
             }
         }
 
-        // --- 5. LOGIKA PANGGIL ULANG & UNIT SELESAI ---
         function panggilUlang() {
             if (dataPanggilanTerakhirKu) {
                 dataPanggilanTerakhirKu.timestamp = Date.now();
@@ -299,7 +321,7 @@
 
         function panggilUnitSelesai(counterPemilik, jenis, nomor, nopol) {
             if (sessionUser !== counterPemilik) {
-                alert(`MAAF! Anda login sebagai ${sessionUser}. Hanya ${counterPemilik} yang bisa memanggil unit ini untuk diserahkan.`);
+                alert(`MAAF! Anda login sebagai ${sessionUser}. Hanya ${counterPemilik} yang bisa memanggil unit ini.`);
                 return;
             }
 
@@ -313,7 +335,7 @@
             });
         }
 
-        // --- 6. LISTENER FIREBASE (REALTIME) ---
+        // --- 4. LISTENER FIREBASE (REALTIME) ---
         function mulaiMendengarkanDaftarTunggu() {
             db.ref('antrian/menunggu').orderByChild('timestamp').on('value', (snapshot) => {
                 let htmlTunggu = "<strong>Daftar Pelanggan Menunggu:</strong><br><br>";
@@ -322,7 +344,7 @@
                     adaAntrian = true;
                     let d = child.val();
                     let classBadge = d.jenis === 'Booking' ? 'badge-booking' : 'badge-non';
-                    let teksNopol = d.nopol ? ` | ${d.nopol}` : ''; // Tampilkan nopol di antrian
+                    let teksNopol = d.nopol ? ` | ${d.nopol}` : '';
                     htmlTunggu += `<span class="badge ${classBadge}">${d.jenis} ${d.nomor}${teksNopol}</span> `;
                 });
                 if (!adaAntrian) htmlTunggu += "<i>Saat ini tidak ada pelanggan yang menunggu.</i>";
@@ -332,30 +354,66 @@
             });
         }
 
+        // LISTENER HISTORY DIPERBARUI UNTUK FORMAT TABEL MENYAMPING
         function mulaiMendengarkanHistory() {
             db.ref('antrian/history').on('value', (snapshot) => {
-                let historyData = { "Counter 2": "", "Counter 3": "", "Counter 4": "", "Counter 5": "", "Counter 6": "" };
                 
+                // Menyiapkan wadah data per Counter dan per Jenis
+                let dataTabel = {
+                    "Counter 2": { booking: [], nonBooking: [] },
+                    "Counter 3": { booking: [], nonBooking: [] },
+                    "Counter 4": { booking: [], nonBooking: [] },
+                    "Counter 5": { booking: [], nonBooking: [] },
+                    "Counter 6": { booking: [], nonBooking: [] }
+                };
+
+                let maxBaris = 0;
+
+                // Ekstrak data dari Firebase ke dalam wadah array
                 snapshot.forEach((counterSnapshot) => {
                     let cName = counterSnapshot.key;
-                    if(historyData[cName] !== undefined) {
+                    if(dataTabel[cName]) {
                         counterSnapshot.forEach((antrianSnapshot) => {
                             let d = antrianSnapshot.val();
                             let classBtn = d.jenis === 'Booking' ? 'btn-hist-book' : 'btn-hist-non';
-                            let teksNopol = d.nopol ? ` - [ ${d.nopol} ]` : '';
-                            // Desain tombol sekarang menurun / display block
-                            historyData[cName] += `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor}, '${d.nopol || ''}')">${d.jenis} ${d.nomor}${teksNopol}</button>`;
+                            let teksNopol = d.nopol && d.nopol !== "-" ? `<span class="hist-nopol">${d.nopol}</span>` : '';
+                            
+                            let tombolHtml = `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor}, '${d.nopol || '-'}')">${d.jenis} ${d.nomor}${teksNopol}</button>`;
+                            
+                            if (d.jenis === 'Booking') {
+                                dataTabel[cName].booking.push(tombolHtml);
+                            } else {
+                                dataTabel[cName].nonBooking.push(tombolHtml);
+                            }
                         });
+                        
+                        // Cari baris terpanjang untuk menentukan tinggi tabel
+                        let panjangMaksCounterIni = Math.max(dataTabel[cName].booking.length, dataTabel[cName].nonBooking.length);
+                        if (panjangMaksCounterIni > maxBaris) {
+                            maxBaris = panjangMaksCounterIni;
+                        }
                     }
                 });
 
-                for(let i=2; i<=6; i++) {
-                    let targetID = 'hist-Counter ' + i;
-                    let el = document.getElementById(targetID);
-                    if(el) {
-                        el.innerHTML = historyData['Counter ' + i] || "<i>Belum ada antrian yang diproses.</i>";
+                // Render array data ke dalam format HTML <tr> dan <td>
+                let tbodyHtml = "";
+                for (let i = 0; i < maxBaris; i++) {
+                    tbodyHtml += "<tr>";
+                    for (let c = 2; c <= 6; c++) {
+                        let cName = "Counter " + c;
+                        let btnB = dataTabel[cName].booking[i] || "";
+                        let btnN = dataTabel[cName].nonBooking[i] || "";
+                        
+                        tbodyHtml += `<td>${btnB}</td><td>${btnN}</td>`;
                     }
+                    tbodyHtml += "</tr>";
                 }
+
+                if (maxBaris === 0) {
+                    tbodyHtml = `<tr><td colspan="10" style="padding:15px; color:#666;">Belum ada history antrian.</td></tr>`;
+                }
+
+                document.getElementById('history-table-body').innerHTML = tbodyHtml;
             });
         }
 
@@ -388,9 +446,7 @@
                         }
 
                     } else if (sessionUser === data.counter && data.status !== 'selesai') {
-                        // Tampilkan di dashboard Counter
                         document.getElementById('last-called').innerText = teksTampilan;
-                        // Tampilkan Nopol dan tombol salin
                         document.getElementById('nopol-display-area').style.display = 'flex';
                         document.getElementById('last-nopol').innerText = data.nopol || "-";
                     }
@@ -398,7 +454,7 @@
             });
         }
 
-        // --- 7. SUARA ---
+        // --- 5. SUARA ---
         function mainkanSuara(teks) {
             const utterance = new SpeechSynthesisUtterance(teks);
             utterance.lang = 'id-ID'; 
