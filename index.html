@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Antrian Service</title>
+    <!-- Script ini menghubungkan web dengan Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        input, select, button { padding: 10px; margin: 10px 0; width: 90%; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+        button { background: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        
+        #monitor-view { display: none; }
+        .big-number { font-size: 80px; font-weight: bold; color: #d9534f; margin: 20px 0; }
+        .calling-counter { font-size: 30px; font-weight: bold; color: #333; }
+        
+        #counter-view { display: none; }
+        .btn-booking { background: #28a745; }
+        .btn-non-booking { background: #17a2b8; }
+    </style>
+</head>
+<body>
+
+    <!-- HALAMAN LOGIN -->
+    <div id="login-section" class="container">
+        <h2>Login Sistem Antrian</h2>
+        <select id="login-id">
+            <option value="Counter 2">Counter 2</option>
+            <option value="Counter 3">Counter 3</option>
+            <option value="Counter 4">Counter 4</option>
+            <option value="Counter 5">Counter 5</option>
+            <option value="Counter 6">Counter 6</option>
+            <option value="Monitor">Monitor</option>
+        </select>
+        <input type="password" id="login-pass" placeholder="Password = Nama ID">
+        <button onclick="login()">Masuk</button>
+        <p id="login-error" style="color:red; display:none;">Password salah!</p>
+    </div>
+
+    <!-- HALAMAN MONITOR -->
+    <div id="monitor-view" class="container">
+        <h2>Layar Monitor Utama</h2>
+        <div class="calling-counter">PANGGILAN SAAT INI</div>
+        <div class="big-number" id="display-number">--</div>
+        <div class="calling-counter" id="display-counter">Menunggu...</div>
+    </div>
+
+    <!-- HALAMAN COUNTER -->
+    <div id="counter-view" class="container">
+        <h2 id="counter-name-display">Counter</h2>
+        <hr>
+        <button class="btn-booking" onclick="panggilAntrian('Booking')">Panggil Booking</button>
+        <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')">Panggil Non Booking</button>
+        <hr>
+        <p>Terakhir Dipanggil: <strong id="last-called">Belum ada</strong></p>
+    </div>
+
+    <script>
+        // --- KONFIGURASI FIREBASE ANDA ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGsylncIZxoRmJ9YD_f4CNc7R83QbBMg4",
+            authDomain: "antrian-service-daya-toyota.firebaseapp.com",
+            databaseURL: "https://antrian-service-daya-toyota-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "antrian-service-daya-toyota",
+            storageBucket: "antrian-service-daya-toyota.firebasestorage.app",
+            messagingSenderId: "421850738338",
+            appId: "1:421850738338:web:21d5d24822e7902923b1fb"
+        };
+        // --------------------------------------------------------
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let sessionUser = "";
+
+        function login() {
+            const id = document.getElementById('login-id').value;
+            const pass = document.getElementById('login-pass').value;
+
+            // Password dibuat sama dengan ID (misal: pilih Counter 2, ketik password: Counter 2)
+            if (id === pass) {
+                sessionUser = id;
+                document.getElementById('login-section').style.display = 'none';
+                
+                let dummyUtterance = new SpeechSynthesisUtterance('');
+                window.speechSynthesis.speak(dummyUtterance);
+
+                if (id === 'Monitor') {
+                    document.getElementById('monitor-view').style.display = 'block';
+                } else {
+                    document.getElementById('counter-view').style.display = 'block';
+                    document.getElementById('counter-name-display').innerText = id;
+                }
+                mulaiMendengarkanFirebase();
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function panggilAntrian(jenis) {
+            const dbRef = db.ref('antrian/terakhir_' + jenis);
+            dbRef.once('value', (snapshot) => {
+                let nomorBaru = (snapshot.val() || 0) + 1;
+                dbRef.set(nomorBaru);
+                db.ref('antrian/panggilan_aktif').set({
+                    jenis: jenis, nomor: nomorBaru, counter: sessionUser, timestamp: Date.now()
+                });
+            });
+        }
+
+        function mulaiMendengarkanFirebase() {
+            db.ref('antrian/panggilan_aktif').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const teksTampilan = `${data.jenis} - ${data.nomor}`;
+                    const teksPanggilan = `Nomor antrian ${data.jenis}, ${data.nomor}, ditunggu di ${data.counter}`;
+
+                    if (sessionUser === 'Monitor') {
+                        document.getElementById('display-number').innerText = teksTampilan;
+                        document.getElementById('display-counter').innerText = data.counter;
+                        mainkanSuara(teksPanggilan);
+                    } else {
+                        document.getElementById('last-called').innerText = `${teksTampilan} (oleh ${data.counter})`;
+                    }
+                }
+            });
+        }
+
+        function mainkanSuara(teks) {
+            const utterance = new SpeechSynthesisUtterance(teks);
+            utterance.lang = 'id-ID'; 
+            utterance.rate = 0.9; 
+            window.speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>
