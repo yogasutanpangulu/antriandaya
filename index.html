@@ -478,12 +478,27 @@
 
         // --- 5. SUARA ---
         function mainkanSuara(teks) {
-            const utterance = new SpeechSynthesisUtterance(teks);
-            utterance.lang = 'id-ID'; 
-            utterance.rate = 1.1; 
-            window.speechSynthesis.speak(utterance);
+            // 1. Matikan paksa semua suara yang mungkin sedang nyangkut di memori Chrome
+            window.speechSynthesis.cancel();
+            
+            // 2. Beri jeda 100 milidetik agar Chrome benar-benar selesai membersihkan memorinya
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(teks);
+                utterance.lang = 'id-ID'; 
+                utterance.rate = 1.1; 
+                
+                let daftarSuara = window.speechSynthesis.getVoices();
+                let suaraIndo = daftarSuara.filter(voice => voice.lang === 'id-ID' || voice.lang === 'id_ID');
+
+                if (suaraIndo.length > 0) {
+                    utterance.voice = suaraIndo[0]; 
+                }
+
+                window.speechSynthesis.speak(utterance);
+            }, 100);
         }
         
+        // Pancingan agar suara bisa jalan di Monitor jika halaman direfresh tanpa sengaja
         document.body.addEventListener('click', function() {
             if (sessionUser === 'Monitor' && window.speechSynthesis.getVoices().length > 0) {
                 let wakeUp = new SpeechSynthesisUtterance('');
