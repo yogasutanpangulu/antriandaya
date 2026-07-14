@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Antrian Service Daya Toyota</title>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     
@@ -46,7 +45,8 @@
         .waiting-col { flex: 1; background: #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
         .waiting-col h4 { margin-top: 0; margin-bottom: 10px; font-size: 15px; }
         
-        .badge-waiting { display: block; padding: 8px; margin-bottom: 6px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px; text-align: center; }
+        .badge-waiting { display: block; padding: 8px; margin-bottom: 6px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px; text-align: center; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
+        .badge-waiting:hover { opacity: 0.85; transform: scale(1.02); }
         .badge-booking { background: #28a745; }
         .badge-non { background: #17a2b8; }
         
@@ -56,7 +56,7 @@
         /* TABEL HISTORY */
         .table-responsive { overflow-x: auto; margin-top: 15px; }
         .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .history-table th, .history-table td { border: 1px solid #999; padding: 5px; vertical-align: top; text-align: center; width: 10%; }
+        .history-table th, .history-table td { border: 1px solid #999; padding: 5px; vertical-align: top; text-align: center; width: 7.14%; }
         .history-table th { background: #d1ecf1; color: #0c5460; font-weight: bold; }
         .history-table .sub-header th { font-size: 12px; background: #f8f9fa; color: #333; }
         
@@ -74,7 +74,6 @@
 </head>
 <body>
 
-    <!-- HALAMAN LOGIN -->
     <div id="login-section" class="container" style="max-width: 500px;">
         <h2>Login Sistem Antrian</h2>
         <select id="login-id" style="width: 100%;">
@@ -84,6 +83,8 @@
             <option value="Counter 4">Counter 4</option>
             <option value="Counter 5">Counter 5</option>
             <option value="Counter 6">Counter 6</option>
+            <option value="Counter 7">Counter 7</option>
+            <option value="Counter 8">Counter 8</option>
             <option value="Monitor">Layar Monitor</option>
         </select>
         <input type="password" id="login-pass" placeholder="Password = Nama ID (cth: Counter 2)" style="width: 95%;">
@@ -91,11 +92,9 @@
         <p id="login-error" style="color:red; display:none;">Password salah!</p>
     </div>
 
-    <!-- HALAMAN VALEY -->
     <div id="valey-view" class="container" style="max-width: 600px;">
         <h2>Petugas Valey</h2>
         
-        <!-- INPUT MANUAL 2 KOLOM -->
         <div class="valey-input-grid">
             <div>
                 <label for="nopol-input">1. Nomor Polisi:</label>
@@ -116,7 +115,6 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <!-- HALAMAN MONITOR -->
     <div id="monitor-view" class="container">
         <h2>Layar Monitor Utama</h2>
         <button id="btn-enable-audio" onclick="aktifkanSuaraMonitor()">🔊 Klik di Sini Aktifkan Suara Monitor</button>
@@ -126,19 +124,18 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <!-- HALAMAN COUNTER -->
     <div id="counter-view" class="container" style="max-width: 600px;">
         <h2 id="counter-name-display">Counter</h2>
         <hr>
         <h3>Tarik Antrian dari Daftar Tunggu</h3>
-        <button class="btn-booking" onclick="panggilAntrian('Booking')">Panggil Booking</button>
-        <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')">Panggil Non Booking</button>
+        <p style="font-size: 13px; color: #555; margin-bottom: 10px;">(Atau klik langsung antrian pada daftar di bawah)</p>
+        <button class="btn-booking" onclick="panggilAntrian('Booking')">Panggil Booking Teratas</button>
+        <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')">Panggil Non Booking Teratas</button>
         
         <hr>
         <p style="margin-bottom: 5px;">Terakhir Dipanggil: <strong id="last-called">Belum ada</strong></p>
         <div id="waktu-tunggu-counter" class="waktu-tunggu-info"></div>
         
-        <!-- KOTAK SALIN NOPOL -->
         <div id="nopol-display-area" class="nopol-box">
             <button class="btn-copy" onclick="salinNopol()">📋 Salin</button> 
             <strong id="last-nopol">-</strong>
@@ -148,7 +145,6 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <!-- HALAMAN HISTORY -->
     <div id="history-view" class="container">
         <h3>History & Panggilan Unit Selesai</h3>
         <p style="font-size: 13px; color: #555;">(Klik nomor di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
@@ -162,8 +158,12 @@
                         <th colspan="2">COUNTER 4</th>
                         <th colspan="2">COUNTER 5</th>
                         <th colspan="2">COUNTER 6</th>
+                        <th colspan="2">COUNTER 7</th>
+                        <th colspan="2">COUNTER 8</th>
                     </tr>
                     <tr class="sub-header">
+                        <th>BOOKING</th> <th>NON BOOKING</th>
+                        <th>BOOKING</th> <th>NON BOOKING</th>
                         <th>BOOKING</th> <th>NON BOOKING</th>
                         <th>BOOKING</th> <th>NON BOOKING</th>
                         <th>BOOKING</th> <th>NON BOOKING</th>
@@ -172,13 +172,12 @@
                     </tr>
                 </thead>
                 <tbody id="history-table-body">
-                    <tr><td colspan="10">Memuat history...</td></tr>
+                    <tr><td colspan="14">Memuat history...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- TOMBOL LOGOUT GLOBAL -->
     <div style="text-align: center; margin-bottom: 30px;">
         <button id="btn-logout" onclick="logoutAkun()">Keluar Akun</button>
     </div>
@@ -424,6 +423,50 @@
             });
         }
 
+        // PEMANGGILAN LANGSUNG SAAT BADGE DAFTAR TUNGGU DIKLIK
+        function panggilAntrianLangsung(keyAntrian) {
+            if (!sessionUser.includes('Counter')) {
+                return; // Hanya role counter yang dapat memanggil antrean
+            }
+
+            cekAtauResetHariBaru();
+
+            db.ref('antrian/menunggu/' + keyAntrian).once('value', (snapshot) => {
+                let dataAntrian = snapshot.val();
+                if (dataAntrian) {
+                    let waktuPanggil = Date.now();
+                    let waktuMasukAwal = dataAntrian.waktuMasuk || dataAntrian.timestamp;
+                    let durasiTunggu = waktuPanggil - waktuMasukAwal;
+
+                    // Hapus antrian dari daftar tunggu
+                    snapshot.ref.remove();
+
+                    dataPanggilanTerakhirKu = {
+                        jenis: dataAntrian.jenis,
+                        nomor: dataAntrian.nomor,
+                        nopol: dataAntrian.nopol || "-",
+                        counter: sessionUser,
+                        status: 'baru',
+                        timestamp: waktuPanggil,
+                        waktuMasuk: waktuMasukAwal,
+                        waktuTunggu: durasiTunggu
+                    };
+
+                    db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
+
+                    db.ref('antrian/history/' + sessionUser).push({
+                        jenis: dataAntrian.jenis,
+                        nomor: dataAntrian.nomor,
+                        nopol: dataAntrian.nopol || "-",
+                        timestamp: waktuPanggil,
+                        waktuTunggu: durasiTunggu
+                    });
+                } else {
+                    alert("Antrian ini sudah dipanggil oleh counter lain.");
+                }
+            });
+        }
+
         function salinNopol() {
             const teksNopol = document.getElementById('last-nopol').innerText;
             if (teksNopol && teksNopol !== "-") {
@@ -486,7 +529,7 @@
                 let strTimer = formatWaktuLalu(durasiMs);
 
                 let badgeHtml = `
-                    <div class="badge-waiting ${d.jenis === 'Booking' ? 'badge-booking' : 'badge-non'}">
+                    <div class="badge-waiting ${d.jenis === 'Booking' ? 'badge-booking' : 'badge-non'}" onclick="panggilAntrianLangsung('${d.key}')" title="Klik untuk memanggil antrian ini">
                         ${d.jenis} ${d.nomor}${teksNopol} 
                         <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
                     </div>`;
@@ -544,7 +587,9 @@
                     "Counter 3": { booking: [], nonBooking: [] },
                     "Counter 4": { booking: [], nonBooking: [] },
                     "Counter 5": { booking: [], nonBooking: [] },
-                    "Counter 6": { booking: [], nonBooking: [] }
+                    "Counter 6": { booking: [], nonBooking: [] },
+                    "Counter 7": { booking: [], nonBooking: [] },
+                    "Counter 8": { booking: [], nonBooking: [] }
                 };
 
                 let maxBaris = 0;
@@ -577,7 +622,7 @@
                 let tbodyHtml = "";
                 for (let i = 0; i < maxBaris; i++) {
                     tbodyHtml += "<tr>";
-                    for (let c = 2; c <= 6; c++) {
+                    for (let c = 2; c <= 8; c++) {
                         let cName = "Counter " + c;
                         let btnB = dataTabel[cName].booking[i] || "";
                         let btnN = dataTabel[cName].nonBooking[i] || "";
@@ -588,7 +633,7 @@
                 }
 
                 if (maxBaris === 0) {
-                    tbodyHtml = `<tr><td colspan="10" style="padding:15px; color:#666;">Belum ada history antrian.</td></tr>`;
+                    tbodyHtml = `<tr><td colspan="14" style="padding:15px; color:#666;">Belum ada history antrian.</td></tr>`;
                 }
 
                 document.getElementById('history-table-body').innerHTML = tbodyHtml;
