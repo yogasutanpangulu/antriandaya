@@ -336,46 +336,47 @@
         }
 
         // --- 2. LOGIKA VALEY (INPUT MANUAL NOPOL & NOMOR ANTRIAN) ---
-        function tambahAntrianValey(jenis) {
-            cekAtauResetHariBaru();
+        // --- 2. LOGIKA VALEY (INPUT MANUAL NOPOL & NOMOR ANTRIAN) ---
+function tambahAntrianValey(jenis) {
+    cekAtauResetHariBaru();
 
-            const nopolInput = document.getElementById('nopol-input');
-            const nomorInput = document.getElementById('nomor-input');
+    const nopolInput = document.getElementById('nopol-input');
+    const nomorInput = document.getElementById('nomor-input');
 
-            const nopolValue = nopolInput.value.trim().toUpperCase();
-            const nomorValue = nomorInput.value.trim();
+    const nopolValue = nopolInput.value.trim().toUpperCase();
+    const nomorValue = nomorInput.value.trim();
 
-            if (nopolValue === "") {
-                alert("Harap ketik Nomor Polisi terlebih dahulu!");
-                nopolInput.focus();
-                return;
-            }
+    if (nopolValue === "") {
+        alert("Harap ketik Nomor Polisi terlebih dahulu!");
+        nopolInput.focus();
+        return;
+    }
 
-            if (nomorValue === "" || isNaN(nomorValue) || parseInt(nomorValue) <= 0) {
-                alert("Harap ketik Nomor Antrian yang valid!");
-                nomorInput.focus();
-                return;
-            }
+    if (nomorValue === "" || isNaN(nomorValue) || parseInt(nomorValue) <= 0) {
+        alert("Harap ketik Nomor Antrian yang valid!");
+        nomorInput.focus();
+        return;
+    }
 
-            let waktuSekarang = Date.now();
-            
-            // SIMPAN DATA KE FIREBASE
-            db.ref('antrian/menunggu').push({
-                jenis: jenis, 
-                nomor: parseInt(nomorValue), 
-                nopol: nopolValue, 
-                timestamp: waktuSekarang,
-                waktuMasuk: waktuSekarang
-            }).then(() => {
-                // RESET FORM INPUT JIKA BERHASIL
-                nopolInput.value = "";
-                nomorInput.value = "";
-                nopolInput.focus();
-            }).catch((err) => {
-                alert("Gagal menambahkan antrian: " + err.message);
-            });
-        }
-
+    // Menggunakan server timestamp untuk konsistensi waktu di semua perangkat
+    const waktuInput = firebase.database.ServerValue.TIMESTAMP;
+    
+    // SIMPAN DATA KE FIREBASE
+    db.ref('antrian/menunggu').push({
+        jenis: jenis, 
+        nomor: parseInt(nomorValue), 
+        nopol: nopolValue, 
+        timestamp: waktuInput, // Waktu saat data masuk ke server
+        waktuMasuk: waktuInput
+    }).then(() => {
+        // RESET FORM INPUT JIKA BERHASIL
+        nopolInput.value = "";
+        nomorInput.value = "";
+        nopolInput.focus();
+    }).catch((err) => {
+        alert("Gagal menambahkan antrian: " + err.message);
+    });
+}
         // --- 3. LOGIKA COUNTER (TARIK TIKET) ---
         function panggilAntrian(jenis) {
             cekAtauResetHariBaru();
