@@ -530,10 +530,13 @@ function tambahAntrianValey(jenis) {
                 let strTimer = formatWaktuLalu(durasiMs);
 
                 let badgeHtml = `
-                    <div class="badge-waiting ${d.jenis === 'Booking' ? 'badge-booking' : 'badge-non'}" onclick="panggilAntrianLangsung('${d.key}')" title="Klik untuk memanggil antrian ini">
-                        ${d.jenis} ${d.nomor}${teksNopol} 
-                        <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
-                    </div>`;
+    <div style="display: flex; align-items: center; gap: 5px;">
+        <button onclick="editAntrian('${d.key}', '${d.nopol}')" style="padding: 2px 5px; font-size: 10px; cursor: pointer;">Edit</button>
+        <div class="badge-waiting ${d.jenis === 'Booking' ? 'badge-booking' : 'badge-non'}" onclick="panggilAntrianLangsung('${d.key}')" style="flex: 1; cursor: pointer;">
+            ${d.jenis} ${d.nomor}${teksNopol} 
+            <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
+        </div>
+    </div>`;
 
                 if (d.jenis === 'Booking') {
                     htmlBooking += badgeHtml;
@@ -733,6 +736,21 @@ function tambahAntrianValey(jenis) {
 
             window.speechSynthesis.speak(utterance);
         }
+
+        function editAntrian(key, nopolLama) {
+    let nopolBaru = prompt("Edit Nomor Polisi:", nopolLama);
+    
+    // Jika user menekan OK dan input tidak kosong
+    if (nopolBaru !== null && nopolBaru.trim() !== "") {
+        db.ref('antrian/menunggu/' + key).update({
+            nopol: nopolBaru.trim().toUpperCase()
+        }).then(() => {
+            // Data akan otomatis ter-update karena listener 'on' di fungsi listener
+        }).catch((err) => {
+            alert("Gagal mengupdate: " + err.message);
+        });
+    }
+}
     </script>
 </body>
 </html>
