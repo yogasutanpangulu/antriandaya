@@ -509,7 +509,6 @@
         }
         .btn-cancel-modal:hover { background: #c82333; }
 
-        /* Modal Hapus */
         .modal-hapus .form-group {
             text-align: left;
             margin-bottom: 15px;
@@ -1018,7 +1017,7 @@
         }
 
         // ============================================================
-        // ================ PASTE MAGIC MULTI ROW ======================
+        // ================ PASTE MAGIC MULTI ROW (DIPERBAIKI) ========
         // ============================================================
         document.addEventListener('paste', function(e) {
             let target = e.target;
@@ -1031,14 +1030,24 @@
             
             if (!pastedText) return;
             
-            let separator = '\t';
-            if (pastedText.includes('|')) {
-                separator = '|';
-            }
-            
+            // ===== PERBAIKAN: Deteksi separator =====
+            let separator = '\t'; // Default: tab
             let lines = pastedText.split('\n').filter(line => line.trim() !== '');
             
             if (lines.length === 0) return;
+            
+            // Cek apakah ada tab di baris pertama
+            let hasTab = lines[0].includes('\t');
+            // Cek apakah ada pipe di baris pertama
+            let hasPipe = lines[0].includes('|');
+            
+            // Prioritas: tab > pipe
+            if (hasTab) {
+                separator = '\t';
+            } else if (hasPipe) {
+                separator = '|';
+            }
+            // ========================================
             
             e.preventDefault();
             
@@ -1048,6 +1057,7 @@
             lines.forEach((line, lineIndex) => {
                 let parts = line.split(separator).map(s => s.trim());
                 
+                // Jika hanya 1 bagian, paste normal di baris pertama
                 if (parts.length < 2 && lineIndex === 0) {
                     let input = row.querySelector('.edit-nopol');
                     if (input) input.value = parts[0] || '';
@@ -2570,7 +2580,7 @@
             }
             let modalHapus = document.getElementById('modal-hapus-semua');
             if (event.target == modalHapus) {
-                // Tidak otomatis tutup, biarkan user yang tutup
+                // Tidak otomatis tutup
             }
             let modalTanggal = document.getElementById('modal-tanggal');
             if (event.target == modalTanggal) {
