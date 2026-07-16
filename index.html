@@ -975,81 +975,79 @@
         // ================ TAMBAH BARIS MANUAL ========================
         // ============================================================
         function tambahBarisManual() {
-            let container = document.getElementById('booking-list');
-            
-            // Cek apakah sudah ada tabel
-            let table = container.querySelector('table');
-            
-            if (!table) {
-                // Jika belum ada tabel, buat tabel kosong dulu
-                let hariIni = getTanggalHariIni();
-                let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput) {
-                    filterInput.value = hariIni;
-                }
-                // Refresh data
-                filterBooking();
-                table = container.querySelector('table');
-                if (!table) {
-                    // Buat tabel kosong
-                    let html = `
-                        <table class="booking-table">
-                            <thead>
-                                <tr>
-                                    <th style="width:30px;">No</th>
-                                    <th>Nopol</th>
-                                    <th>Tipe</th>
-                                    <th>Nama</th>
-                                    <th>Telpon</th>
-                                    <th>Pekerjaan</th>
-                                    <th>Waktu</th>
-                                    <th>Tanggal</th>
-                                    <th>SA</th>
-                                    <th>Status</th>
-                                    <th style="width:180px;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-                    `;
-                    container.innerHTML = html;
-                    table = container.querySelector('table');
-                }
-            }
-            
-            let tbody = table.querySelector('tbody');
-            let rowCount = tbody.querySelectorAll('tr').length;
-            let hariIni = getTanggalHariIni();
-            
-            let newRow = document.createElement('tr');
-            newRow.className = 'edit-row';
-            newRow.innerHTML = `
-                <td><strong>${rowCount + 1}</strong></td>
-                <td><input type="text" class="edit-input edit-nopol" placeholder="Nopol" value=""></td>
-                <td><input type="text" class="edit-input edit-tipe" placeholder="Tipe" value=""></td>
-                <td><input type="text" class="edit-input edit-nama" placeholder="Nama" value=""></td>
-                <td><input type="text" class="edit-input edit-telp" placeholder="Telpon" value=""></td>
-                <td><input type="text" class="edit-input edit-pekerjaan" placeholder="Pekerjaan" value=""></td>
-                <td><input type="time" class="edit-input edit-waktu" value="08:00"></td>
-                <td><input type="date" class="edit-input edit-tanggal" value="${hariIni}"></td>
-                <td><input type="text" class="edit-input edit-sa" placeholder="SA" value=""></td>
-                <td>
-                    <button class="btn-save-row" onclick="simpanBarisManual(this)" title="Simpan">💾</button>
-                    <button class="btn-cancel-row" onclick="hapusBarisManual(this)" title="Batal">✕</button>
-                </td>
-            `;
-            
-            tbody.appendChild(newRow);
-            
-            // Fokus ke input pertama
-            let firstInput = newRow.querySelector('.edit-nopol');
-            if (firstInput) firstInput.focus();
-            
-            // Scroll ke baris baru
-            newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    let container = document.getElementById('booking-list');
+    
+    let table = container.querySelector('table');
+    
+    if (!table) {
+        let hariIni = getTanggalHariIni();
+        let filterInput = document.getElementById('filter-tanggal');
+        if (filterInput) {
+            filterInput.value = hariIni;
         }
-
+        filterBooking();
+        table = container.querySelector('table');
+        if (!table) {
+            let html = `
+                <table class="booking-table">
+                    <thead>
+                        <tr>
+                            <th style="width:30px;">No</th>
+                            <th>Nopol</th>
+                            <th>Tipe</th>
+                            <th>Nama</th>
+                            <th>Telpon</th>
+                            <th>Pekerjaan</th>
+                            <th>Waktu</th>
+                            <th>Tanggal</th>
+                            <th>SA</th>
+                            <th>Status</th>
+                            <th style="width:180px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+            table = container.querySelector('table');
+        }
+    }
+    
+    let tbody = table.querySelector('tbody');
+    let rowCount = tbody.querySelectorAll('tr').length;
+    let hariIni = getTanggalHariIni();
+    
+    let newRow = document.createElement('tr');
+    newRow.className = 'edit-row';
+    newRow.innerHTML = `
+        <td><strong>${rowCount + 1}</strong></td>
+        <td><input type="text" class="edit-input edit-nopol" placeholder="Nopol" value=""></td>
+        <td><input type="text" class="edit-input edit-tipe" placeholder="Tipe" value=""></td>
+        <td><input type="text" class="edit-input edit-nama" placeholder="Nama" value=""></td>
+        <td><input type="text" class="edit-input edit-telp" placeholder="Telpon" value=""></td>
+        <td><input type="text" class="edit-input edit-pekerjaan" placeholder="Pekerjaan" value=""></td>
+        <td><input type="time" class="edit-input edit-waktu" value="08:00"></td>
+        <td><input type="date" class="edit-input edit-tanggal" value="${hariIni}"></td>
+        <td><input type="text" class="edit-input edit-sa" placeholder="SA" value=""></td>
+        <td>
+            <button class="btn-save-row" onclick="simpanBarisManual(this)" title="Simpan">💾</button>
+            <button class="btn-cancel-row" onclick="hapusBarisManual(this)" title="Batal">✕</button>
+        </td>
+    `;
+    
+    tbody.appendChild(newRow);
+    
+    // Fokus ke input pertama
+    let firstInput = newRow.querySelector('.edit-nopol');
+    if (firstInput) {
+        firstInput.focus();
+        // Select semua teks agar mudah di-paste
+        firstInput.select();
+    }
+    
+    newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
         function simpanBarisManual(btn) {
             let row = btn.closest('tr');
             let nopol = row.querySelector('.edit-nopol').value.trim().toUpperCase();
@@ -2488,6 +2486,65 @@
                 tutupModalHapusSemua();
             }
         }
+
+        // ============================================================
+// ================ PASTE MAGIC EVENT ==========================
+// ============================================================
+document.addEventListener('paste', function(e) {
+    let target = e.target;
+    if (!target.classList.contains('edit-input') && !target.classList.contains('edit-nopol')) {
+        return;
+    }
+    
+    let clipboardData = e.clipboardData || window.clipboardData;
+    let pastedText = clipboardData.getData('text');
+    
+    if (!pastedText) return;
+    
+    // Cek apakah data mengandung tab atau pipe
+    let separator = '\t';
+    if (pastedText.includes('|')) {
+        separator = '|';
+    }
+    
+    let parts = pastedText.split(separator).map(s => s.trim());
+    
+    // Jika hanya 1 bagian, biarkan paste normal
+    if (parts.length < 2) return;
+    
+    let row = target.closest('tr');
+    if (!row) return;
+    
+    e.preventDefault();
+    
+    // Mapping kolom
+    let fields = [
+        { class: 'edit-nopol', value: parts[0] || '' },
+        { class: 'edit-tipe', value: parts[1] || '' },
+        { class: 'edit-nama', value: parts[2] || '' },
+        { class: 'edit-telp', value: parts[3] || '' },
+        { class: 'edit-pekerjaan', value: parts[4] || '' },
+        { class: 'edit-waktu', value: parts[5] || '' },
+        { class: 'edit-tanggal', value: parts[6] || '' },
+        { class: 'edit-sa', value: parts[7] || '' }
+    ];
+    
+    fields.forEach(field => {
+        let input = row.querySelector('.' + field.class);
+        if (input) {
+            if (field.class === 'edit-tanggal' && field.value) {
+                let parsedDate = parseTanggal(field.value);
+                input.value = parsedDate;
+            } else {
+                input.value = field.value;
+            }
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    });
+    
+    let saveBtn = row.querySelector('.btn-save-row');
+    if (saveBtn) saveBtn.focus();
+}, true);
     </script>
 </body>
 </html>
