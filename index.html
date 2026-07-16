@@ -804,18 +804,25 @@
         }
 
         // ============================================================
-        // ================ PARSING TANGGAL ============================
+        // ================ PARSING TANGGAL (DIPERBAIKI) ===============
         // ============================================================
         function parseTanggal(value) {
+            // Jika value kosong/null/undefined
             if (!value) return getTanggalHariIni();
             
+            // Jika value sudah berupa string
+            let strValue = String(value).trim();
+            
+            // Jika kosong setelah trim
+            if (!strValue) return getTanggalHariIni();
+            
             // Jika sudah dalam format YYYY-MM-DD
-            if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-                return value;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(strValue)) {
+                return strValue;
             }
             
             // Jika dalam format DD/MM/YYYY atau DD-MM-YYYY
-            let match = value.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+            let match = strValue.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
             if (match) {
                 let day = match[1].padStart(2, '0');
                 let month = match[2].padStart(2, '0');
@@ -827,7 +834,6 @@
                 if (parseInt(month) > 12) {
                     return `${year}-${day}-${month}`;
                 }
-                // Jika tidak jelas, asumsikan DD/MM/YYYY
                 return `${year}-${month}-${day}`;
             }
             
@@ -839,23 +845,40 @@
                 'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12'
             };
             
+            let lowerValue = strValue.toLowerCase();
             for (let key in bulanMap) {
-                if (value.toLowerCase().includes(key)) {
-                    let parts = value.split(/[\/\-\s,]+/);
+                if (lowerValue.includes(key)) {
+                    let parts = strValue.split(/[\/\-\s,]+/);
                     let year = '';
                     let day = '';
                     let month = bulanMap[key];
                     
                     for (let p of parts) {
-                        if (/^\d{4}$/.test(p)) year = p;
-                        if (/^\d{1,2}$/.test(p) && parseInt(p) <= 31) {
-                            if (!day || parseInt(p) < parseInt(day)) {
-                                day = p;
+                        let cleanP = p.replace(/[^0-9]/g, '');
+                        if (/^\d{4}$/.test(cleanP)) year = cleanP;
+                        if (/^\d{1,2}$/.test(cleanP) && parseInt(cleanP) <= 31) {
+                            if (!day || parseInt(cleanP) < parseInt(day)) {
+                                day = cleanP;
                             }
                         }
                     }
                     if (year && day && month) {
                         day = day.padStart(2, '0');
+                        return `${year}-${month}-${day}`;
+                    }
+                }
+            }
+            
+            // Coba parse sebagai angka (Excel date serial number)
+            if (!isNaN(strValue) && strValue.length > 0) {
+                let excelDate = parseInt(strValue);
+                if (excelDate > 0 && excelDate < 50000) {
+                    let epoch = new Date(1899, 11, 30);
+                    let date = new Date(epoch.getTime() + excelDate * 86400000);
+                    let year = date.getFullYear();
+                    let month = String(date.getMonth() + 1).padStart(2, '0');
+                    let day = String(date.getDate()).padStart(2, '0');
+                    if (year > 2000 && year < 2100) {
                         return `${year}-${month}-${day}`;
                     }
                 }
@@ -1559,9 +1582,9 @@
                             return;
                         }
 
-                        // ===== PERBAIKAN: Parsing tanggal =====
+                        // ===== PERBAIKAN: Parsing tanggal dengan fungsi baru =====
                         let tanggalParsed = parseTanggal(tanggal);
-                        // =====================================
+                        // =======================================================
 
                         // Ambil tanggal pertama sebagai referensi
                         if (!tanggalUpload && tanggalParsed) {
