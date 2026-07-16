@@ -51,8 +51,8 @@
         
         .live-timer { display: inline-block; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 6px; font-family: monospace; }
 
-        .table-responsive { overflow-x: visible; margin-top: 15px; }
-        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+        .table-responsive { overflow-x: auto; margin-top: 15px; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .history-table th, .history-table td { border: 1px solid #999; padding: 4px 3px; vertical-align: top; text-align: center; word-wrap: break-word; }
         .history-table th { background: #d1ecf1; color: #0c5460; font-weight: bold; font-size: 11px; }
         .history-table .sub-header th { font-size: 10px; background: #f8f9fa; color: #333; }
@@ -96,7 +96,6 @@
         .btn-upload-excel:hover { background: #218838; }
         .btn-download-template { background: #17a2b8; color: white; padding: 6px 16px; font-size: 13px; }
         .btn-download-template:hover { background: #138496; }
-        /* ===== TOMBOL HAPUS SEMUA ===== */
         .btn-danger-booking {
             background: #dc3545;
             color: white;
@@ -108,10 +107,6 @@
             font-weight: bold;
         }
         .btn-danger-booking:hover { background: #c82333; }
-        .btn-danger-booking:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
         
         .search-box {
             display: flex;
@@ -366,7 +361,6 @@
             margin-bottom: 0;
         }
 
-        /* MODAL KONFIRMASI HAPUS SEMUA */
         .modal-hapus .modal-content {
             max-width: 450px;
             text-align: center;
@@ -396,6 +390,12 @@
         }
         .modal-hapus .modal-content .btn-cancel-hapus:hover {
             background: #5a6268;
+        }
+        #total-booking-info {
+            font-size: 13px;
+            color: #666;
+            margin-left: 10px;
+            font-weight: normal;
         }
 
         @media (max-width: 768px) {
@@ -471,7 +471,7 @@
         <div class="booking-section">
             <div class="booking-wrapper">
                 <div class="booking-header">
-                    <h3>📋 Daftar Booking</h3>
+                    <h3>📋 Daftar Booking <span id="total-booking-info"></span></h3>
                     <div class="btn-group">
                         <button class="btn-upload-booking" onclick="bukaModalUpload()">📤 Upload Manual</button>
                         <button class="btn-upload-excel" onclick="document.getElementById('file-excel').click()">📊 Upload Excel</button>
@@ -566,7 +566,7 @@
         <div class="booking-section">
             <div class="booking-wrapper">
                 <div class="booking-header">
-                    <h3>📋 Booking</h3>
+                    <h3>📋 Booking <span id="total-booking-info-counter"></span></h3>
                 </div>
                 
                 <div class="search-box">
@@ -793,11 +793,21 @@
         }
 
         // ============================================================
+        // ================ CEK DUPLIKAT ===============================
+        // ============================================================
+        function isDuplicateBooking(dataBaru, existingData) {
+            return existingData.some(b => 
+                b.nopol === dataBaru.nopol && 
+                b.nama === dataBaru.nama && 
+                b.tanggal === dataBaru.tanggal
+            );
+        }
+
+        // ============================================================
         // ================ MODAL HAPUS SEMUA ==========================
         // ============================================================
 
         function bukaModalHapusSemua() {
-            // Hitung jumlah booking dulu
             let btn = document.getElementById('btn-confirm-hapus');
             btn.disabled = true;
             
@@ -971,7 +981,10 @@
                     daftarBooking.push(data);
                 });
                 
-                // Tampilkan booking untuk HARI INI
+                // Update total info
+                updateTotalInfo();
+                
+                // Tampilkan booking untuk HARI INI (default)
                 let hariIni = getTanggalHariIni();
                 daftarBookingFiltered = daftarBooking.filter(b => {
                     return b.tanggal && b.tanggal === hariIni;
@@ -981,13 +994,25 @@
             });
         }
 
+        function updateTotalInfo() {
+            let totalInfo = document.getElementById('total-booking-info');
+            if (totalInfo) {
+                totalInfo.innerHTML = `📊 Total: ${daftarBooking.length} booking`;
+            }
+            let totalInfoCounter = document.getElementById('total-booking-info-counter');
+            if (totalInfoCounter) {
+                totalInfoCounter.innerHTML = `📊 Total: ${daftarBooking.length} booking`;
+            }
+        }
+
         function renderDaftarBooking() {
             let html = '';
             
             if (daftarBookingFiltered.length === 0) {
-                html = '<div class="empty-booking">📭 Belum ada booking untuk hari ini.</div>';
+                html = '<div class="empty-booking">📭 Tidak ada booking untuk filter ini.</div>';
             } else {
                 daftarBookingFiltered.sort((a, b) => {
+                    if (a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
                     if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
                     return 0;
                 });
@@ -1071,11 +1096,13 @@
             let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
             let tanggal = document.getElementById('filter-tanggal').value;
             
+            // Jika tanggal kosong, gunakan hari ini
             if (!tanggal) {
                 tanggal = getTanggalHariIni();
                 document.getElementById('filter-tanggal').value = tanggal;
             }
             
+            // Filter dari daftarBooking (data lengkap)
             let filtered = daftarBooking.filter(b => {
                 let match = true;
                 
@@ -1420,7 +1447,10 @@
             });
         }
 
-        // --- UPLOAD EXCEL ---
+        // ============================================================
+        // ================ UPLOAD EXCEL (DIPERBAIKI) =================
+        // ============================================================
+
         function uploadExcelBooking(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1440,6 +1470,10 @@
 
                     let dataBooking = [];
                     let isValid = true;
+                    let tanggalUpload = '';
+
+                    // Ambil data existing untuk cek duplikat
+                    let existingData = daftarBooking;
 
                     jsonData.forEach((row, index) => {
                         const nopol = row['Nopol'] || row['nopol'] || row['PLAT'] || row['plat'] || '';
@@ -1456,7 +1490,13 @@
                             return;
                         }
 
-                        dataBooking.push({
+                        // Ambil tanggal pertama sebagai referensi
+                        if (!tanggalUpload && tanggal) {
+                            tanggalUpload = tanggal;
+                        }
+
+                        // Format data
+                        let dataBaru = {
                             nopol: nopol.toString().trim().toUpperCase(),
                             nama: nama.toString().trim(),
                             telp: telp.toString().trim() || '',
@@ -1465,17 +1505,32 @@
                             tanggal: tanggal.toString().trim() || getTanggalHariIni(),
                             sa: sa.toString().trim() || '',
                             status: 'menunggu'
-                        });
+                        };
+
+                        // Cek duplikat
+                        let isDuplicate = existingData.some(b => 
+                            b.nopol === dataBaru.nopol && 
+                            b.nama === dataBaru.nama && 
+                            b.tanggal === dataBaru.tanggal
+                        );
+
+                        if (!isDuplicate) {
+                            dataBooking.push(dataBaru);
+                            existingData.push(dataBaru);
+                        }
                     });
 
                     if (!isValid) return;
 
                     if (dataBooking.length === 0) {
-                        alert('Tidak ada data yang valid!');
+                        alert('📭 Tidak ada data baru yang ditemukan. Semua data sudah ada.');
                         return;
                     }
 
-                    let konfirmasi = confirm(`📊 Upload ${dataBooking.length} data booking dari Excel?`);
+                    let konfirmasi = confirm(
+                        `📊 Upload ${dataBooking.length} data booking baru dari Excel?\n` +
+                        `(Data duplikat akan dilewati)`
+                    );
                     if (!konfirmasi) return;
 
                     let updates = {};
@@ -1486,13 +1541,28 @@
                     });
 
                     db.ref().update(updates).then(() => {
-                        alert(`✅ Berhasil upload ${dataBooking.length} data booking dari Excel!`);
+                        alert(`✅ Berhasil upload ${dataBooking.length} data booking baru dari Excel!`);
+                        
+                        // Auto filter ke tanggal yang diupload
+                        if (tanggalUpload) {
+                            let filterInput = document.getElementById('filter-tanggal');
+                            if (filterInput) {
+                                filterInput.value = tanggalUpload;
+                            }
+                            filterBooking();
+                            
+                            let filterInputCounter = document.getElementById('filter-tanggal-counter');
+                            if (filterInputCounter) {
+                                filterInputCounter.value = tanggalUpload;
+                            }
+                            filterBookingCounter();
+                        }
                     }).catch((err) => {
-                        alert("Gagal upload: " + err.message);
+                        alert("❌ Gagal upload: " + err.message);
                     });
 
                 } catch (err) {
-                    alert('Error membaca file Excel: ' + err.message);
+                    alert('❌ Error membaca file Excel: ' + err.message);
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -1544,6 +1614,7 @@
             let rows = document.querySelectorAll('.booking-row');
             let dataBooking = [];
             let isValid = true;
+            let tanggalUpload = '';
 
             rows.forEach(row => {
                 let nopol = row.querySelector('.booking-nopol').value.trim().toUpperCase();
@@ -1562,6 +1633,10 @@
 
                 if (!tanggal) {
                     tanggal = getTanggalHariIni();
+                }
+
+                if (!tanggalUpload && tanggal) {
+                    tanggalUpload = tanggal;
                 }
 
                 dataBooking.push({
@@ -1596,6 +1671,21 @@
             db.ref().update(updates).then(() => {
                 alert(`✅ Berhasil upload ${dataBooking.length} data booking!`);
                 tutupModalUpload();
+                
+                // Auto filter ke tanggal yang diupload
+                if (tanggalUpload) {
+                    let filterInput = document.getElementById('filter-tanggal');
+                    if (filterInput) {
+                        filterInput.value = tanggalUpload;
+                    }
+                    filterBooking();
+                    
+                    let filterInputCounter = document.getElementById('filter-tanggal-counter');
+                    if (filterInputCounter) {
+                        filterInputCounter.value = tanggalUpload;
+                    }
+                    filterBookingCounter();
+                }
             }).catch((err) => {
                 alert("Gagal upload: " + err.message);
             });
