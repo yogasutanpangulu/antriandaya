@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
+        /* SAMA SEPERTI SEBELUMNYA - TIDAK BERUBAH */
         * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 20px; }
         .container { max-width: 98%; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
@@ -51,7 +52,6 @@
         
         .live-timer { display: inline-block; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 6px; font-family: monospace; }
 
-        /* HISTORY TABLE - NO SCROLL */
         .table-responsive { overflow-x: visible; margin-top: 15px; }
         .history-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
         .history-table th, .history-table td { border: 1px solid #999; padding: 4px 3px; vertical-align: top; text-align: center; word-wrap: break-word; }
@@ -68,7 +68,6 @@
         #btn-enable-audio { background: #fd7e14; color: white; padding: 10px 20px; font-size: 15px; border-radius: 5px; border: none; cursor: pointer; margin-bottom: 10px; }
         #btn-enable-audio:hover { background: #e8590c; }
 
-        /* ============ BOOKING TABLE STYLE ============ */
         .booking-wrapper {
             background: #f8f9fa;
             border-radius: 10px;
@@ -99,7 +98,6 @@
         .btn-download-template { background: #17a2b8; color: white; padding: 6px 16px; font-size: 13px; }
         .btn-download-template:hover { background: #138496; }
         
-        /* SEARCH & FILTER */
         .search-box {
             display: flex;
             gap: 10px;
@@ -131,7 +129,6 @@
         .search-box .btn-filter { background: #007bff; }
         .search-box .btn-filter:hover { background: #0056b3; }
 
-        /* TABLE BOOKING */
         .booking-table {
             width: 100%;
             border-collapse: collapse;
@@ -221,13 +218,11 @@
             text-align: center;
         }
 
-        /* MODAL UPLOAD - DIPERBESAR */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 3% auto; padding: 25px; border: 1px solid #888; width: 95%; max-width: 1100px; border-radius: 10px; max-height: 90vh; overflow-y: auto; }
         .modal-close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .modal-close:hover { color: #000; }
         
-        /* UPLOAD ROW - DIPERBESAR */
         .booking-row {
             display: grid;
             grid-template-columns: 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1.2fr 1.2fr 0.5fr;
@@ -275,7 +270,6 @@
             margin-top: 20px;
         }
 
-        /* MODAL GET IN */
         .modal-getin .modal-content {
             max-width: 500px;
         }
@@ -323,7 +317,6 @@
         }
         .btn-cancel-getin:hover { background: #c82333; }
 
-        /* TOMBOL MATIKAN SUARA COUNTER */
         .btn-mute {
             background: #6c757d;
             color: white;
@@ -347,7 +340,6 @@
             gap: 10px;
         }
 
-        /* BADGE ANTRIAN DENGAN TOMBOL X */
         .antrian-item {
             display: flex;
             align-items: center;
@@ -405,7 +397,6 @@
     <div id="valey-view" class="container" style="max-width: 100%; display: none;">
         <h2>👤 Petugas Valey</h2>
         
-        <!-- ====== INPUT ANTRIAN ====== -->
         <h3>➕ Input Antrian</h3>
         <div class="valey-input-grid">
             <div>
@@ -428,10 +419,8 @@
             <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking', null)">+ Antrian Non Booking</button>
         </div>
 
-        <!-- ====== DAFTAR TUNGGU ====== -->
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
 
-        <!-- ====== DAFTAR BOOKING (TABLE) ====== -->
         <div class="booking-section">
             <div class="booking-wrapper">
                 <div class="booking-header">
@@ -444,7 +433,6 @@
                     </div>
                 </div>
                 
-                <!-- SEARCH & FILTER -->
                 <div class="search-box">
                     <input type="text" id="search-booking" placeholder="🔍 Cari Nopol, Nama, atau No Telpon..." onkeyup="filterBooking()">
                     <input type="date" id="filter-tanggal" onchange="filterBooking()">
@@ -458,7 +446,6 @@
             </div>
         </div>
 
-        <!-- ====== HISTORY ====== -->
         <div class="history-section">
             <h3>📊 History & Panggilan Unit Selesai</h3>
             <p style="font-size: 13px; color: #555;">(Klik nomor polisi di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
@@ -526,17 +513,14 @@
 
         <button class="btn-recall" onclick="panggilUlang()">Panggil Ulang Nomor Ini</button>
         
-        <!-- ====== DAFTAR TUNGGU ====== -->
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
 
-        <!-- ====== DAFTAR BOOKING (TABLE) ====== -->
         <div class="booking-section">
             <div class="booking-wrapper">
                 <div class="booking-header">
                     <h3>📋 Booking</h3>
                 </div>
                 
-                <!-- SEARCH & FILTER -->
                 <div class="search-box">
                     <input type="text" id="search-booking-counter" placeholder="🔍 Cari Nopol, Nama, atau No Telpon..." onkeyup="filterBookingCounter()">
                     <input type="date" id="filter-tanggal-counter" onchange="filterBookingCounter()">
@@ -550,7 +534,6 @@
             </div>
         </div>
 
-        <!-- ====== HISTORY COUNTER ====== -->
         <div class="history-section">
             <h3>📊 History & Panggilan Unit Selesai</h3>
             <p style="font-size: 13px; color: #555;">(Klik nomor polisi di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
@@ -589,7 +572,7 @@
         <button id="btn-logout" onclick="logoutAkun()" style="display: none; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">Keluar Akun</button>
     </div>
 
-    <!-- ================ MODAL UPLOAD BOOKING (DIPERBESAR) ================ -->
+    <!-- ================ MODAL UPLOAD BOOKING ================ -->
     <div id="modal-upload" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="tutupModalUpload()">&times;</span>
@@ -819,15 +802,14 @@
             const wsData = [headers, ...sampleData];
             const ws = XLSX.utils.aoa_to_sheet(wsData);
             
-            // Set kolom width
             ws['!cols'] = [
-                { wch: 15 }, // Nopol
-                { wch: 20 }, // Nama
-                { wch: 15 }, // Telpon
-                { wch: 20 }, // Pekerjaan
-                { wch: 12 }, // Waktu
-                { wch: 14 }, // Tanggal
-                { wch: 15 }  // SA
+                { wch: 15 },
+                { wch: 20 },
+                { wch: 15 },
+                { wch: 20 },
+                { wch: 12 },
+                { wch: 14 },
+                { wch: 15 }
             ];
             
             XLSX.utils.book_append_sheet(wb, ws, 'Booking');
@@ -971,18 +953,41 @@
         }
 
         // ============================================================
-        // ================ DELETE ANTRIAN =============================
+        // ================ DELETE ANTRIAN (DIPERBAIKI) ===============
         // ============================================================
 
         function deleteAntrian(key) {
-            if (!confirm('⚠️ Yakin ingin menghapus antrian ini?\n\nData akan dihapus permanen dari daftar tunggu!')) {
+            if (!confirm('⚠️ Yakin ingin menghapus antrian ini?\n\nData akan dihapus permanen dari daftar tunggu!\nStatus booking akan dikembalikan ke "Menunggu".')) {
                 return;
             }
             
-            db.ref('antrian/menunggu/' + key).remove().then(() => {
-                alert('✅ Antrian berhasil dihapus!');
+            // Ambil data antrian terlebih dahulu untuk mengetahui bookingKey
+            db.ref('antrian/menunggu/' + key).once('value', (snapshot) => {
+                let dataAntrian = snapshot.val();
+                if (dataAntrian && dataAntrian.bookingKey) {
+                    // Hapus antrian
+                    db.ref('antrian/menunggu/' + key).remove().then(() => {
+                        // Kembalikan status booking ke "menunggu"
+                        db.ref('booking/' + dataAntrian.bookingKey).update({
+                            status: 'menunggu'
+                        }).then(() => {
+                            alert('✅ Antrian berhasil dihapus!\nStatus booking dikembalikan ke "Menunggu".');
+                        }).catch((err) => {
+                            alert('❌ Gagal mengembalikan status booking: ' + err.message);
+                        });
+                    }).catch((err) => {
+                        alert('❌ Gagal menghapus antrian: ' + err.message);
+                    });
+                } else {
+                    // Jika tidak ada bookingKey (non booking), hapus saja
+                    db.ref('antrian/menunggu/' + key).remove().then(() => {
+                        alert('✅ Antrian berhasil dihapus!');
+                    }).catch((err) => {
+                        alert('❌ Gagal menghapus antrian: ' + err.message);
+                    });
+                }
             }).catch((err) => {
-                alert('❌ Gagal menghapus: ' + err.message);
+                alert('❌ Gagal mengambil data antrian: ' + err.message);
             });
         }
 
