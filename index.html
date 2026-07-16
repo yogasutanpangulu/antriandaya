@@ -884,8 +884,12 @@
                     
                     let dataBooking = [];
                     
+                    // Mulai dari baris 4 (index 3)
                     for (let i = 3; i < lines.length; i++) {
                         let values = parseCSVLine(lines[i]);
+                        
+                        // Pastikan values memiliki setidaknya 7 kolom
+                        if (values.length < 7) continue;
                         
                         const nopol = cleanValue(values[1] || '').toUpperCase();
                         const nama = cleanValue(values[3] || '');
@@ -893,7 +897,8 @@
                         const pekerjaan = cleanValue(values[5] || '');
                         const waktu = cleanValue(values[6] || '');
                         
-                        if (nopol && nama) {
+                        // Validasi: Nopol dan Nama harus ada
+                        if (nopol && nama && nopol.length > 0 && nama.length > 0) {
                             dataBooking.push({
                                 nopol: nopol,
                                 nama: nama,
@@ -902,7 +907,8 @@
                                 waktu: waktu || '08:00',
                                 tanggal: tanggal,
                                 sa: '',
-                                status: 'menunggu'
+                                status: 'menunggu',
+                                source: 'google_sheets'
                             });
                         }
                     }
@@ -1179,10 +1185,15 @@
                     data.key = child.key;
                     daftarBooking.push(data);
                 });
+                
+                // ================ PERUBAHAN UTAMA ================
+                // Hanya tampilkan booking untuk HARI INI
                 let hariIni = getTanggalHariIni();
                 daftarBookingFiltered = daftarBooking.filter(b => {
-                    return b.tanggal && b.tanggal <= hariIni;
+                    return b.tanggal && b.tanggal === hariIni;
                 });
+                // ================================================
+                
                 renderDaftarBooking();
             });
         }
@@ -1191,7 +1202,7 @@
             let html = '';
             
             if (daftarBookingFiltered.length === 0) {
-                html = '<div class="empty-booking">📭 Belum ada booking yang tersedia untuk hari ini.</div>';
+                html = '<div class="empty-booking">📭 Belum ada booking untuk hari ini.</div>';
             } else {
                 daftarBookingFiltered.sort((a, b) => {
                     if (a.tanggal && b.tanggal) return a.tanggal.localeCompare(b.tanggal);
@@ -1345,12 +1356,25 @@
         function filterBooking() {
             let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
             let tanggal = document.getElementById('filter-tanggal').value;
+            
+            // Jika tanggal filter kosong, tampilkan hari ini
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                document.getElementById('filter-tanggal').value = tanggal;
+            }
+            
             filterBookingUniversal(keyword, tanggal, 'booking-list');
         }
 
         function filterBookingCounter() {
             let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
             let tanggal = document.getElementById('filter-tanggal-counter').value;
+            
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                document.getElementById('filter-tanggal-counter').value = tanggal;
+            }
+            
             filterBookingUniversal(keyword, tanggal, 'booking-list-counter');
         }
 
@@ -1359,7 +1383,12 @@
             if (!container) return;
             
             let rows = container.querySelectorAll('tbody tr');
-            if (!rows.length) return;
+            if (!rows.length) {
+                // Jika tidak ada baris, tampilkan pesan
+                return;
+            }
+            
+            let visibleCount = 0;
             
             rows.forEach(row => {
                 let text = row.textContent.toLowerCase();
@@ -1384,19 +1413,36 @@
                     }
                 }
                 
+                if (show) visibleCount++;
                 row.style.display = show ? '' : 'none';
             });
+            
+            // Jika tidak ada yang visible, tampilkan pesan
+            if (visibleCount === 0) {
+                let emptyMsg = container.querySelector('.empty-filter-msg');
+                if (!emptyMsg) {
+                    let msg = document.createElement('div');
+                    msg.className = 'empty-booking empty-filter-msg';
+                    msg.textContent = '📭 Tidak ada booking untuk tanggal ini.';
+                    container.appendChild(msg);
+                }
+            } else {
+                let emptyMsg = container.querySelector('.empty-filter-msg');
+                if (emptyMsg) emptyMsg.remove();
+            }
         }
 
         function resetFilter() {
             document.getElementById('search-booking').value = '';
-            document.getElementById('filter-tanggal').value = '';
+            let hariIni = getTanggalHariIni();
+            document.getElementById('filter-tanggal').value = hariIni;
             filterBooking();
         }
 
         function resetFilterCounter() {
             document.getElementById('search-booking-counter').value = '';
-            document.getElementById('filter-tanggal-counter').value = '';
+            let hariIni = getTanggalHariIni();
+            document.getElementById('filter-tanggal-counter').value = hariIni;
             filterBookingCounter();
         }
 
@@ -1582,7 +1628,7 @@
                     let updates = {};
                     
                     dataBooking.forEach((b) => {
-                        let key = generateSafeKey(b.nopol, b.nama);
+                        let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
                         updates['booking/' + key] = b;
                     });
 
@@ -1690,7 +1736,7 @@
             let updates = {};
             
             dataBooking.forEach((b) => {
-                let key = generateSafeKey(b.nopol, b.nama);
+                let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
                 updates['booking/' + key] = b;
             });
 
