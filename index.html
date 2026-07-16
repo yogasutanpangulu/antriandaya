@@ -98,8 +98,6 @@
         .btn-download-template:hover { background: #138496; }
         .btn-google-sync { background: #ea4335; color: white; padding: 6px 16px; font-size: 13px; }
         .btn-google-sync:hover { background: #d33426; }
-        .btn-clear-sync { background: #dc3545; color: white; padding: 6px 16px; font-size: 13px; }
-        .btn-clear-sync:hover { background: #c82333; }
         
         .search-box {
             display: flex;
@@ -891,10 +889,14 @@
             
             let csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${sheetIndex}`;
             
+            console.log(`📅 Tanggal: ${tanggal}, Sheet Index: ${sheetIndex}`);
+            console.log(`🔗 URL: ${csvUrl}`);
+            
             return fetch(csvUrl)
                 .then(response => {
                     if (!response.ok) {
                         let fallbackUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+                        console.log(`⚠️ Fallback ke: ${fallbackUrl}`);
                         return fetch(fallbackUrl);
                     }
                     return response;
@@ -941,6 +943,7 @@
                         throw new Error(`Tidak ada data valid di sheet tanggal ${tanggal}`);
                     }
                     
+                    console.log(`✅ Ditemukan ${dataBooking.length} data untuk tanggal ${tanggal}`);
                     return dataBooking;
                 });
         }
@@ -1288,96 +1291,215 @@
                     daftarBooking.push(data);
                 });
                 
-                // Tampilkan hanya booking untuk HARI INI
-                let hariIni = getTanggalHariIni();
-                daftarBookingFiltered = daftarBooking.filter(b => {
-                    return b.tanggal && b.tanggal === hariIni;
-                });
+                // ========== PERUBAHAN ==========
+                // daftarBookingFiltered berisi SEMUA data
+                daftarBookingFiltered = [...daftarBooking];
+                // ===============================
                 
+                // Render tabel dengan data yang sudah ada
                 renderDaftarBooking();
+                
+                // Set filter tanggal default ke hari ini
+                let hariIni = getTanggalHariIni();
+                let filterInput = document.getElementById('filter-tanggal');
+                if (filterInput && !filterInput.value) {
+                    filterInput.value = hariIni;
+                }
+                let filterInputCounter = document.getElementById('filter-tanggal-counter');
+                if (filterInputCounter && !filterInputCounter.value) {
+                    filterInputCounter.value = hariIni;
+                }
+                
+                // Apply filter default
+                setTimeout(() => {
+                    filterBooking();
+                    filterBookingCounter();
+                }, 100);
             });
         }
 
-        function renderDaftarBooking() {
-            let html = '';
-            
-            if (daftarBookingFiltered.length === 0) {
-                html = '<div class="empty-booking">📭 Belum ada booking untuk hari ini.</div>';
-            } else {
-                daftarBookingFiltered.sort((a, b) => {
-                    if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
-                    return 0;
-                });
+        // ============================================================
+        // ================ RENDER DAFTAR BOOKING ======================
+        // ============================================================
 
-                html = `
-                    <table class="booking-table">
-                        <thead>
-                            <tr>
-                                <th style="width:30px;">No</th>
-                                <th>Nopol</th>
-                                <th>Nama</th>
-                                <th>Telpon</th>
-                                <th>Pekerjaan</th>
-                                <th>Waktu</th>
-                                <th>Tanggal</th>
-                                <th>SA</th>
-                                <th>Status</th>
-                                <th style="width:180px;">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-                
-                daftarBookingFiltered.forEach((b, index) => {
-                    let statusClass = 'status-menunggu';
-                    let statusText = 'Menunggu';
-                    let disabled = false;
-                    if (b.status === 'dipanggil') { 
-                        statusClass = 'status-dipanggil'; 
-                        statusText = 'Dipanggil'; 
-                        disabled = true;
-                    }
-                    if (b.status === 'selesai') { 
-                        statusClass = 'status-selesai'; 
-                        statusText = 'Selesai';
-                        disabled = true;
-                    }
-                    
-                    html += `
-                        <tr>
-                            <td><strong>${index + 1}</strong></td>
-                            <td><strong>${b.nopol || '-'}</strong></td>
-                            <td>${b.nama || '-'}</td>
-                            <td>${b.telp || '-'}</td>
-                            <td>${b.pekerjaan || '-'}</td>
-                            <td>${b.waktu || '-'}</td>
-                            <td>${formatTanggalIndonesia(b.tanggal)}</td>
-                            <td>${b.sa || '-'}</td>
-                            <td><span class="${statusClass}">${statusText}</span></td>
-                            <td>
-                                <button class="btn-get-in" ${disabled ? 'disabled' : ''} onclick="bukaModalGetIn('${b.key}')" title="Masukkan ke antrian">🚪 Get In</button>
-                                ${b.status === 'dipanggil' ? `<button class="btn-restore-booking" onclick="restoreBooking('${b.key}')" title="Kembalikan ke daftar booking">↩️</button>` : ''}
-                                <button class="btn-delete-booking" onclick="deleteBooking('${b.key}')" title="Hapus booking">✕</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                html += `
-                        </tbody>
-                    </table>
-                `;
-            }
+        function renderDaftarBooking() {
+            let dataToShow = daftarBookingFiltered || [];
             
             let containerValey = document.getElementById('booking-list');
             if (containerValey) {
-                containerValey.innerHTML = html;
+                renderFilteredBooking(dataToShow, containerValey);
             }
             
             let containerCounter = document.getElementById('booking-list-counter');
             if (containerCounter) {
-                containerCounter.innerHTML = html;
+                renderFilteredBooking(dataToShow, containerCounter);
             }
+        }
+
+        // ============================================================
+        // ================ RENDER FILTERED BOOKING ====================
+        // ============================================================
+
+        function renderFilteredBooking(data, container) {
+            if (!container) return;
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div class="empty-booking">📭 Tidak ada booking untuk filter ini.</div>';
+                return;
+            }
+            
+            let html = `
+                <table class="booking-table">
+                    <thead>
+                        <tr>
+                            <th style="width:30px;">No</th>
+                            <th>Nopol</th>
+                            <th>Nama</th>
+                            <th>Telpon</th>
+                            <th>Pekerjaan</th>
+                            <th>Waktu</th>
+                            <th>Tanggal</th>
+                            <th>SA</th>
+                            <th>Status</th>
+                            <th style="width:180px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Urutkan berdasarkan tanggal dan waktu
+            data.sort((a, b) => {
+                if (a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
+                if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
+                return 0;
+            });
+            
+            data.forEach((b, index) => {
+                let statusClass = 'status-menunggu';
+                let statusText = 'Menunggu';
+                let disabled = false;
+                if (b.status === 'dipanggil') { 
+                    statusClass = 'status-dipanggil'; 
+                    statusText = 'Dipanggil'; 
+                    disabled = true;
+                }
+                if (b.status === 'selesai') { 
+                    statusClass = 'status-selesai'; 
+                    statusText = 'Selesai';
+                    disabled = true;
+                }
+                
+                html += `
+                    <tr>
+                        <td><strong>${index + 1}</strong></td>
+                        <td><strong>${b.nopol || '-'}</strong></td>
+                        <td>${b.nama || '-'}</td>
+                        <td>${b.telp || '-'}</td>
+                        <td>${b.pekerjaan || '-'}</td>
+                        <td>${b.waktu || '-'}</td>
+                        <td>${formatTanggalIndonesia(b.tanggal)}</td>
+                        <td>${b.sa || '-'}</td>
+                        <td><span class="${statusClass}">${statusText}</span></td>
+                        <td>
+                            <button class="btn-get-in" ${disabled ? 'disabled' : ''} onclick="bukaModalGetIn('${b.key}')" title="Masukkan ke antrian">🚪 Get In</button>
+                            ${b.status === 'dipanggil' ? `<button class="btn-restore-booking" onclick="restoreBooking('${b.key}')" title="Kembalikan ke daftar booking">↩️</button>` : ''}
+                            <button class="btn-delete-booking" onclick="deleteBooking('${b.key}')" title="Hapus booking">✕</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // ================ FILTER TANGGAL =============================
+        // ============================================================
+
+        function filterBooking() {
+            let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
+            let tanggal = document.getElementById('filter-tanggal').value;
+            
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                document.getElementById('filter-tanggal').value = tanggal;
+            }
+            
+            // Filter dari daftarBooking (data lengkap)
+            let filtered = daftarBooking.filter(b => {
+                let match = true;
+                
+                if (keyword) {
+                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp).toLowerCase();
+                    if (!text.includes(keyword)) match = false;
+                }
+                
+                if (tanggal) {
+                    if (b.tanggal !== tanggal) match = false;
+                }
+                
+                return match;
+            });
+            
+            daftarBookingFiltered = filtered;
+            
+            let container = document.getElementById('booking-list');
+            if (container) {
+                renderFilteredBooking(filtered, container);
+            }
+        }
+
+        function filterBookingCounter() {
+            let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
+            let tanggal = document.getElementById('filter-tanggal-counter').value;
+            
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                document.getElementById('filter-tanggal-counter').value = tanggal;
+            }
+            
+            let filtered = daftarBooking.filter(b => {
+                let match = true;
+                
+                if (keyword) {
+                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp).toLowerCase();
+                    if (!text.includes(keyword)) match = false;
+                }
+                
+                if (tanggal) {
+                    if (b.tanggal !== tanggal) match = false;
+                }
+                
+                return match;
+            });
+            
+            let container = document.getElementById('booking-list-counter');
+            if (container) {
+                renderFilteredBooking(filtered, container);
+            }
+        }
+
+        // ============================================================
+        // ================ RESET FILTER ===============================
+        // ============================================================
+
+        function resetFilter() {
+            document.getElementById('search-booking').value = '';
+            let hariIni = getTanggalHariIni();
+            document.getElementById('filter-tanggal').value = hariIni;
+            filterBooking();
+        }
+
+        function resetFilterCounter() {
+            document.getElementById('search-booking-counter').value = '';
+            let hariIni = getTanggalHariIni();
+            document.getElementById('filter-tanggal-counter').value = hariIni;
+            filterBookingCounter();
         }
 
         // ============================================================
@@ -1447,97 +1569,6 @@
             }).catch((err) => {
                 alert('❌ Gagal mengambil data antrian: ' + err.message);
             });
-        }
-
-        // ============================================================
-        // ================ FILTER TANGGAL =============================
-        // ============================================================
-
-        function filterBooking() {
-            let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
-            let tanggal = document.getElementById('filter-tanggal').value;
-            
-            if (!tanggal) {
-                tanggal = getTanggalHariIni();
-                document.getElementById('filter-tanggal').value = tanggal;
-            }
-            
-            filterBookingUniversal(keyword, tanggal, 'booking-list');
-        }
-
-        function filterBookingCounter() {
-            let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
-            let tanggal = document.getElementById('filter-tanggal-counter').value;
-            
-            if (!tanggal) {
-                tanggal = getTanggalHariIni();
-                document.getElementById('filter-tanggal-counter').value = tanggal;
-            }
-            
-            filterBookingUniversal(keyword, tanggal, 'booking-list-counter');
-        }
-
-        function filterBookingUniversal(keyword, tanggal, containerId) {
-            let container = document.getElementById(containerId);
-            if (!container) return;
-            
-            let rows = container.querySelectorAll('tbody tr');
-            if (!rows.length) return;
-            
-            let visibleCount = 0;
-            
-            rows.forEach(row => {
-                let text = row.textContent.toLowerCase();
-                let show = true;
-                
-                if (keyword !== '' && !text.includes(keyword)) {
-                    show = false;
-                }
-                
-                if (tanggal) {
-                    let tglCell = row.querySelector('td:nth-child(7)');
-                    if (tglCell) {
-                        let tglText = tglCell.textContent.trim();
-                        let tglParts = tglText.split(' ');
-                        if (tglParts.length === 3) {
-                            let bulanMap = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04','Mei':'05','Jun':'06','Jul':'07','Agu':'08','Sep':'09','Okt':'10','Nov':'11','Des':'12'};
-                            let tglFormatted = tglParts[2] + '-' + (bulanMap[tglParts[1]] || '01') + '-' + (tglParts[0].padStart(2,'0'));
-                            if (tglFormatted !== tanggal) {
-                                show = false;
-                            }
-                        }
-                    }
-                }
-                
-                if (show) visibleCount++;
-                row.style.display = show ? '' : 'none';
-            });
-            
-            let emptyMsg = container.querySelector('.empty-filter-msg');
-            if (visibleCount === 0) {
-                if (!emptyMsg) {
-                    let msg = document.createElement('div');
-                    msg.className = 'empty-booking empty-filter-msg';
-                    msg.textContent = '📭 Tidak ada booking untuk tanggal ini.';
-                    container.appendChild(msg);
-                }
-            } else {
-                if (emptyMsg) emptyMsg.remove();
-            }
-        }
-
-        function resetFilter() {
-            document.getElementById('search-booking').value = '';
-            let hariIni = getTanggalHariIni();
-            document.getElementById('filter-tanggal').value = hariIni;
-            filterBooking();
-        }
-
-        function resetFilterCounter() {
-            document.getElementById('search-booking-counter').value = '';
-            let hariIni = getTanggalHariIni();
-            document.getElementById('filter-tanggal-counter').value = hariIni;
-            filterBookingCounter();
         }
 
         // ============================================================
