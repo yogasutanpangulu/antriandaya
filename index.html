@@ -984,11 +984,24 @@
                 // Update total info
                 updateTotalInfo();
                 
-                // Tampilkan booking untuk HARI INI (default)
+                // ===== PERBAIKAN: Tampilkan HARI INI =====
                 let hariIni = getTanggalHariIni();
+                
+                // Set filter tanggal ke hari ini
+                let filterInput = document.getElementById('filter-tanggal');
+                if (filterInput) {
+                    filterInput.value = hariIni;
+                }
+                let filterInputCounter = document.getElementById('filter-tanggal-counter');
+                if (filterInputCounter) {
+                    filterInputCounter.value = hariIni;
+                }
+                
+                // Filter data untuk hari ini
                 daftarBookingFiltered = daftarBooking.filter(b => {
                     return b.tanggal && b.tanggal === hariIni;
                 });
+                // ========================================
                 
                 renderDaftarBooking();
             });
@@ -1009,10 +1022,9 @@
             let html = '';
             
             if (daftarBookingFiltered.length === 0) {
-                html = '<div class="empty-booking">📭 Tidak ada booking untuk filter ini.</div>';
+                html = '<div class="empty-booking">📭 Tidak ada booking untuk hari ini.</div>';
             } else {
                 daftarBookingFiltered.sort((a, b) => {
-                    if (a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
                     if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
                     return 0;
                 });
@@ -1448,7 +1460,7 @@
         }
 
         // ============================================================
-        // ================ UPLOAD EXCEL (DIPERBAIKI) =================
+        // ================ UPLOAD EXCEL ===============================
         // ============================================================
 
         function uploadExcelBooking(event) {
