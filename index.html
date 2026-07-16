@@ -1291,10 +1291,8 @@
                     daftarBooking.push(data);
                 });
                 
-                // ========== PERUBAHAN ==========
                 // daftarBookingFiltered berisi SEMUA data
                 daftarBookingFiltered = [...daftarBooking];
-                // ===============================
                 
                 // Render tabel dengan data yang sudah ada
                 renderDaftarBooking();
@@ -1348,6 +1346,28 @@
                 return;
             }
             
+            // ========== PERBAIKAN ==========
+            // Filter data yang tidak memiliki tanggal
+            let validData = data.filter(b => b.tanggal);
+            
+            if (validData.length === 0) {
+                container.innerHTML = '<div class="empty-booking">📭 Data booking tidak valid (tidak memiliki tanggal).</div>';
+                return;
+            }
+            
+            // Urutkan berdasarkan tanggal dan waktu
+            validData.sort((a, b) => {
+                // Pastikan kedua data memiliki tanggal
+                if (a.tanggal && b.tanggal && a.tanggal !== b.tanggal) {
+                    return a.tanggal.localeCompare(b.tanggal);
+                }
+                if (a.waktu && b.waktu && a.waktu !== b.waktu) {
+                    return a.waktu.localeCompare(b.waktu);
+                }
+                return 0;
+            });
+            // ===============================
+            
             let html = `
                 <table class="booking-table">
                     <thead>
@@ -1367,14 +1387,7 @@
                     <tbody>
             `;
             
-            // Urutkan berdasarkan tanggal dan waktu
-            data.sort((a, b) => {
-                if (a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
-                if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
-                return 0;
-            });
-            
-            data.forEach((b, index) => {
+            validData.forEach((b, index) => {
                 let statusClass = 'status-menunggu';
                 let statusText = 'Menunggu';
                 let disabled = false;
