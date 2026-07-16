@@ -454,7 +454,6 @@
             background: white;
         }
 
-        /* Modal Pilih Tanggal */
         .modal-tanggal .modal-content {
             max-width: 400px;
             text-align: center;
@@ -509,6 +508,25 @@
             margin-top: 5px;
         }
         .btn-cancel-modal:hover { background: #c82333; }
+
+        /* Modal Hapus */
+        .modal-hapus .form-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        .modal-hapus .form-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        .modal-hapus .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
 
         @media (max-width: 768px) {
             .booking-row {
@@ -589,7 +607,7 @@
                         <button class="btn-add-row-manual" onclick="tambahBarisManual()">➕ Tambah Baris</button>
                         <button class="btn-save-all" onclick="bukaModalSimpanSemua()">💾 Simpan Semua</button>
                         <button class="btn-download-report" onclick="downloadReport()">📥 Download Laporan</button>
-                        <button class="btn-danger-booking" onclick="bukaModalHapusSemua()">🗑️ Hapus Semua</button>
+                        <button class="btn-danger-booking" onclick="bukaModalHapusSemua()">🗑️ Hapus Booking</button>
                     </div>
                 </div>
                 
@@ -738,18 +756,23 @@
         <button id="btn-logout" onclick="logoutAkun()" style="display: none; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">Keluar Akun</button>
     </div>
 
-    <!-- ================ MODAL KONFIRMASI HAPUS SEMUA ================ -->
+    <!-- ================ MODAL KONFIRMASI HAPUS ================ -->
     <div id="modal-hapus-semua" class="modal modal-hapus">
         <div class="modal-content">
             <span class="modal-close" onclick="tutupModalHapusSemua()">&times;</span>
             <div class="icon-danger">⚠️</div>
-            <h2 style="color: #dc3545;">Hapus Semua Booking?</h2>
+            <h2 style="color: #dc3545;">Hapus Booking?</h2>
             <p style="font-size: 15px; color: #555; margin-bottom: 5px;">
-                Anda akan menghapus <strong>SEMUA</strong> data booking.
+                Pilih tanggal booking yang akan dihapus.
             </p>
             <p style="font-size: 13px; color: #999; margin-bottom: 15px;">
                 Data yang dihapus <strong>TIDAK BISA</strong> dikembalikan!
             </p>
+            
+            <div class="form-group">
+                <label for="hapus-tanggal">📅 Pilih Tanggal:</label>
+                <input type="date" id="hapus-tanggal">
+            </div>
             
             <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: left; font-size: 13px;">
                 <div id="hapus-count-info">📊 Menghitung jumlah booking...</div>
@@ -757,12 +780,12 @@
             
             <div class="btn-group-hapus">
                 <button class="btn-cancel-hapus" onclick="tutupModalHapusSemua()">❌ Batal</button>
-                <button class="btn-confirm-hapus" onclick="hapusSemuaBooking()" id="btn-confirm-hapus">🗑️ Ya, Hapus Semua</button>
+                <button class="btn-confirm-hapus" onclick="hapusBookingByTanggal()" id="btn-confirm-hapus">🗑️ Hapus</button>
             </div>
         </div>
     </div>
 
-    <!-- ================ MODAL PILIH TANGGAL ================ -->
+    <!-- ================ MODAL PILIH TANGGAL (SIMPAN SEMUA) ================ -->
     <div id="modal-tanggal" class="modal modal-tanggal">
         <div class="modal-content">
             <span class="modal-close" onclick="tutupModalTanggal()">&times;</span>
@@ -1099,7 +1122,6 @@
                 return;
             }
             
-            // Hitung jumlah data dan cek duplikat
             let existingData = daftarBooking;
             let duplicateList = [];
             let newCount = 0;
@@ -1136,7 +1158,6 @@
             }
             info.innerHTML = infoHtml;
             
-            // Set default tanggal ke hari ini
             let today = getTanggalHariIni();
             document.getElementById('tanggal-simpan').value = today;
             
@@ -1249,6 +1270,145 @@
                 btn.textContent = '💾 Simpan Semua';
                 btn.disabled = false;
             });
+        }
+
+        // ============================================================
+        // ================ HAPUS BOOKING BERDASARKAN TANGGAL ==========
+        // ============================================================
+
+        function bukaModalHapusSemua() {
+            let today = getTanggalHariIni();
+            document.getElementById('hapus-tanggal').value = today;
+            
+            let btn = document.getElementById('btn-confirm-hapus');
+            btn.disabled = true;
+            btn.textContent = '⏳ Menghitung...';
+            
+            hitungDataHapus();
+            
+            document.getElementById('modal-hapus-semua').style.display = 'block';
+        }
+
+        function hitungDataHapus() {
+            let tanggal = document.getElementById('hapus-tanggal').value;
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                document.getElementById('hapus-tanggal').value = tanggal;
+            }
+            
+            let btn = document.getElementById('btn-confirm-hapus');
+            
+            db.ref('booking').once('value', (snapshot) => {
+                let count = 0;
+                let dataList = [];
+                snapshot.forEach((child) => {
+                    let data = child.val();
+                    if (data.tanggal === tanggal) {
+                        count++;
+                        dataList.push(`${data.nopol || '-'} - ${data.nama || '-'}`);
+                    }
+                });
+                
+                let info = document.getElementById('hapus-count-info');
+                if (count === 0) {
+                    info.innerHTML = `📭 Tidak ada data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}.`;
+                    btn.disabled = true;
+                    btn.textContent = '🗑️ Tidak Ada Data';
+                } else {
+                    let preview = dataList.slice(0, 5).map(d => `• ${d}`).join('<br>');
+                    if (dataList.length > 5) {
+                        preview += `<br>• ... dan ${dataList.length - 5} data lainnya`;
+                    }
+                    info.innerHTML = `
+                        📊 Ditemukan <strong>${count}</strong> data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}.<br>
+                        <div style="margin-top:5px; font-size:12px; color:#555;">${preview}</div>
+                    `;
+                    btn.disabled = false;
+                    btn.textContent = `🗑️ Hapus ${count} Data`;
+                }
+            }).catch((err) => {
+                alert('❌ Gagal menghitung data: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = '🗑️ Hapus';
+            });
+        }
+
+        // Event listener untuk perubahan tanggal pada modal hapus
+        document.addEventListener('DOMContentLoaded', function() {
+            let inputTanggal = document.getElementById('hapus-tanggal');
+            if (inputTanggal) {
+                inputTanggal.addEventListener('change', function() {
+                    hitungDataHapus();
+                });
+            }
+        });
+
+        function hapusBookingByTanggal() {
+            let tanggal = document.getElementById('hapus-tanggal').value;
+            if (!tanggal) {
+                alert('⚠️ Harap pilih tanggal!');
+                return;
+            }
+            
+            let btn = document.getElementById('btn-confirm-hapus');
+            let countText = btn.textContent.replace(/\D/g, '');
+            let count = parseInt(countText) || 0;
+            
+            if (count === 0) {
+                alert('📭 Tidak ada data untuk tanggal ini!');
+                return;
+            }
+            
+            if (!confirm(`⚠️ Yakin ingin menghapus ${count} data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}?\n\nData yang dihapus TIDAK BISA dikembalikan!`)) {
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Menghapus...';
+            
+            let keysToRemove = [];
+            db.ref('booking').once('value', (snapshot) => {
+                snapshot.forEach((child) => {
+                    let data = child.val();
+                    if (data.tanggal === tanggal) {
+                        keysToRemove.push(child.key);
+                    }
+                });
+                
+                if (keysToRemove.length === 0) {
+                    alert('📭 Tidak ada data untuk tanggal ini!');
+                    btn.disabled = false;
+                    btn.textContent = '🗑️ Hapus';
+                    return;
+                }
+                
+                let promises = [];
+                keysToRemove.forEach(key => {
+                    promises.push(db.ref('booking/' + key).remove());
+                });
+                
+                Promise.all(promises)
+                    .then(() => {
+                        alert(`✅ Berhasil menghapus ${keysToRemove.length} data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}!`);
+                        tutupModalHapusSemua();
+                        filterBooking();
+                    })
+                    .catch((err) => {
+                        alert('❌ Gagal menghapus data: ' + err.message);
+                    })
+                    .finally(() => {
+                        btn.disabled = false;
+                        btn.textContent = '🗑️ Hapus';
+                    });
+            }).catch((err) => {
+                alert('❌ Gagal membaca data: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = '🗑️ Hapus';
+            });
+        }
+
+        function tutupModalHapusSemua() {
+            document.getElementById('modal-hapus-semua').style.display = 'none';
         }
 
         // ============================================================
@@ -1412,57 +1572,6 @@
             }).catch((err) => {
                 alert("Gagal menambahkan antrian: " + err.message);
             });
-        }
-
-        // ============================================================
-        // ================ MODAL HAPUS SEMUA ==========================
-        // ============================================================
-
-        function bukaModalHapusSemua() {
-            let btn = document.getElementById('btn-confirm-hapus');
-            btn.disabled = true;
-            
-            db.ref('booking').once('value', (snapshot) => {
-                let count = 0;
-                snapshot.forEach(() => count++);
-                
-                let info = document.getElementById('hapus-count-info');
-                if (count === 0) {
-                    info.innerHTML = '📭 Tidak ada data booking untuk dihapus.';
-                    btn.disabled = true;
-                } else {
-                    info.innerHTML = `📊 Ditemukan <strong>${count}</strong> data booking.`;
-                    btn.disabled = false;
-                }
-                
-                document.getElementById('modal-hapus-semua').style.display = 'block';
-            }).catch((err) => {
-                alert('❌ Gagal menghitung data: ' + err.message);
-                btn.disabled = false;
-            });
-        }
-
-        function tutupModalHapusSemua() {
-            document.getElementById('modal-hapus-semua').style.display = 'none';
-        }
-
-        function hapusSemuaBooking() {
-            let btn = document.getElementById('btn-confirm-hapus');
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Menghapus...';
-            
-            db.ref('booking').remove()
-                .then(() => {
-                    alert('✅ Semua data booking berhasil dihapus!');
-                    tutupModalHapusSemua();
-                })
-                .catch((err) => {
-                    alert('❌ Gagal menghapus data: ' + err.message);
-                })
-                .finally(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = '🗑️ Ya, Hapus Semua';
-                });
         }
 
         // ============================================================
@@ -2461,7 +2570,7 @@
             }
             let modalHapus = document.getElementById('modal-hapus-semua');
             if (event.target == modalHapus) {
-                tutupModalHapusSemua();
+                // Tidak otomatis tutup, biarkan user yang tutup
             }
             let modalTanggal = document.getElementById('modal-tanggal');
             if (event.target == modalTanggal) {
