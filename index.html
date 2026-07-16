@@ -96,6 +96,22 @@
         .btn-upload-excel:hover { background: #218838; }
         .btn-download-template { background: #17a2b8; color: white; padding: 6px 16px; font-size: 13px; }
         .btn-download-template:hover { background: #138496; }
+        /* ===== TOMBOL HAPUS SEMUA ===== */
+        .btn-danger-booking {
+            background: #dc3545;
+            color: white;
+            padding: 6px 16px;
+            font-size: 13px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-danger-booking:hover { background: #c82333; }
+        .btn-danger-booking:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
         
         .search-box {
             display: flex;
@@ -350,6 +366,38 @@
             margin-bottom: 0;
         }
 
+        /* MODAL KONFIRMASI HAPUS SEMUA */
+        .modal-hapus .modal-content {
+            max-width: 450px;
+            text-align: center;
+        }
+        .modal-hapus .modal-content .icon-danger {
+            font-size: 48px;
+            color: #dc3545;
+        }
+        .modal-hapus .modal-content .btn-group-hapus {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .modal-hapus .modal-content .btn-group-hapus button {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+        }
+        .modal-hapus .modal-content .btn-confirm-hapus {
+            background: #dc3545;
+        }
+        .modal-hapus .modal-content .btn-confirm-hapus:hover {
+            background: #c82333;
+        }
+        .modal-hapus .modal-content .btn-cancel-hapus {
+            background: #6c757d;
+        }
+        .modal-hapus .modal-content .btn-cancel-hapus:hover {
+            background: #5a6268;
+        }
+
         @media (max-width: 768px) {
             .booking-row {
                 grid-template-columns: 1fr 1fr;
@@ -428,6 +476,7 @@
                         <button class="btn-upload-booking" onclick="bukaModalUpload()">📤 Upload Manual</button>
                         <button class="btn-upload-excel" onclick="document.getElementById('file-excel').click()">📊 Upload Excel</button>
                         <button class="btn-download-template" onclick="downloadTemplate()">📥 Download Template</button>
+                        <button class="btn-danger-booking" onclick="bukaModalHapusSemua()">🗑️ Hapus Semua</button>
                         <input type="file" id="file-excel" accept=".xlsx,.xls" style="display:none" onchange="uploadExcelBooking(event)">
                     </div>
                 </div>
@@ -597,6 +646,30 @@
         </div>
     </div>
 
+    <!-- ================ MODAL KONFIRMASI HAPUS SEMUA ================ -->
+    <div id="modal-hapus-semua" class="modal modal-hapus">
+        <div class="modal-content">
+            <span class="modal-close" onclick="tutupModalHapusSemua()">&times;</span>
+            <div class="icon-danger">⚠️</div>
+            <h2 style="color: #dc3545;">Hapus Semua Booking?</h2>
+            <p style="font-size: 15px; color: #555; margin-bottom: 5px;">
+                Anda akan menghapus <strong>SEMUA</strong> data booking.
+            </p>
+            <p style="font-size: 13px; color: #999; margin-bottom: 15px;">
+                Data yang dihapus <strong>TIDAK BISA</strong> dikembalikan!
+            </p>
+            
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: left; font-size: 13px;">
+                <div id="hapus-count-info">📊 Menghitung jumlah booking...</div>
+            </div>
+            
+            <div class="btn-group-hapus">
+                <button class="btn-cancel-hapus" onclick="tutupModalHapusSemua()">❌ Batal</button>
+                <button class="btn-confirm-hapus" onclick="hapusSemuaBooking()" id="btn-confirm-hapus">🗑️ Ya, Hapus Semua</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ================ MODAL GET IN ================ -->
     <div id="modal-getin" class="modal modal-getin">
         <div class="modal-content">
@@ -717,6 +790,58 @@
             }
             key = key.replace(/[.#$\/\[\]]/g, '_');
             return key;
+        }
+
+        // ============================================================
+        // ================ MODAL HAPUS SEMUA ==========================
+        // ============================================================
+
+        function bukaModalHapusSemua() {
+            // Hitung jumlah booking dulu
+            let btn = document.getElementById('btn-confirm-hapus');
+            btn.disabled = true;
+            
+            db.ref('booking').once('value', (snapshot) => {
+                let count = 0;
+                snapshot.forEach(() => count++);
+                
+                let info = document.getElementById('hapus-count-info');
+                if (count === 0) {
+                    info.innerHTML = '📭 Tidak ada data booking untuk dihapus.';
+                    btn.disabled = true;
+                } else {
+                    info.innerHTML = `📊 Ditemukan <strong>${count}</strong> data booking.`;
+                    btn.disabled = false;
+                }
+                
+                document.getElementById('modal-hapus-semua').style.display = 'block';
+            }).catch((err) => {
+                alert('❌ Gagal menghitung data: ' + err.message);
+                btn.disabled = false;
+            });
+        }
+
+        function tutupModalHapusSemua() {
+            document.getElementById('modal-hapus-semua').style.display = 'none';
+        }
+
+        function hapusSemuaBooking() {
+            let btn = document.getElementById('btn-confirm-hapus');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Menghapus...';
+            
+            db.ref('booking').remove()
+                .then(() => {
+                    alert('✅ Semua data booking berhasil dihapus!');
+                    tutupModalHapusSemua();
+                })
+                .catch((err) => {
+                    alert('❌ Gagal menghapus data: ' + err.message);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '🗑️ Ya, Hapus Semua';
+                });
         }
 
         // ============================================================
@@ -1999,6 +2124,10 @@
             let modalGetin = document.getElementById('modal-getin');
             if (event.target == modalGetin) {
                 tutupModalGetIn();
+            }
+            let modalHapus = document.getElementById('modal-hapus-semua');
+            if (event.target == modalHapus) {
+                tutupModalHapusSemua();
             }
         }
     </script>
