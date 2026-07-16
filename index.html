@@ -804,6 +804,69 @@
         }
 
         // ============================================================
+        // ================ PARSING TANGGAL ============================
+        // ============================================================
+        function parseTanggal(value) {
+            if (!value) return getTanggalHariIni();
+            
+            // Jika sudah dalam format YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                return value;
+            }
+            
+            // Jika dalam format DD/MM/YYYY atau DD-MM-YYYY
+            let match = value.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+            if (match) {
+                let day = match[1].padStart(2, '0');
+                let month = match[2].padStart(2, '0');
+                let year = match[3];
+                // Cek apakah formatnya DD/MM/YYYY atau MM/DD/YYYY
+                if (parseInt(day) > 12) {
+                    return `${year}-${month}-${day}`;
+                }
+                if (parseInt(month) > 12) {
+                    return `${year}-${day}-${month}`;
+                }
+                // Jika tidak jelas, asumsikan DD/MM/YYYY
+                return `${year}-${month}-${day}`;
+            }
+            
+            // Jika format "17 Jul 2026" atau "17 July 2026"
+            let bulanMap = {
+                'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'mei': '05', 'jun': '06',
+                'jul': '07', 'agu': '08', 'sep': '09', 'okt': '10', 'nov': '11', 'des': '12',
+                'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06',
+                'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12'
+            };
+            
+            for (let key in bulanMap) {
+                if (value.toLowerCase().includes(key)) {
+                    let parts = value.split(/[\/\-\s,]+/);
+                    let year = '';
+                    let day = '';
+                    let month = bulanMap[key];
+                    
+                    for (let p of parts) {
+                        if (/^\d{4}$/.test(p)) year = p;
+                        if (/^\d{1,2}$/.test(p) && parseInt(p) <= 31) {
+                            if (!day || parseInt(p) < parseInt(day)) {
+                                day = p;
+                            }
+                        }
+                    }
+                    if (year && day && month) {
+                        day = day.padStart(2, '0');
+                        return `${year}-${month}-${day}`;
+                    }
+                }
+            }
+            
+            // Jika semua gagal, return hari ini
+            console.warn('Format tanggal tidak dikenali:', value, '-> menggunakan hari ini');
+            return getTanggalHariIni();
+        }
+
+        // ============================================================
         // ================ MODAL HAPUS SEMUA ==========================
         // ============================================================
 
@@ -981,13 +1044,10 @@
                     daftarBooking.push(data);
                 });
                 
-                // Update total info
                 updateTotalInfo();
                 
-                // ===== PERBAIKAN: Tampilkan HARI INI =====
                 let hariIni = getTanggalHariIni();
                 
-                // Set filter tanggal ke hari ini
                 let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput) {
                     filterInput.value = hariIni;
@@ -997,11 +1057,9 @@
                     filterInputCounter.value = hariIni;
                 }
                 
-                // Filter data untuk hari ini
                 daftarBookingFiltered = daftarBooking.filter(b => {
                     return b.tanggal && b.tanggal === hariIni;
                 });
-                // ========================================
                 
                 renderDaftarBooking();
             });
@@ -1108,13 +1166,11 @@
             let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
             let tanggal = document.getElementById('filter-tanggal').value;
             
-            // Jika tanggal kosong, gunakan hari ini
             if (!tanggal) {
                 tanggal = getTanggalHariIni();
                 document.getElementById('filter-tanggal').value = tanggal;
             }
             
-            // Filter dari daftarBooking (data lengkap)
             let filtered = daftarBooking.filter(b => {
                 let match = true;
                 
@@ -1460,7 +1516,7 @@
         }
 
         // ============================================================
-        // ================ UPLOAD EXCEL ===============================
+        // ================ UPLOAD EXCEL (DIPERBAIKI) ==================
         // ============================================================
 
         function uploadExcelBooking(event) {
@@ -1488,6 +1544,7 @@
                     let existingData = daftarBooking;
 
                     jsonData.forEach((row, index) => {
+                        // Cari kolom berdasarkan berbagai kemungkinan nama
                         const nopol = row['Nopol'] || row['nopol'] || row['PLAT'] || row['plat'] || '';
                         const nama = row['Nama'] || row['nama'] || row['NAMA'] || '';
                         const telp = row['Telpon'] || row['telpon'] || row['TELPON'] || row['No Telpon'] || row['no telpon'] || '';
@@ -1502,9 +1559,13 @@
                             return;
                         }
 
+                        // ===== PERBAIKAN: Parsing tanggal =====
+                        let tanggalParsed = parseTanggal(tanggal);
+                        // =====================================
+
                         // Ambil tanggal pertama sebagai referensi
-                        if (!tanggalUpload && tanggal) {
-                            tanggalUpload = tanggal;
+                        if (!tanggalUpload && tanggalParsed) {
+                            tanggalUpload = tanggalParsed;
                         }
 
                         // Format data
@@ -1514,7 +1575,7 @@
                             telp: telp.toString().trim() || '',
                             pekerjaan: pekerjaan.toString().trim() || '-',
                             waktu: waktu.toString().trim() || '08:00',
-                            tanggal: tanggal.toString().trim() || getTanggalHariIni(),
+                            tanggal: tanggalParsed,
                             sa: sa.toString().trim() || '',
                             status: 'menunggu'
                         };
@@ -1684,7 +1745,6 @@
                 alert(`✅ Berhasil upload ${dataBooking.length} data booking!`);
                 tutupModalUpload();
                 
-                // Auto filter ke tanggal yang diupload
                 if (tanggalUpload) {
                     let filterInput = document.getElementById('filter-tanggal');
                     if (filterInput) {
