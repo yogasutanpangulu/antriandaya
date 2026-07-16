@@ -98,6 +98,8 @@
         .btn-download-template:hover { background: #138496; }
         .btn-google-sync { background: #ea4335; color: white; padding: 6px 16px; font-size: 13px; }
         .btn-google-sync:hover { background: #d33426; }
+        .btn-clear-sync { background: #dc3545; color: white; padding: 6px 16px; font-size: 13px; }
+        .btn-clear-sync:hover { background: #c82333; }
         
         .search-box {
             display: flex;
@@ -393,6 +395,12 @@
             flex: 1;
             min-width: 150px;
         }
+        .modal-setup .btn-danger {
+            background: #dc3545;
+        }
+        .modal-setup .btn-danger:hover {
+            background: #c82333;
+        }
 
         @media (max-width: 768px) {
             .booking-row {
@@ -648,12 +656,11 @@
     <div id="modal-googlesheets" class="modal modal-setup">
         <div class="modal-content" style="max-width: 700px;">
             <span class="modal-close" onclick="tutupModalGoogleSheets()">&times;</span>
-            <h2>🔄 Sync Google Sheets</h2>
-            <p style="font-size: 14px; color: #555;">Masukkan URL Google Sheets Anda. Aplikasi akan membaca sheet berdasarkan tanggal.</p>
+            <h2>🔄 Google Sheets Integration</h2>
             
             <div class="info-text">
                 <strong>📋 Format Spreadsheet:</strong><br>
-                • <strong>Sheet 1</strong> = Tanggal 1, <strong>Sheet 2</strong> = Tanggal 2, dst (1-31)<br>
+                • <strong>Sheet 1</strong> = Tanggal 1, <strong>Sheet 2</strong> = Tanggal 2, dst<br>
                 • <strong>Kolom B</strong> = Nopol (mulai baris 4)<br>
                 • <strong>Kolom D</strong> = Nama (mulai baris 4)<br>
                 • <strong>Kolom E</strong> = Telpon (mulai baris 4)<br>
@@ -672,8 +679,14 @@
             </div>
             
             <div class="btn-group-sync">
-                <button class="btn-save-getin" onclick="syncAllSheets()" style="flex:1;">📅 Sync Semua (1-31)</button>
+                <button class="btn-save-getin" onclick="syncAllSheets()" style="flex:1;">📅 Sync Semua</button>
                 <button class="btn-upload-booking" onclick="syncSpecificDate()" style="flex:1; background:#6f42c1;">📅 Sync Tanggal Spesifik</button>
+            </div>
+            
+            <hr style="margin: 15px 0;">
+            
+            <div class="btn-group-sync">
+                <button class="btn-danger" onclick="clearSyncData()" style="flex:1; background:#dc3545;">🗑️ Hapus Semua Data Sync</button>
             </div>
             <br>
             <button class="btn-cancel-getin" onclick="tutupModalGoogleSheets()" style="width:100%;">❌ Tutup</button>
@@ -749,6 +762,10 @@
             return [year, month, day].join('-');
         }
 
+        function getJumlahHariBulan(tahun, bulan) {
+            return new Date(tahun, bulan, 0).getDate();
+        }
+
         function formatTanggalIndonesia(tgl) {
             if (!tgl) return '-';
             let parts = tgl.split('-');
@@ -798,9 +815,20 @@
             } else {
                 key = nopol + '_' + nama.replace(/\s/g, '') + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
             }
-            // Replace karakter yang tidak diizinkan Firebase
             key = key.replace(/[.#$\/\[\]]/g, '_');
             return key;
+        }
+
+        // ============================================================
+        // ================ CEK DUPLIKAT ===============================
+        // ============================================================
+        function isDuplicateBooking(dataBaru, existingData) {
+            return existingData.some(b => 
+                b.nopol === dataBaru.nopol && 
+                b.nama === dataBaru.nama && 
+                b.tanggal === dataBaru.tanggal &&
+                b.pekerjaan === dataBaru.pekerjaan
+            );
         }
 
         // ============================================================
@@ -851,11 +879,10 @@
             return value.replace(/^"|"$/g, '').trim();
         }
 
-        // Fungsi untuk sync dari Google Sheets dengan struktur spesifik
+        // Fungsi untuk sync dari Google Sheets
         function syncGoogleSheetsWithFormat(url, tanggal) {
             let sheetId = extractSheetId(url);
             if (!sheetId) {
-                alert('❌ URL tidak valid! Pastikan URL Google Sheets benar.');
                 return Promise.reject('Invalid URL');
             }
 
@@ -884,11 +911,9 @@
                     
                     let dataBooking = [];
                     
-                    // Mulai dari baris 4 (index 3)
                     for (let i = 3; i < lines.length; i++) {
                         let values = parseCSVLine(lines[i]);
                         
-                        // Pastikan values memiliki setidaknya 7 kolom
                         if (values.length < 7) continue;
                         
                         const nopol = cleanValue(values[1] || '').toUpperCase();
@@ -897,7 +922,6 @@
                         const pekerjaan = cleanValue(values[5] || '');
                         const waktu = cleanValue(values[6] || '');
                         
-                        // Validasi: Nopol dan Nama harus ada
                         if (nopol && nama && nopol.length > 0 && nama.length > 0) {
                             dataBooking.push({
                                 nopol: nopol,
@@ -914,14 +938,17 @@
                     }
                     
                     if (dataBooking.length === 0) {
-                        throw new Error(`Tidak ada data valid di sheet tanggal ${tanggal}. Pastikan kolom B (Nopol) dan D (Nama) terisi.`);
+                        throw new Error(`Tidak ada data valid di sheet tanggal ${tanggal}`);
                     }
                     
                     return dataBooking;
                 });
         }
 
-        // Sync semua tanggal (1-31)
+        // ============================================================
+        // ================ SYNC SEMUA TANGGAL =========================
+        // ============================================================
+
         function syncAllSheets() {
             let url = document.getElementById('google-sheet-url').value.trim();
             if (!url) {
@@ -931,12 +958,12 @@
 
             localStorage.setItem('google_sheets_url', url);
 
-            let totalDays = 31;
-            let allData = [];
-            let errors = [];
-            let successCount = 0;
+            let now = new Date();
+            let tahun = now.getFullYear();
+            let bulan = now.getMonth() + 1;
+            let totalDays = getJumlahHariBulan(tahun, bulan);
 
-            if (!confirm(`🔄 Sync data dari Google Sheets?\n\nAkan membaca sheet 1-${totalDays} (sesuai tanggal).\nData booking akan diupdate dari spreadsheet.`)) {
+            if (!confirm(`🔄 Sync data dari Google Sheets?\n\nAkan membaca sheet 1-${totalDays} (sesuai tanggal ${bulan}/${tahun}).\nData booking akan diupdate dari spreadsheet.`)) {
                 return;
             }
 
@@ -944,16 +971,25 @@
             let originalText = btn ? btn.innerText : '';
             if (btn) btn.innerText = '⏳ Loading...';
 
+            // Ambil data existing untuk cek duplikat
+            let existingData = daftarBooking;
+
             let promises = [];
-            let year = new Date().getFullYear();
-            let month = String(new Date().getMonth() + 1).padStart(2, '0');
+            let allData = [];
+            let errors = [];
+            let successCount = 0;
             
             for (let day = 1; day <= totalDays; day++) {
-                let tanggal = `${year}-${month}-${String(day).padStart(2, '0')}`;
+                let tanggal = `${tahun}-${String(bulan).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 promises.push(
                     syncGoogleSheetsWithFormat(url, tanggal)
                         .then(data => {
-                            allData = allData.concat(data);
+                            // Filter duplikat
+                            let newData = data.filter(d => !isDuplicateBooking(d, existingData));
+                            if (newData.length > 0) {
+                                allData = allData.concat(newData);
+                                existingData = existingData.concat(newData);
+                            }
                             successCount++;
                             return data;
                         })
@@ -966,20 +1002,13 @@
 
             Promise.all(promises)
                 .then(results => {
-                    let finalData = [];
-                    results.forEach(data => {
-                        if (data && data.length > 0) {
-                            finalData = finalData.concat(data);
-                        }
-                    });
-
-                    if (finalData.length === 0) {
-                        alert('❌ Tidak ada data yang berhasil diambil dari Google Sheets.\n\n' + errors.join('\n'));
+                    if (allData.length === 0) {
+                        alert('❌ Tidak ada data baru yang ditemukan.\n\n' + errors.join('\n'));
                         return;
                     }
 
                     let konfirmasi = confirm(
-                        `📊 Sync ${finalData.length} data booking dari Google Sheets!\n\n` +
+                        `📊 Sync ${allData.length} data booking baru dari Google Sheets!\n\n` +
                         `✅ ${successCount} sheet berhasil dibaca\n` +
                         `❌ ${errors.length} sheet error\n\n` +
                         `Lanjutkan upload?`
@@ -987,13 +1016,13 @@
                     if (!konfirmasi) return;
 
                     let updates = {};
-                    finalData.forEach((b) => {
+                    allData.forEach((b) => {
                         let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
                         updates['booking/' + key] = b;
                     });
 
                     db.ref().update(updates).then(() => {
-                        alert(`✅ Berhasil sync ${finalData.length} data booking dari Google Sheets!`);
+                        alert(`✅ Berhasil sync ${allData.length} data booking baru dari Google Sheets!`);
                         tutupModalGoogleSheets();
                     }).catch((err) => {
                         alert("❌ Gagal menyimpan data: " + err.message);
@@ -1008,7 +1037,10 @@
                 });
         }
 
-        // Sync untuk satu tanggal tertentu
+        // ============================================================
+        // ================ SYNC TANGGAL SPESIFIK ======================
+        // ============================================================
+
         function syncSpecificDate() {
             let url = document.getElementById('google-sheet-url').value.trim();
             let tanggal = document.getElementById('sync-tanggal').value;
@@ -1028,6 +1060,8 @@
             let originalText = btn ? btn.innerText : '';
             if (btn) btn.innerText = '⏳ Loading...';
 
+            let existingData = daftarBooking;
+
             syncGoogleSheetsWithFormat(url, tanggal)
                 .then(data => {
                     if (data.length === 0) {
@@ -1035,17 +1069,25 @@
                         return;
                     }
 
-                    let konfirmasi = confirm(`📊 Sync ${data.length} data booking dari Google Sheets untuk tanggal ${tanggal}?`);
+                    // Filter duplikat
+                    let newData = data.filter(d => !isDuplicateBooking(d, existingData));
+
+                    if (newData.length === 0) {
+                        alert(`📭 Tidak ada data baru untuk tanggal ${tanggal}. Data sudah ada.`);
+                        return;
+                    }
+
+                    let konfirmasi = confirm(`📊 Sync ${newData.length} data booking baru dari Google Sheets untuk tanggal ${tanggal}?`);
                     if (!konfirmasi) return;
 
                     let updates = {};
-                    data.forEach((b) => {
+                    newData.forEach((b) => {
                         let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
                         updates['booking/' + key] = b;
                     });
 
                     db.ref().update(updates).then(() => {
-                        alert(`✅ Berhasil sync ${data.length} data booking untuk tanggal ${tanggal}!`);
+                        alert(`✅ Berhasil sync ${newData.length} data booking untuk tanggal ${tanggal}!`);
                         tutupModalGoogleSheets();
                     }).catch((err) => {
                         alert("❌ Gagal menyimpan data: " + err.message);
@@ -1057,6 +1099,66 @@
                 .finally(() => {
                     if (btn) btn.innerText = originalText;
                 });
+        }
+
+        // ============================================================
+        // ================ HAPUS SEMUA DATA SYNC ======================
+        // ============================================================
+
+        function clearSyncData() {
+            if (!confirm('⚠️ Yakin ingin menghapus SEMUA data booking dari Google Sheets?\n\nData akan dihapus permanen!')) {
+                return;
+            }
+
+            if (!confirm('⚠️ PERINGATAN! Ini akan menghapus semua data booking yang berasal dari Google Sheets.\n\nTekan OK untuk melanjutkan.')) {
+                return;
+            }
+
+            let btn = document.querySelector('.btn-clear-sync');
+            let originalText = btn ? btn.innerText : '';
+            if (btn) btn.innerText = '⏳ Menghapus...';
+
+            // Cari semua data dengan source = 'google_sheets'
+            let keysToRemove = [];
+            db.ref('booking').once('value', (snapshot) => {
+                snapshot.forEach((child) => {
+                    let data = child.val();
+                    if (data.source === 'google_sheets') {
+                        keysToRemove.push(child.key);
+                    }
+                });
+
+                if (keysToRemove.length === 0) {
+                    alert('📭 Tidak ada data sync yang ditemukan.');
+                    if (btn) btn.innerText = originalText;
+                    return;
+                }
+
+                if (!confirm(`🗑️ Ditemukan ${keysToRemove.length} data booking dari Google Sheets. Hapus semua?`)) {
+                    if (btn) btn.innerText = originalText;
+                    return;
+                }
+
+                let promises = [];
+                keysToRemove.forEach(key => {
+                    promises.push(db.ref('booking/' + key).remove());
+                });
+
+                Promise.all(promises)
+                    .then(() => {
+                        alert(`✅ Berhasil menghapus ${keysToRemove.length} data booking dari Google Sheets!`);
+                        tutupModalGoogleSheets();
+                    })
+                    .catch((err) => {
+                        alert('❌ Gagal menghapus data: ' + err.message);
+                    })
+                    .finally(() => {
+                        if (btn) btn.innerText = originalText;
+                    });
+            }).catch((err) => {
+                alert('❌ Gagal membaca data: ' + err.message);
+                if (btn) btn.innerText = originalText;
+            });
         }
 
         // ============================================================
@@ -1186,13 +1288,11 @@
                     daftarBooking.push(data);
                 });
                 
-                // ================ PERUBAHAN UTAMA ================
-                // Hanya tampilkan booking untuk HARI INI
+                // Tampilkan hanya booking untuk HARI INI
                 let hariIni = getTanggalHariIni();
                 daftarBookingFiltered = daftarBooking.filter(b => {
                     return b.tanggal && b.tanggal === hariIni;
                 });
-                // ================================================
                 
                 renderDaftarBooking();
             });
@@ -1205,7 +1305,7 @@
                 html = '<div class="empty-booking">📭 Belum ada booking untuk hari ini.</div>';
             } else {
                 daftarBookingFiltered.sort((a, b) => {
-                    if (a.tanggal && b.tanggal) return a.tanggal.localeCompare(b.tanggal);
+                    if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
                     return 0;
                 });
 
@@ -1357,7 +1457,6 @@
             let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
             let tanggal = document.getElementById('filter-tanggal').value;
             
-            // Jika tanggal filter kosong, tampilkan hari ini
             if (!tanggal) {
                 tanggal = getTanggalHariIni();
                 document.getElementById('filter-tanggal').value = tanggal;
@@ -1383,10 +1482,7 @@
             if (!container) return;
             
             let rows = container.querySelectorAll('tbody tr');
-            if (!rows.length) {
-                // Jika tidak ada baris, tampilkan pesan
-                return;
-            }
+            if (!rows.length) return;
             
             let visibleCount = 0;
             
@@ -1417,9 +1513,8 @@
                 row.style.display = show ? '' : 'none';
             });
             
-            // Jika tidak ada yang visible, tampilkan pesan
+            let emptyMsg = container.querySelector('.empty-filter-msg');
             if (visibleCount === 0) {
-                let emptyMsg = container.querySelector('.empty-filter-msg');
                 if (!emptyMsg) {
                     let msg = document.createElement('div');
                     msg.className = 'empty-booking empty-filter-msg';
@@ -1427,7 +1522,6 @@
                     container.appendChild(msg);
                 }
             } else {
-                let emptyMsg = container.querySelector('.empty-filter-msg');
                 if (emptyMsg) emptyMsg.remove();
             }
         }
@@ -1611,7 +1705,8 @@
                             waktu: waktu.toString().trim() || '08:00',
                             tanggal: tanggal.toString().trim() || getTanggalHariIni(),
                             sa: sa.toString().trim() || '',
-                            status: 'menunggu'
+                            status: 'menunggu',
+                            source: 'excel'
                         });
                     });
 
@@ -1626,7 +1721,6 @@
                     if (!konfirmasi) return;
 
                     let updates = {};
-                    
                     dataBooking.forEach((b) => {
                         let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
                         updates['booking/' + key] = b;
@@ -1719,7 +1813,8 @@
                     waktu: waktu || '08:00',
                     tanggal: tanggal,
                     sa: sa || '',
-                    status: 'menunggu'
+                    status: 'menunggu',
+                    source: 'manual'
                 });
             });
 
@@ -2110,7 +2205,6 @@
                             let teksTelp = d.telp ? `<span class="hist-nopol">📞 ${d.telp}</span>` : '';
                             let teksSA = d.sa ? `<span class="hist-nopol">SA: ${d.sa}</span>` : '';
                             let teksWaktu = d.waktuTunggu ? `<span class="hist-time">⏱️ ${formatWaktuTunggu(d.waktuTunggu)}</span>` : '';
-                            let teksNomor = d.nomor ? `#${d.nomor}` : '';
                             
                             let tombolHtml = `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor || 0}, '${d.nopol || '-'}')">${teksNopol}${teksNama}${teksTelp}${teksSA}${teksWaktu}</button>`;
                             
