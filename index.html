@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        /* SAMA SEPERTI SEBELUMNYA - TIDAK BERUBAH */
         * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 20px; }
         .container { max-width: 98%; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
@@ -97,6 +96,8 @@
         .btn-upload-excel:hover { background: #218838; }
         .btn-download-template { background: #17a2b8; color: white; padding: 6px 16px; font-size: 13px; }
         .btn-download-template:hover { background: #138496; }
+        .btn-google-sync { background: #ea4335; color: white; padding: 6px 16px; font-size: 13px; }
+        .btn-google-sync:hover { background: #d33426; }
         
         .search-box {
             display: flex;
@@ -351,6 +352,49 @@
             margin-bottom: 0;
         }
 
+        /* Modal Setup Google Sheets */
+        .modal-setup input {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .modal-setup .info-text {
+            font-size: 13px;
+            color: #666;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: left;
+        }
+        .modal-setup .info-text code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .modal-setup .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .modal-setup .form-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        .modal-setup .btn-group-sync {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .modal-setup .btn-group-sync button {
+            flex: 1;
+            min-width: 150px;
+        }
+
         @media (max-width: 768px) {
             .booking-row {
                 grid-template-columns: 1fr 1fr;
@@ -366,6 +410,8 @@
             .modal-content { width: 98%; margin: 2% auto; padding: 15px; }
             .history-table { font-size: 10px; }
             .history-table th, .history-table td { padding: 3px 2px; }
+            .modal-setup .btn-group-sync { flex-direction: column; }
+            .modal-setup .btn-group-sync button { width: 100%; }
         }
     </style>
 </head>
@@ -429,6 +475,7 @@
                         <button class="btn-upload-booking" onclick="bukaModalUpload()">📤 Upload Manual</button>
                         <button class="btn-upload-excel" onclick="document.getElementById('file-excel').click()">📊 Upload Excel</button>
                         <button class="btn-download-template" onclick="downloadTemplate()">📥 Download Template</button>
+                        <button class="btn-google-sync" onclick="bukaModalGoogleSheets()">🔄 Sync Google Sheets</button>
                         <input type="file" id="file-excel" accept=".xlsx,.xls" style="display:none" onchange="uploadExcelBooking(event)">
                     </div>
                 </div>
@@ -598,6 +645,42 @@
         </div>
     </div>
 
+    <!-- ================ MODAL GOOGLE SHEETS SETUP ================ -->
+    <div id="modal-googlesheets" class="modal modal-setup">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="modal-close" onclick="tutupModalGoogleSheets()">&times;</span>
+            <h2>🔄 Sync Google Sheets</h2>
+            <p style="font-size: 14px; color: #555;">Masukkan URL Google Sheets Anda. Aplikasi akan membaca sheet berdasarkan tanggal.</p>
+            
+            <div class="info-text">
+                <strong>📋 Format Spreadsheet:</strong><br>
+                • <strong>Sheet 1</strong> = Tanggal 1, <strong>Sheet 2</strong> = Tanggal 2, dst (1-31)<br>
+                • <strong>Kolom B</strong> = Nopol (mulai baris 4)<br>
+                • <strong>Kolom D</strong> = Nama (mulai baris 4)<br>
+                • <strong>Kolom E</strong> = Telpon (mulai baris 4)<br>
+                • <strong>Kolom F</strong> = Pekerjaan (mulai baris 4)<br>
+                • <strong>Kolom G</strong> = Waktu (mulai baris 4)
+            </div>
+            
+            <div class="form-group">
+                <label for="google-sheet-url">URL Google Sheets:</label>
+                <input type="text" id="google-sheet-url" placeholder="https://docs.google.com/spreadsheets/d/...">
+            </div>
+            
+            <div class="form-group">
+                <label for="sync-tanggal">Pilih Tanggal (untuk sync spesifik):</label>
+                <input type="date" id="sync-tanggal" style="width:100%;">
+            </div>
+            
+            <div class="btn-group-sync">
+                <button class="btn-save-getin" onclick="syncAllSheets()" style="flex:1;">📅 Sync Semua (1-31)</button>
+                <button class="btn-upload-booking" onclick="syncSpecificDate()" style="flex:1; background:#6f42c1;">📅 Sync Tanggal Spesifik</button>
+            </div>
+            <br>
+            <button class="btn-cancel-getin" onclick="tutupModalGoogleSheets()" style="width:100%;">❌ Tutup</button>
+        </div>
+    </div>
+
     <!-- ================ MODAL GET IN ================ -->
     <div id="modal-getin" class="modal modal-getin">
         <div class="modal-content">
@@ -624,7 +707,9 @@
     </div>
 
     <script>
-        // --- KONFIGURASI FIREBASE ---
+        // ============================================================
+        // ================ KONFIGURASI FIREBASE =======================
+        // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyBGsylncIZxoRmJ9YD_f4CNc7R83QbBMg4",
             authDomain: "antrian-service-daya-toyota.firebaseapp.com",
@@ -652,7 +737,9 @@
         let daftarAntrianMenunggu = [];
         let timerInterval = null;
 
-        // --- HELPER ---
+        // ============================================================
+        // ================ HELPER =====================================
+        // ============================================================
         function getTanggalHariIni() {
             let d = new Date();
             let month = '' + (d.getMonth() + 1);
@@ -700,6 +787,256 @@
             let detik = totalDetik % 60;
             if (menit > 0) return `${menit} mnt ${detik} dtk`;
             return `${detik} dtk`;
+        }
+
+        // ============================================================
+        // ================ GOOGLE SHEETS INTEGRATION ==================
+        // ============================================================
+
+        function bukaModalGoogleSheets() {
+            document.getElementById('modal-googlesheets').style.display = 'block';
+            let savedUrl = localStorage.getItem('google_sheets_url');
+            if (savedUrl) {
+                document.getElementById('google-sheet-url').value = savedUrl;
+            }
+        }
+
+        function tutupModalGoogleSheets() {
+            document.getElementById('modal-googlesheets').style.display = 'none';
+        }
+
+        function extractSheetId(url) {
+            let match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (match) return match[1];
+            if (/^[a-zA-Z0-9-_]{20,}$/.test(url)) return url;
+            return null;
+        }
+
+        function parseCSVLine(line) {
+            let result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                let char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function cleanValue(value) {
+            if (!value) return '';
+            return value.replace(/^"|"$/g, '').trim();
+        }
+
+        // Fungsi untuk sync dari Google Sheets dengan struktur spesifik
+        function syncGoogleSheetsWithFormat(url, tanggal) {
+            let sheetId = extractSheetId(url);
+            if (!sheetId) {
+                alert('❌ URL tidak valid! Pastikan URL Google Sheets benar.');
+                return Promise.reject('Invalid URL');
+            }
+
+            let day = parseInt(tanggal.split('-')[2]);
+            let sheetIndex = day - 1;
+            
+            let csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${sheetIndex}`;
+            
+            return fetch(csvUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        let fallbackUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+                        return fetch(fallbackUrl);
+                    }
+                    return response;
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Gagal mengakses Google Sheets');
+                    return response.text();
+                })
+                .then(csvData => {
+                    const lines = csvData.split('\n').filter(line => line.trim() !== '');
+                    if (lines.length < 5) {
+                        throw new Error(`Data kosong atau format tidak sesuai untuk tanggal ${tanggal}`);
+                    }
+                    
+                    let dataBooking = [];
+                    
+                    for (let i = 3; i < lines.length; i++) {
+                        let values = parseCSVLine(lines[i]);
+                        
+                        const nopol = cleanValue(values[1] || '').toUpperCase();
+                        const nama = cleanValue(values[3] || '');
+                        const telp = cleanValue(values[4] || '');
+                        const pekerjaan = cleanValue(values[5] || '');
+                        const waktu = cleanValue(values[6] || '');
+                        
+                        if (nopol && nama) {
+                            dataBooking.push({
+                                nopol: nopol,
+                                nama: nama,
+                                telp: telp || '',
+                                pekerjaan: pekerjaan || '-',
+                                waktu: waktu || '08:00',
+                                tanggal: tanggal,
+                                sa: '',
+                                status: 'menunggu'
+                            });
+                        }
+                    }
+                    
+                    if (dataBooking.length === 0) {
+                        throw new Error(`Tidak ada data valid di sheet tanggal ${tanggal}. Pastikan kolom B (Nopol) dan D (Nama) terisi.`);
+                    }
+                    
+                    return dataBooking;
+                });
+        }
+
+        // Sync semua tanggal (1-31)
+        function syncAllSheets() {
+            let url = document.getElementById('google-sheet-url').value.trim();
+            if (!url) {
+                alert('❌ Harap masukkan URL Google Sheets!');
+                return;
+            }
+
+            localStorage.setItem('google_sheets_url', url);
+
+            let totalDays = 31;
+            let allData = [];
+            let errors = [];
+            let successCount = 0;
+
+            if (!confirm(`🔄 Sync data dari Google Sheets?\n\nAkan membaca sheet 1-${totalDays} (sesuai tanggal).\nData booking akan diupdate dari spreadsheet.`)) {
+                return;
+            }
+
+            let btn = document.querySelector('.btn-google-sync');
+            let originalText = btn ? btn.innerText : '';
+            if (btn) btn.innerText = '⏳ Loading...';
+
+            let promises = [];
+            let year = new Date().getFullYear();
+            let month = String(new Date().getMonth() + 1).padStart(2, '0');
+            
+            for (let day = 1; day <= totalDays; day++) {
+                let tanggal = `${year}-${month}-${String(day).padStart(2, '0')}`;
+                promises.push(
+                    syncGoogleSheetsWithFormat(url, tanggal)
+                        .then(data => {
+                            allData = allData.concat(data);
+                            successCount++;
+                            return data;
+                        })
+                        .catch(err => {
+                            errors.push(`Tanggal ${tanggal}: ${err.message}`);
+                            return [];
+                        })
+                );
+            }
+
+            Promise.all(promises)
+                .then(results => {
+                    let finalData = [];
+                    results.forEach(data => {
+                        if (data && data.length > 0) {
+                            finalData = finalData.concat(data);
+                        }
+                    });
+
+                    if (finalData.length === 0) {
+                        alert('❌ Tidak ada data yang berhasil diambil dari Google Sheets.\n\n' + errors.join('\n'));
+                        return;
+                    }
+
+                    let konfirmasi = confirm(
+                        `📊 Sync ${finalData.length} data booking dari Google Sheets!\n\n` +
+                        `✅ ${successCount} sheet berhasil dibaca\n` +
+                        `❌ ${errors.length} sheet error\n\n` +
+                        `Lanjutkan upload?`
+                    );
+                    if (!konfirmasi) return;
+
+                    let updates = {};
+                    finalData.forEach((b) => {
+                        let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + b.tanggal + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                        updates['booking/' + key] = b;
+                    });
+
+                    db.ref().update(updates).then(() => {
+                        alert(`✅ Berhasil sync ${finalData.length} data booking dari Google Sheets!`);
+                        tutupModalGoogleSheets();
+                    }).catch((err) => {
+                        alert("❌ Gagal menyimpan data: " + err.message);
+                    });
+
+                })
+                .catch(err => {
+                    alert('❌ Gagal sync: ' + err.message);
+                })
+                .finally(() => {
+                    if (btn) btn.innerText = originalText;
+                });
+        }
+
+        // Sync untuk satu tanggal tertentu
+        function syncSpecificDate() {
+            let url = document.getElementById('google-sheet-url').value.trim();
+            let tanggal = document.getElementById('sync-tanggal').value;
+            
+            if (!url) {
+                alert('❌ Harap masukkan URL Google Sheets!');
+                return;
+            }
+            if (!tanggal) {
+                alert('❌ Harap pilih tanggal!');
+                return;
+            }
+
+            localStorage.setItem('google_sheets_url', url);
+
+            let btn = document.querySelector('.btn-google-sync');
+            let originalText = btn ? btn.innerText : '';
+            if (btn) btn.innerText = '⏳ Loading...';
+
+            syncGoogleSheetsWithFormat(url, tanggal)
+                .then(data => {
+                    if (data.length === 0) {
+                        alert(`❌ Tidak ada data untuk tanggal ${tanggal}`);
+                        return;
+                    }
+
+                    let konfirmasi = confirm(`📊 Sync ${data.length} data booking dari Google Sheets untuk tanggal ${tanggal}?`);
+                    if (!konfirmasi) return;
+
+                    let updates = {};
+                    data.forEach((b) => {
+                        let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + b.tanggal + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                        updates['booking/' + key] = b;
+                    });
+
+                    db.ref().update(updates).then(() => {
+                        alert(`✅ Berhasil sync ${data.length} data booking untuk tanggal ${tanggal}!`);
+                        tutupModalGoogleSheets();
+                    }).catch((err) => {
+                        alert("❌ Gagal menyimpan data: " + err.message);
+                    });
+                })
+                .catch(err => {
+                    alert('❌ Gagal sync: ' + err.message);
+                })
+                .finally(() => {
+                    if (btn) btn.innerText = originalText;
+                });
         }
 
         // ============================================================
@@ -953,7 +1290,7 @@
         }
 
         // ============================================================
-        // ================ DELETE ANTRIAN (DIPERBAIKI) ===============
+        // ================ DELETE ANTRIAN =============================
         // ============================================================
 
         function deleteAntrian(key) {
@@ -961,13 +1298,10 @@
                 return;
             }
             
-            // Ambil data antrian terlebih dahulu untuk mengetahui bookingKey
             db.ref('antrian/menunggu/' + key).once('value', (snapshot) => {
                 let dataAntrian = snapshot.val();
                 if (dataAntrian && dataAntrian.bookingKey) {
-                    // Hapus antrian
                     db.ref('antrian/menunggu/' + key).remove().then(() => {
-                        // Kembalikan status booking ke "menunggu"
                         db.ref('booking/' + dataAntrian.bookingKey).update({
                             status: 'menunggu'
                         }).then(() => {
@@ -979,7 +1313,6 @@
                         alert('❌ Gagal menghapus antrian: ' + err.message);
                     });
                 } else {
-                    // Jika tidak ada bookingKey (non booking), hapus saja
                     db.ref('antrian/menunggu/' + key).remove().then(() => {
                         alert('✅ Antrian berhasil dihapus!');
                     }).catch((err) => {
@@ -1235,7 +1568,7 @@
                     let updates = {};
                     
                     dataBooking.forEach((b) => {
-                        let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + Date.now();
+                        let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
                         updates['booking/' + key] = b;
                     });
 
@@ -1343,7 +1676,7 @@
             let updates = {};
             
             dataBooking.forEach((b) => {
-                let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + Date.now();
+                let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
                 updates['booking/' + key] = b;
             });
 
@@ -1879,6 +2212,10 @@
             let modalGetin = document.getElementById('modal-getin');
             if (event.target == modalGetin) {
                 tutupModalGetIn();
+            }
+            let modalSheets = document.getElementById('modal-googlesheets');
+            if (event.target == modalSheets) {
+                tutupModalGoogleSheets();
             }
         }
     </script>
