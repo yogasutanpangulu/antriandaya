@@ -6,10 +6,12 @@
     <title>Sistem Antrian Service Daya Toyota</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
+        * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 95%; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
+        .container { max-width: 98%; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
         input, select, button { padding: 10px; margin: 10px 0; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
         button { background: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
         button:hover { background: #0056b3; }
@@ -20,18 +22,15 @@
         #btn-logout { background: #dc3545; width: auto; padding: 8px 20px; font-weight: normal; font-size: 14px; display: none; }
         #btn-logout:hover { background: #c82333; }
 
-        /* Tampilan Layar */
-        #monitor-view, #counter-view, #valey-view, #history-view { display: none; }
+        #monitor-view, #counter-view, #valey-view { display: none; }
         .big-number { font-size: 80px; font-weight: bold; color: #d9534f; margin: 20px 0; }
         .calling-counter { font-size: 30px; font-weight: bold; color: #333; }
         
-        /* Layout Input Valey 2 Kolom */
-        .valey-input-grid { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
-        .valey-input-grid div { flex: 1; text-align: left; }
+        .valey-input-grid { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
+        .valey-input-grid div { flex: 1; min-width: 180px; text-align: left; }
         .valey-input-grid label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 3px; }
-        .valey-input-grid input { width: 100%; text-align: center; font-weight: bold; font-size: 18px; margin: 0; }
+        .valey-input-grid input, .valey-input-grid select { width: 100%; text-align: center; font-weight: bold; font-size: 18px; margin: 0; }
 
-        /* Area Salin Nopol */
         .nopol-box { display: flex; align-items: center; justify-content: center; background: #e2e3e5; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: none; }
         .btn-copy { background: #6c757d; padding: 8px 15px; width: auto; margin: 0 15px 0 0; font-size: 14px; display: inline-block; }
         .btn-copy:hover { background: #5a6268; }
@@ -39,62 +38,375 @@
 
         .waktu-tunggu-info { font-size: 14px; color: #555; margin-top: 5px; font-weight: bold; }
 
-        /* DAFTAR TUNGGU */
         .waiting-list-container { margin-top: 20px; text-align: left; }
-        .waiting-grid { display: flex; gap: 15px; margin-top: 10px; }
-        .waiting-col { flex: 1; background: #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
+        .waiting-grid { display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap; }
+        .waiting-col { flex: 1; min-width: 300px; background: #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
         .waiting-col h4 { margin-top: 0; margin-bottom: 10px; font-size: 15px; }
         
         .badge-waiting { display: block; padding: 8px; margin-bottom: 6px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px; text-align: center; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
         .badge-waiting:hover { opacity: 0.85; transform: scale(1.02); }
         .badge-booking { background: #28a745; }
         .badge-non { background: #17a2b8; }
+        .badge-sa { background: #6f42c1; }
         
-        /* Timer di dalam badge antrean */
         .live-timer { display: inline-block; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 6px; font-family: monospace; }
 
-        /* TABEL HISTORY */
-        .table-responsive { overflow-x: auto; margin-top: 15px; }
-        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .history-table th, .history-table td { border: 1px solid #999; padding: 5px; vertical-align: top; text-align: center; width: 7.14%; }
-        .history-table th { background: #d1ecf1; color: #0c5460; font-weight: bold; }
-        .history-table .sub-header th { font-size: 12px; background: #f8f9fa; color: #333; }
+        /* HISTORY TABLE - NO SCROLL */
+        .table-responsive { overflow-x: visible; margin-top: 15px; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+        .history-table th, .history-table td { border: 1px solid #999; padding: 4px 3px; vertical-align: top; text-align: center; word-wrap: break-word; }
+        .history-table th { background: #d1ecf1; color: #0c5460; font-weight: bold; font-size: 11px; }
+        .history-table .sub-header th { font-size: 10px; background: #f8f9fa; color: #333; }
         
-        .btn-hist-book { background: #28a745; color: white; border: none; padding: 6px; margin: 2px 0; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box; }
-        .btn-hist-non { background: #17a2b8; color: white; border: none; padding: 6px; margin: 2px 0; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box;}
+        .btn-hist-book { background: #28a745; color: white; border: none; padding: 4px; margin: 1px 0; border-radius: 4px; cursor: pointer; font-size: 10px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box; }
+        .btn-hist-non { background: #17a2b8; color: white; border: none; padding: 4px; margin: 1px 0; border-radius: 4px; cursor: pointer; font-size: 10px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box;}
         .btn-hist-book:hover { background: #218838; }
         .btn-hist-non:hover { background: #138496; }
-        .hist-nopol { display: block; font-size: 10px; font-weight: normal; margin-top: 2px; background: rgba(0,0,0,0.1); padding: 2px; border-radius: 2px; }
-        .hist-time { display: block; font-size: 9px; font-weight: normal; margin-top: 2px; color: #fff; background: rgba(0,0,0,0.2); padding: 2px; border-radius: 2px; }
+        .hist-nopol { display: block; font-size: 9px; font-weight: normal; margin-top: 1px; background: rgba(0,0,0,0.1); padding: 1px; border-radius: 2px; }
+        .hist-time { display: block; font-size: 8px; font-weight: normal; margin-top: 1px; color: #fff; background: rgba(0,0,0,0.2); padding: 1px; border-radius: 2px; }
         
-        /* Tombol Suara Monitor */
         #btn-enable-audio { background: #fd7e14; color: white; padding: 10px 20px; font-size: 15px; border-radius: 5px; border: none; cursor: pointer; margin-bottom: 10px; }
         #btn-enable-audio:hover { background: #e8590c; }
+
+        /* ============ BOOKING TABLE STYLE ============ */
+        .booking-wrapper {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0 20px 0;
+            border: 1px solid #dee2e6;
+        }
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .booking-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .booking-header .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn-upload-booking { background: #6f42c1; color: white; padding: 6px 16px; font-size: 13px; }
+        .btn-upload-booking:hover { background: #5a32a3; }
+        .btn-upload-excel { background: #28a745; color: white; padding: 6px 16px; font-size: 13px; }
+        .btn-upload-excel:hover { background: #218838; }
+        .btn-download-template { background: #17a2b8; color: white; padding: 6px 16px; font-size: 13px; }
+        .btn-download-template:hover { background: #138496; }
+        
+        /* SEARCH & FILTER */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-box input[type="text"] {
+            flex: 1;
+            min-width: 180px;
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .search-box input[type="date"] {
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            min-width: 150px;
+        }
+        .search-box button {
+            padding: 8px 16px;
+            font-size: 14px;
+            background: #6c757d;
+        }
+        .search-box button:hover { background: #5a6268; }
+        .search-box .btn-filter { background: #007bff; }
+        .search-box .btn-filter:hover { background: #0056b3; }
+
+        /* TABLE BOOKING */
+        .booking-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .booking-table th {
+            background: #007bff;
+            color: white;
+            padding: 6px 4px;
+            border: 1px solid #0069d9;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-size: 11px;
+        }
+        .booking-table td {
+            padding: 4px 3px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 12px;
+        }
+        .booking-table tr:nth-child(even) { background: #f8f9fa; }
+        .booking-table tr:hover { background: #e3f0ff; }
+        .booking-table .status-menunggu { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+        .booking-table .status-dipanggil { background: #28a745; color: #fff; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+        .booking-table .status-selesai { background: #dc3545; color: #fff; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+        
+        .btn-get-in {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .btn-get-in:hover { background: #218838; }
+        .btn-get-in:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .btn-delete-booking {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .btn-delete-booking:hover { background: #c82333; }
+        
+        .btn-restore-booking {
+            background: #fd7e14;
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .btn-restore-booking:hover { background: #e8590c; }
+        
+        .btn-delete-antrian {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+        .btn-delete-antrian:hover { background: #c82333; }
+
+        .empty-booking {
+            color: #999;
+            font-size: 14px;
+            padding: 15px 0;
+            text-align: center;
+        }
+
+        /* MODAL UPLOAD - DIPERBESAR */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 3% auto; padding: 25px; border: 1px solid #888; width: 95%; max-width: 1100px; border-radius: 10px; max-height: 90vh; overflow-y: auto; }
+        .modal-close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal-close:hover { color: #000; }
+        
+        /* UPLOAD ROW - DIPERBESAR */
+        .booking-row {
+            display: grid;
+            grid-template-columns: 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1.2fr 1.2fr 0.5fr;
+            gap: 6px;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+        .booking-row input, .booking-row select {
+            padding: 8px 6px;
+            font-size: 13px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 100%;
+            min-width: 0;
+        }
+        .booking-row input::placeholder {
+            font-size: 12px;
+        }
+        .btn-add-row { background: #28a745; padding: 5px 15px; font-size: 14px; }
+        .btn-remove-row { background: #dc3545; padding: 5px 10px; font-size: 14px; margin-left: 0; width: 100%; }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            max-width: 450px;
+            margin: 50px auto;
+        }
+        .login-card h2 { color: #d9534f; margin-bottom: 5px; }
+        .login-card .subtitle { color: #666; font-size: 14px; margin-bottom: 25px; }
+        .login-card select { width: 100%; padding: 14px; font-size: 18px; border-radius: 8px; border: 2px solid #ddd; background: white; cursor: pointer; }
+        .login-card select:focus { border-color: #007bff; outline: none; }
+        .login-card .btn-login { width: 100%; padding: 14px; font-size: 18px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .login-card .btn-login:hover { background: #0056b3; transform: scale(1.02); }
+        .login-card .role-icon { font-size: 48px; display: block; margin-bottom: 10px; }
+
+        .history-section {
+            margin-top: 15px;
+            border-top: 2px solid #dee2e6;
+            padding-top: 15px;
+        }
+
+        .booking-section {
+            margin-top: 20px;
+        }
+
+        /* MODAL GET IN */
+        .modal-getin .modal-content {
+            max-width: 500px;
+        }
+        .modal-getin .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .modal-getin .form-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        .modal-getin .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .modal-getin .info-booking {
+            background: #e9ecef;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .modal-getin .info-booking strong {
+            color: #007bff;
+        }
+        .btn-save-getin {
+            background: #28a745;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+        }
+        .btn-save-getin:hover { background: #218838; }
+        .btn-cancel-getin {
+            background: #dc3545;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .btn-cancel-getin:hover { background: #c82333; }
+
+        /* TOMBOL MATIKAN SUARA COUNTER */
+        .btn-mute {
+            background: #6c757d;
+            color: white;
+            padding: 6px 16px;
+            font-size: 13px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .btn-mute.active {
+            background: #dc3545;
+        }
+        .btn-mute:hover { opacity: 0.85; }
+
+        .counter-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* BADGE ANTRIAN DENGAN TOMBOL X */
+        .antrian-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+        .antrian-item .badge-waiting {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+            .booking-row {
+                grid-template-columns: 1fr 1fr;
+            }
+            .login-card { padding: 25px; margin: 20px auto; }
+            .valey-input-grid div { min-width: 100%; }
+            .booking-header { flex-direction: column; align-items: stretch; gap: 8px; }
+            .booking-header .btn-group { justify-content: center; }
+            .booking-table { font-size: 10px; }
+            .booking-table th, .booking-table td { padding: 3px 2px; }
+            .search-box { flex-direction: column; }
+            .search-box input, .search-box button { width: 100%; }
+            .modal-content { width: 98%; margin: 2% auto; padding: 15px; }
+            .history-table { font-size: 10px; }
+            .history-table th, .history-table td { padding: 3px 2px; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="login-section" class="container" style="max-width: 500px;">
-        <h2>Login Sistem Antrian</h2>
-        <select id="login-id" style="width: 100%;">
-            <option value="Valey">Valey (Input Antrian)</option>
-            <option value="Counter 2">Counter 2</option>
-            <option value="Counter 3">Counter 3</option>
-            <option value="Counter 4">Counter 4</option>
-            <option value="Counter 5">Counter 5</option>
-            <option value="Counter 6">Counter 6</option>
-            <option value="Counter 7">Counter 7</option>
-            <option value="Counter 8">Counter 8</option>
-            <option value="Monitor">Layar Monitor</option>
+    <!-- ================ LOGIN ================ -->
+    <div id="login-section" class="login-card">
+        <span class="role-icon">🚗</span>
+        <h2>Sistem Antrian Service</h2>
+        <p class="subtitle">Daya Toyota</p>
+        
+        <select id="login-id" style="width: 100%; padding: 14px; font-size: 18px; border-radius: 8px; border: 2px solid #ddd;">
+            <option value="Valey">👤 Valey (Input Antrian)</option>
+            <option value="Counter 2">🖥️ Counter 2</option>
+            <option value="Counter 3">🖥️ Counter 3</option>
+            <option value="Counter 4">🖥️ Counter 4</option>
+            <option value="Counter 5">🖥️ Counter 5</option>
+            <option value="Counter 6">🖥️ Counter 6</option>
+            <option value="Counter 7">🖥️ Counter 7</option>
+            <option value="Counter 8">🖥️ Counter 8</option>
+            <option value="Monitor">📺 Monitor (Layar Besar)</option>
         </select>
-        <input type="password" id="login-pass" placeholder="Password = Nama ID (cth: Counter 2)" style="width: 95%;">
-        <button onclick="loginProses()" style="width: 100%;">Masuk</button>
-        <p id="login-error" style="color:red; display:none;">Password salah!</p>
+        
+        <button class="btn-login" onclick="loginProses()">🔑 Masuk</button>
+        <p style="color:red; display:none; margin-top:10px;" id="login-error">⚠️ Gagal login! Coba refresh halaman.</p>
     </div>
 
-    <div id="valey-view" class="container" style="max-width: 600px;">
-        <h2>Petugas Valey</h2>
+    <!-- ================ VIEW VALEY ================ -->
+    <div id="valey-view" class="container" style="max-width: 100%; display: none;">
+        <h2>👤 Petugas Valey</h2>
         
+        <!-- ====== INPUT ANTRIAN ====== -->
+        <h3>➕ Input Antrian</h3>
         <div class="valey-input-grid">
             <div>
                 <label for="nopol-input">1. Nomor Polisi:</label>
@@ -104,19 +416,86 @@
                 <label for="nomor-input">2. Nomor Antrian:</label>
                 <input type="number" id="nomor-input" placeholder="Contoh: 1" min="1">
             </div>
+            <div>
+                <label for="sa-input">3. SA (Opsional):</label>
+                <input type="text" id="sa-input" placeholder="Nama SA (Opsional)">
+            </div>
         </div>
 
-        <p style="margin: 15px 0 5px 0; font-weight: bold;">3. Pilih Kategori Antrian:</p>
-        <div style="display: flex; gap: 4%; justify-content: center;">
-            <button class="btn-booking" onclick="tambahAntrianValey('Booking')">+ Antrian Booking</button>
-            <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking')">+ Antrian Non Booking</button>
+        <p style="margin: 15px 0 5px 0; font-weight: bold;">4. Pilih Kategori Antrian:</p>
+        <div style="display: flex; gap: 4%; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-booking" onclick="tambahAntrianValey('Booking', null)">+ Antrian Booking</button>
+            <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking', null)">+ Antrian Non Booking</button>
         </div>
-        
+
+        <!-- ====== DAFTAR TUNGGU ====== -->
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
+
+        <!-- ====== DAFTAR BOOKING (TABLE) ====== -->
+        <div class="booking-section">
+            <div class="booking-wrapper">
+                <div class="booking-header">
+                    <h3>📋 Daftar Booking</h3>
+                    <div class="btn-group">
+                        <button class="btn-upload-booking" onclick="bukaModalUpload()">📤 Upload Manual</button>
+                        <button class="btn-upload-excel" onclick="document.getElementById('file-excel').click()">📊 Upload Excel</button>
+                        <button class="btn-download-template" onclick="downloadTemplate()">📥 Download Template</button>
+                        <input type="file" id="file-excel" accept=".xlsx,.xls" style="display:none" onchange="uploadExcelBooking(event)">
+                    </div>
+                </div>
+                
+                <!-- SEARCH & FILTER -->
+                <div class="search-box">
+                    <input type="text" id="search-booking" placeholder="🔍 Cari Nopol, Nama, atau No Telpon..." onkeyup="filterBooking()">
+                    <input type="date" id="filter-tanggal" onchange="filterBooking()">
+                    <button class="btn-filter" onclick="filterBooking()">🔍 Filter</button>
+                    <button onclick="resetFilter()" style="background:#6c757d;">Reset</button>
+                </div>
+                
+                <div id="booking-list" style="min-height: 60px;">
+                    <div class="empty-booking">⏳ Memuat daftar booking...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== HISTORY ====== -->
+        <div class="history-section">
+            <h3>📊 History & Panggilan Unit Selesai</h3>
+            <p style="font-size: 13px; color: #555;">(Klik nomor polisi di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
+            
+            <div class="table-responsive">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">COUNTER 2</th>
+                            <th colspan="2">COUNTER 3</th>
+                            <th colspan="2">COUNTER 4</th>
+                            <th colspan="2">COUNTER 5</th>
+                            <th colspan="2">COUNTER 6</th>
+                            <th colspan="2">COUNTER 7</th>
+                            <th colspan="2">COUNTER 8</th>
+                        </tr>
+                        <tr class="sub-header">
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                        <tr><td colspan="14">Memuat history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <div id="monitor-view" class="container">
-        <h2>Layar Monitor Utama</h2>
+    <!-- ================ VIEW MONITOR ================ -->
+    <div id="monitor-view" class="container" style="display: none;">
+        <h2>📺 Layar Monitor Utama</h2>
         <button id="btn-enable-audio" onclick="aktifkanSuaraMonitor()">🔊 Klik di Sini Aktifkan Suara Monitor</button>
         <div class="calling-counter">PANGGILAN SAAT INI</div>
         <div class="big-number" id="display-number">--</div>
@@ -124,10 +503,14 @@
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
     </div>
 
-    <div id="counter-view" class="container" style="max-width: 600px;">
-        <h2 id="counter-name-display">Counter</h2>
-        <hr>
-        <h3>Tarik Antrian dari Daftar Tunggu</h3>
+    <!-- ================ VIEW COUNTER ================ -->
+    <div id="counter-view" class="container" style="max-width: 100%; display: none;">
+        <div class="counter-header">
+            <h2 id="counter-name-display">Counter</h2>
+            <button class="btn-mute" id="btn-mute-counter" onclick="toggleMute()">🔊 Suara ON</button>
+        </div>
+        
+        <h3>📞 Tarik Antrian dari Daftar Tunggu</h3>
         <p style="font-size: 13px; color: #555; margin-bottom: 10px;">(Atau klik langsung antrian pada daftar di bawah)</p>
         <button class="btn-booking" onclick="panggilAntrian('Booking')">Panggil Booking Teratas</button>
         <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')">Panggil Non Booking Teratas</button>
@@ -142,44 +525,119 @@
         </div>
 
         <button class="btn-recall" onclick="panggilUlang()">Panggil Ulang Nomor Ini</button>
-        <div class="waiting-list-container">Memuat daftar tunggu...</div>
-    </div>
-
-    <div id="history-view" class="container">
-        <h3>History & Panggilan Unit Selesai</h3>
-        <p style="font-size: 13px; color: #555;">(Klik nomor di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
         
-        <div class="table-responsive">
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th colspan="2">COUNTER 2</th>
-                        <th colspan="2">COUNTER 3</th>
-                        <th colspan="2">COUNTER 4</th>
-                        <th colspan="2">COUNTER 5</th>
-                        <th colspan="2">COUNTER 6</th>
-                        <th colspan="2">COUNTER 7</th>
-                        <th colspan="2">COUNTER 8</th>
-                    </tr>
-                    <tr class="sub-header">
-                        <th>BOOKING</th> <th>NON BOOKING</th>
-                        <th>BOOKING</th> <th>NON BOOKING</th>
-                        <th>BOOKING</th> <th>NON BOOKING</th>
-                        <th>BOOKING</th> <th>NON BOOKING</th>
-                        <th>BOOKING</th> <th>NON BOOKING</th>
-                        <th>BOOKING</th> <th>NON BOOKING</th>
-                        <th>BOOKING</th> <th>NON BOOKING</th>
-                    </tr>
-                </thead>
-                <tbody id="history-table-body">
-                    <tr><td colspan="14">Memuat history...</td></tr>
-                </tbody>
-            </table>
+        <!-- ====== DAFTAR TUNGGU ====== -->
+        <div class="waiting-list-container">Memuat daftar tunggu...</div>
+
+        <!-- ====== DAFTAR BOOKING (TABLE) ====== -->
+        <div class="booking-section">
+            <div class="booking-wrapper">
+                <div class="booking-header">
+                    <h3>📋 Booking</h3>
+                </div>
+                
+                <!-- SEARCH & FILTER -->
+                <div class="search-box">
+                    <input type="text" id="search-booking-counter" placeholder="🔍 Cari Nopol, Nama, atau No Telpon..." onkeyup="filterBookingCounter()">
+                    <input type="date" id="filter-tanggal-counter" onchange="filterBookingCounter()">
+                    <button class="btn-filter" onclick="filterBookingCounter()">🔍 Filter</button>
+                    <button onclick="resetFilterCounter()" style="background:#6c757d;">Reset</button>
+                </div>
+                
+                <div id="booking-list-counter" style="min-height: 60px;">
+                    <div class="empty-booking">⏳ Memuat daftar booking...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== HISTORY COUNTER ====== -->
+        <div class="history-section">
+            <h3>📊 History & Panggilan Unit Selesai</h3>
+            <p style="font-size: 13px; color: #555;">(Klik nomor polisi di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
+            
+            <div class="table-responsive">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">COUNTER 2</th>
+                            <th colspan="2">COUNTER 3</th>
+                            <th colspan="2">COUNTER 4</th>
+                            <th colspan="2">COUNTER 5</th>
+                            <th colspan="2">COUNTER 6</th>
+                            <th colspan="2">COUNTER 7</th>
+                            <th colspan="2">COUNTER 8</th>
+                        </tr>
+                        <tr class="sub-header">
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                            <th>BOOKING</th> <th>NON BOOKING</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body-counter">
+                        <tr><td colspan="14">Memuat history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <div style="text-align: center; margin-bottom: 30px;">
-        <button id="btn-logout" onclick="logoutAkun()">Keluar Akun</button>
+        <button id="btn-logout" onclick="logoutAkun()" style="display: none; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">Keluar Akun</button>
+    </div>
+
+    <!-- ================ MODAL UPLOAD BOOKING (DIPERBESAR) ================ -->
+    <div id="modal-upload" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="tutupModalUpload()">&times;</span>
+            <h2>📤 Upload Daftar Booking</h2>
+            <p style="font-size: 14px; color: #555;">Tambahkan daftar booking. Booking akan muncul pada tanggal yang dipilih.</p>
+            
+            <div id="booking-rows">
+                <div class="booking-row">
+                    <input type="text" placeholder="Plat Nomor (wajib)" class="booking-nopol">
+                    <input type="text" placeholder="Nama Konsumen (wajib)" class="booking-nama">
+                    <input type="text" placeholder="No Telpon" class="booking-telp">
+                    <input type="text" placeholder="Pekerjaan" class="booking-pekerjaan">
+                    <input type="time" class="booking-waktu">
+                    <input type="date" class="booking-tanggal" value="">
+                    <input type="text" placeholder="SA (Opsional)" class="booking-sa">
+                    <button class="btn-remove-row" onclick="hapusRowBooking(this)">✕</button>
+                </div>
+            </div>
+            
+            <button class="btn-add-row" onclick="tambahRowBooking()">+ Tambah Baris</button>
+            <br><br>
+            <button class="btn-upload-booking" onclick="simpanDaftarBooking()" style="width: 100%;">📤 Upload Semua Booking</button>
+        </div>
+    </div>
+
+    <!-- ================ MODAL GET IN ================ -->
+    <div id="modal-getin" class="modal modal-getin">
+        <div class="modal-content">
+            <span class="modal-close" onclick="tutupModalGetIn()">&times;</span>
+            <h2>🚪 Get In - Masuk Antrian</h2>
+            
+            <div id="getin-info" class="info-booking">
+                <!-- Akan diisi dari JS -->
+            </div>
+            
+            <div class="form-group">
+                <label for="getin-nomor">Nomor Antrian:</label>
+                <input type="number" id="getin-nomor" placeholder="Masukkan nomor antrian..." min="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="getin-sa">Ketemu SA (Opsional):</label>
+                <input type="text" id="getin-sa" placeholder="Nama SA...">
+            </div>
+            
+            <button class="btn-save-getin" onclick="saveGetIn()">✅ Masukkan ke Antrian</button>
+            <button class="btn-cancel-getin" onclick="tutupModalGetIn()">❌ Batal</button>
+        </div>
     </div>
 
     <script>
@@ -200,53 +658,53 @@
         let sessionUser = "";
         let dataPanggilanTerakhirKu = null;
         let lastPlayedTimestamp = 0;
+        let daftarBooking = [];
+        let daftarBookingFiltered = [];
+        let getInTargetKey = null;
+        let isMuted = false;
 
-        // --- SISTEM ANTREAN SUARA (KHUSUS MONITOR) ---
         let queueSuara = [];
         let sedangMemutarSuara = false;
 
-        // --- DATA LOKAL UNTUK TIMER LIVE ---
         let daftarAntrianMenunggu = [];
         let timerInterval = null;
 
-        // --- HELPER Dapatkan Tanggal Hari Ini (YYYY-MM-DD) ---
+        // --- HELPER ---
         function getTanggalHariIni() {
             let d = new Date();
             let month = '' + (d.getMonth() + 1);
             let day = '' + d.getDate();
             let year = d.getFullYear();
-
             if (month.length < 2) month = '0' + month;
             if (day.length < 2) day = '0' + day;
-
             return [year, month, day].join('-');
         }
 
-        // --- OTOMATISASI RESET HARIAN TERPUSAT ---
+        function formatTanggalIndonesia(tgl) {
+            if (!tgl) return '-';
+            let parts = tgl.split('-');
+            let bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            return `${parseInt(parts[2])} ${bulan[parseInt(parts[1])-1]} ${parts[0]}`;
+        }
+
         function cekAtauResetHariBaru() {
             let tanggalHariIni = getTanggalHariIni();
-            
             db.ref('tanggal_sistem').once('value', (snapshot) => {
                 let tanggalTersimpan = snapshot.val();
-                
-                // Jika tanggal di database belum ada atau beda dengan hari ini
                 if (!tanggalTersimpan || tanggalTersimpan !== tanggalHariIni) {
-                    // Bersihkan seluruh data antrian
-                    db.ref('antrian').remove().then(() => {
-                        // Update tanggal sistem ke tanggal baru
-                        db.ref('tanggal_sistem').set(tanggalHariIni);
-                    });
+                    db.ref('antrian/menunggu').remove();
+                    db.ref('antrian/panggilan_aktif').remove();
+                    db.ref('antrian/history').remove();
+                    db.ref('tanggal_sistem').set(tanggalHariIni);
                 }
             });
         }
 
-        // --- HELPER FORMAT WAKTU ---
         function formatWaktuLalu(ms) {
             if (!ms || ms < 0) return "00:00";
             let totalDetik = Math.floor(ms / 1000);
             let menit = Math.floor(totalDetik / 60);
             let detik = totalDetik % 60;
-            
             let mStr = menit < 10 ? "0" + menit : menit;
             let dStr = detik < 10 ? "0" + detik : detik;
             return `${mStr}:${dStr}`;
@@ -257,70 +715,64 @@
             let totalDetik = Math.floor(ms / 1000);
             let menit = Math.floor(totalDetik / 60);
             let detik = totalDetik % 60;
-            if (menit > 0) {
-                return `${menit} mnt ${detik} dtk`;
-            }
+            if (menit > 0) return `${menit} mnt ${detik} dtk`;
             return `${detik} dtk`;
         }
 
-        // --- 1. LOGIKA SESI & LOGIN ---
-        window.onload = function() {
-            cekAtauResetHariBaru(); // Cek reset tanggal saat pertama aplikasi dimuat
-            
-            // Pantau juga tanggal secara otomatis secara berkala (tiap 1 menit)
-            setInterval(cekAtauResetHariBaru, 60000);
+        // ============================================================
+        // ================ LOGIN ======================================
+        // ============================================================
 
+        window.onload = function() {
+            cekAtauResetHariBaru();
+            setInterval(cekAtauResetHariBaru, 60000);
             cekLoginSebelumnya();
             mulaiTimerRealtime();
+            mulaiMendengarkanBooking();
         };
 
         function cekLoginSebelumnya() {
             let savedUser = localStorage.getItem("sesi_user_antriandaya");
             let savedDate = localStorage.getItem("tanggal_login_antriandaya");
             let hariIni = getTanggalHariIni();
-
             if (savedUser && savedDate === hariIni) {
                 document.getElementById('login-id').value = savedUser;
-                document.getElementById('login-pass').value = savedUser;
-                loginProses(true);
+                loginProses();
             }
         }
 
-        function loginProses(isAuto = false) {
+        function loginProses() {
             const id = document.getElementById('login-id').value;
-            const pass = document.getElementById('login-pass').value;
+            sessionUser = id;
+            
+            localStorage.setItem("sesi_user_antriandaya", id);
+            localStorage.setItem("tanggal_login_antriandaya", getTanggalHariIni());
 
-            if (id === pass) {
-                sessionUser = id;
-                
-                localStorage.setItem("sesi_user_antriandaya", id);
-                localStorage.setItem("tanggal_login_antriandaya", getTanggalHariIni());
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('btn-logout').style.display = 'inline-block';
 
-                document.getElementById('login-section').style.display = 'none';
-                document.getElementById('btn-logout').style.display = 'inline-block';
-
-                if (id === 'Monitor') {
-                    document.getElementById('monitor-view').style.display = 'block';
-                } else if (id === 'Valey') {
-                    document.getElementById('valey-view').style.display = 'block';
-                    document.getElementById('history-view').style.display = 'block';
-                } else {
-                    document.getElementById('counter-view').style.display = 'block';
-                    document.getElementById('history-view').style.display = 'block';
-                    document.getElementById('counter-name-display').innerText = id;
-                }
-                
-                mulaiMendengarkanPanggilanAktif();
-                mulaiMendengarkanDaftarTunggu();
-                mulaiMendengarkanHistory();
+            if (id === 'Monitor') {
+                document.getElementById('monitor-view').style.display = 'block';
+            } else if (id === 'Valey') {
+                document.getElementById('valey-view').style.display = 'block';
             } else {
-                document.getElementById('login-error').style.display = 'block';
+                document.getElementById('counter-view').style.display = 'block';
+                document.getElementById('counter-name-display').innerText = id;
+                let savedMute = localStorage.getItem('mute_counter_' + id);
+                if (savedMute === 'true') {
+                    isMuted = true;
+                    document.getElementById('btn-mute-counter').innerText = '🔇 Suara OFF';
+                    document.getElementById('btn-mute-counter').classList.add('active');
+                }
             }
+            
+            mulaiMendengarkanPanggilanAktif();
+            mulaiMendengarkanDaftarTunggu();
+            mulaiMendengarkanHistory();
         }
 
         function logoutAkun() {
-            let konfirmasi = confirm("Anda yakin ingin keluar dari akun ini?");
-            if (konfirmasi) {
+            if (confirm("Anda yakin ingin keluar?")) {
                 localStorage.removeItem("sesi_user_antriandaya");
                 localStorage.removeItem("tanggal_login_antriandaya");
                 location.reload(); 
@@ -335,49 +787,632 @@
             document.getElementById('btn-enable-audio').style.background = "#28a745";
         }
 
-        // --- 2. LOGIKA VALEY (INPUT MANUAL NOPOL & NOMOR ANTRIAN) ---
-        // --- 2. LOGIKA VALEY (INPUT MANUAL NOPOL & NOMOR ANTRIAN) ---
-function tambahAntrianValey(jenis) {
-    cekAtauResetHariBaru();
+        // ============================================================
+        // ================ MUTE COUNTER ===============================
+        // ============================================================
 
-    const nopolInput = document.getElementById('nopol-input');
-    const nomorInput = document.getElementById('nomor-input');
+        function toggleMute() {
+            isMuted = !isMuted;
+            let btn = document.getElementById('btn-mute-counter');
+            if (isMuted) {
+                btn.innerText = '🔇 Suara OFF';
+                btn.classList.add('active');
+            } else {
+                btn.innerText = '🔊 Suara ON';
+                btn.classList.remove('active');
+            }
+            localStorage.setItem('mute_counter_' + sessionUser, isMuted);
+        }
 
-    const nopolValue = nopolInput.value.trim().toUpperCase();
-    const nomorValue = nomorInput.value.trim();
+        // ============================================================
+        // ================ DOWNLOAD TEMPLATE EXCEL ====================
+        // ============================================================
 
-    if (nopolValue === "") {
-        alert("Harap ketik Nomor Polisi terlebih dahulu!");
-        nopolInput.focus();
-        return;
-    }
+        function downloadTemplate() {
+            const headers = ['Nopol', 'Nama', 'Telpon', 'Pekerjaan', 'Waktu', 'Tanggal', 'SA'];
+            const sampleData = [
+                ['B 1234 ABC', 'Budi Santoso', '08123456789', 'Service 10.000 KM', '09:00', getTanggalHariIni(), 'SA Budi'],
+                ['B 5678 DEF', 'Ani Wijaya', '08198765432', 'Ganti Oli', '10:30', getTanggalHariIni(), '']
+            ];
+            
+            const wb = XLSX.utils.book_new();
+            const wsData = [headers, ...sampleData];
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            
+            // Set kolom width
+            ws['!cols'] = [
+                { wch: 15 }, // Nopol
+                { wch: 20 }, // Nama
+                { wch: 15 }, // Telpon
+                { wch: 20 }, // Pekerjaan
+                { wch: 12 }, // Waktu
+                { wch: 14 }, // Tanggal
+                { wch: 15 }  // SA
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, 'Booking');
+            XLSX.writeFile(wb, 'Template_Upload_Booking.xlsx');
+        }
 
-    if (nomorValue === "" || isNaN(nomorValue) || parseInt(nomorValue) <= 0) {
-        alert("Harap ketik Nomor Antrian yang valid!");
-        nomorInput.focus();
-        return;
-    }
+        // ============================================================
+        // ================ FITUR BOOKING ==============================
+        // ============================================================
 
-    // Menggunakan server timestamp untuk konsistensi waktu di semua perangkat
-    const waktuInput = firebase.database.ServerValue.TIMESTAMP;
-    
-    // SIMPAN DATA KE FIREBASE
-    db.ref('antrian/menunggu').push({
-        jenis: jenis, 
-        nomor: parseInt(nomorValue), 
-        nopol: nopolValue, 
-        timestamp: waktuInput, // Waktu saat data masuk ke server
-        waktuMasuk: waktuInput
-    }).then(() => {
-        // RESET FORM INPUT JIKA BERHASIL
-        nopolInput.value = "";
-        nomorInput.value = "";
-        nopolInput.focus();
-    }).catch((err) => {
-        alert("Gagal menambahkan antrian: " + err.message);
-    });
-}
-        // --- 3. LOGIKA COUNTER (TARIK TIKET) ---
+        function mulaiMendengarkanBooking() {
+            db.ref('booking').on('value', (snapshot) => {
+                daftarBooking = [];
+                snapshot.forEach((child) => {
+                    let data = child.val();
+                    data.key = child.key;
+                    daftarBooking.push(data);
+                });
+                let hariIni = getTanggalHariIni();
+                daftarBookingFiltered = daftarBooking.filter(b => {
+                    return b.tanggal && b.tanggal <= hariIni;
+                });
+                renderDaftarBooking();
+            });
+        }
+
+        function renderDaftarBooking() {
+            let html = '';
+            
+            if (daftarBookingFiltered.length === 0) {
+                html = '<div class="empty-booking">📭 Belum ada booking yang tersedia untuk hari ini.</div>';
+            } else {
+                daftarBookingFiltered.sort((a, b) => {
+                    if (a.tanggal && b.tanggal) return a.tanggal.localeCompare(b.tanggal);
+                    return 0;
+                });
+
+                html = `
+                    <table class="booking-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30px;">No</th>
+                                <th>Nopol</th>
+                                <th>Nama</th>
+                                <th>Telpon</th>
+                                <th>Pekerjaan</th>
+                                <th>Waktu</th>
+                                <th>Tanggal</th>
+                                <th>SA</th>
+                                <th>Status</th>
+                                <th style="width:180px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                daftarBookingFiltered.forEach((b, index) => {
+                    let statusClass = 'status-menunggu';
+                    let statusText = 'Menunggu';
+                    let disabled = false;
+                    if (b.status === 'dipanggil') { 
+                        statusClass = 'status-dipanggil'; 
+                        statusText = 'Dipanggil'; 
+                        disabled = true;
+                    }
+                    if (b.status === 'selesai') { 
+                        statusClass = 'status-selesai'; 
+                        statusText = 'Selesai';
+                        disabled = true;
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${index + 1}</strong></td>
+                            <td><strong>${b.nopol || '-'}</strong></td>
+                            <td>${b.nama || '-'}</td>
+                            <td>${b.telp || '-'}</td>
+                            <td>${b.pekerjaan || '-'}</td>
+                            <td>${b.waktu || '-'}</td>
+                            <td>${formatTanggalIndonesia(b.tanggal)}</td>
+                            <td>${b.sa || '-'}</td>
+                            <td><span class="${statusClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn-get-in" ${disabled ? 'disabled' : ''} onclick="bukaModalGetIn('${b.key}')" title="Masukkan ke antrian">🚪 Get In</button>
+                                ${b.status === 'dipanggil' ? `<button class="btn-restore-booking" onclick="restoreBooking('${b.key}')" title="Kembalikan ke daftar booking">↩️</button>` : ''}
+                                <button class="btn-delete-booking" onclick="deleteBooking('${b.key}')" title="Hapus booking">✕</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            let containerValey = document.getElementById('booking-list');
+            if (containerValey) {
+                containerValey.innerHTML = html;
+            }
+            
+            let containerCounter = document.getElementById('booking-list-counter');
+            if (containerCounter) {
+                containerCounter.innerHTML = html;
+            }
+        }
+
+        // ============================================================
+        // ================ DELETE BOOKING =============================
+        // ============================================================
+
+        function deleteBooking(key) {
+            if (!confirm('⚠️ Yakin ingin menghapus booking ini?\n\nData akan dihapus permanen!')) {
+                return;
+            }
+            
+            db.ref('booking/' + key).remove().then(() => {
+                alert('✅ Booking berhasil dihapus!');
+            }).catch((err) => {
+                alert('❌ Gagal menghapus: ' + err.message);
+            });
+        }
+
+        // ============================================================
+        // ================ RESTORE BOOKING ============================
+        // ============================================================
+
+        function restoreBooking(key) {
+            if (!confirm('↩️ Yakin ingin mengembalikan booking ini ke daftar booking?\n\nBooking akan dikembalikan ke status "Menunggu".')) {
+                return;
+            }
+            
+            db.ref('booking/' + key).update({
+                status: 'menunggu'
+            }).then(() => {
+                alert('✅ Booking berhasil dikembalikan!');
+            }).catch((err) => {
+                alert('❌ Gagal mengembalikan: ' + err.message);
+            });
+        }
+
+        // ============================================================
+        // ================ DELETE ANTRIAN =============================
+        // ============================================================
+
+        function deleteAntrian(key) {
+            if (!confirm('⚠️ Yakin ingin menghapus antrian ini?\n\nData akan dihapus permanen dari daftar tunggu!')) {
+                return;
+            }
+            
+            db.ref('antrian/menunggu/' + key).remove().then(() => {
+                alert('✅ Antrian berhasil dihapus!');
+            }).catch((err) => {
+                alert('❌ Gagal menghapus: ' + err.message);
+            });
+        }
+
+        // ============================================================
+        // ================ FILTER TANGGAL =============================
+        // ============================================================
+
+        function filterBooking() {
+            let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
+            let tanggal = document.getElementById('filter-tanggal').value;
+            filterBookingUniversal(keyword, tanggal, 'booking-list');
+        }
+
+        function filterBookingCounter() {
+            let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
+            let tanggal = document.getElementById('filter-tanggal-counter').value;
+            filterBookingUniversal(keyword, tanggal, 'booking-list-counter');
+        }
+
+        function filterBookingUniversal(keyword, tanggal, containerId) {
+            let container = document.getElementById(containerId);
+            if (!container) return;
+            
+            let rows = container.querySelectorAll('tbody tr');
+            if (!rows.length) return;
+            
+            rows.forEach(row => {
+                let text = row.textContent.toLowerCase();
+                let show = true;
+                
+                if (keyword !== '' && !text.includes(keyword)) {
+                    show = false;
+                }
+                
+                if (tanggal) {
+                    let tglCell = row.querySelector('td:nth-child(7)');
+                    if (tglCell) {
+                        let tglText = tglCell.textContent.trim();
+                        let tglParts = tglText.split(' ');
+                        if (tglParts.length === 3) {
+                            let bulanMap = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04','Mei':'05','Jun':'06','Jul':'07','Agu':'08','Sep':'09','Okt':'10','Nov':'11','Des':'12'};
+                            let tglFormatted = tglParts[2] + '-' + (bulanMap[tglParts[1]] || '01') + '-' + (tglParts[0].padStart(2,'0'));
+                            if (tglFormatted !== tanggal) {
+                                show = false;
+                            }
+                        }
+                    }
+                }
+                
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        function resetFilter() {
+            document.getElementById('search-booking').value = '';
+            document.getElementById('filter-tanggal').value = '';
+            filterBooking();
+        }
+
+        function resetFilterCounter() {
+            document.getElementById('search-booking-counter').value = '';
+            document.getElementById('filter-tanggal-counter').value = '';
+            filterBookingCounter();
+        }
+
+        // ============================================================
+        // ================ MODAL GET IN ===============================
+        // ============================================================
+
+        function bukaModalGetIn(keyBooking) {
+            if (sessionUser !== 'Valey') {
+                alert('⚠️ Hanya Valey yang bisa melakukan Get In!');
+                return;
+            }
+
+            let bookingData = daftarBookingFiltered.find(b => b.key === keyBooking);
+            if (!bookingData) {
+                alert("Data booking tidak ditemukan!");
+                return;
+            }
+
+            if (bookingData.status === 'dipanggil' || bookingData.status === 'selesai') {
+                alert(`Booking ini sudah ${bookingData.status}!`);
+                return;
+            }
+
+            let sudahDiAntrian = daftarAntrianMenunggu.some(a => 
+                a.nopol === bookingData.nopol && a.jenis === 'Booking'
+            );
+            
+            if (sudahDiAntrian) {
+                alert(`Booking dengan nopol ${bookingData.nopol} sudah ada di antrian!`);
+                return;
+            }
+
+            getInTargetKey = keyBooking;
+
+            let infoHtml = `
+                <div><strong>🚗 Nopol:</strong> ${bookingData.nopol}</div>
+                <div><strong>👤 Nama:</strong> ${bookingData.nama}</div>
+                <div><strong>📞 Telpon:</strong> ${bookingData.telp || '-'}</div>
+                <div><strong>🔧 Pekerjaan:</strong> ${bookingData.pekerjaan || '-'}</div>
+                <div><strong>⏰ Waktu:</strong> ${bookingData.waktu || '-'}</div>
+                <div><strong>📅 Tanggal:</strong> ${formatTanggalIndonesia(bookingData.tanggal)}</div>
+            `;
+            document.getElementById('getin-info').innerHTML = infoHtml;
+
+            let nomorTerakhir = 0;
+            daftarAntrianMenunggu.forEach(a => {
+                if (a.nomor > nomorTerakhir) nomorTerakhir = a.nomor;
+            });
+            document.getElementById('getin-nomor').value = nomorTerakhir + 1;
+            document.getElementById('getin-sa').value = bookingData.sa || '';
+
+            document.getElementById('modal-getin').style.display = 'block';
+        }
+
+        function tutupModalGetIn() {
+            document.getElementById('modal-getin').style.display = 'none';
+            getInTargetKey = null;
+        }
+
+        function saveGetIn() {
+            if (!getInTargetKey) {
+                alert('Error: Tidak ada booking yang dipilih!');
+                return;
+            }
+
+            let bookingData = daftarBookingFiltered.find(b => b.key === getInTargetKey);
+            if (!bookingData) {
+                alert("Data booking tidak ditemukan!");
+                return;
+            }
+
+            let nomorAntrian = parseInt(document.getElementById('getin-nomor').value);
+            let saValue = document.getElementById('getin-sa').value.trim();
+
+            if (!nomorAntrian || nomorAntrian <= 0) {
+                alert('Harap masukkan Nomor Antrian yang valid!');
+                document.getElementById('getin-nomor').focus();
+                return;
+            }
+
+            let nomorSudahAda = daftarAntrianMenunggu.some(a => a.nomor === nomorAntrian);
+            if (nomorSudahAda) {
+                alert(`Nomor antrian ${nomorAntrian} sudah digunakan! Silakan gunakan nomor lain.`);
+                document.getElementById('getin-nomor').focus();
+                return;
+            }
+
+            let konfirmasi = confirm(
+                `🚪 Yakin memasukkan ke antrian?\n\n` +
+                `🚗 ${bookingData.nopol}\n` +
+                `👤 ${bookingData.nama}\n` +
+                `📌 Nomor Antrian: ${nomorAntrian}\n` +
+                `${saValue ? `👤 SA: ${saValue}` : ''}`
+            );
+            if (!konfirmasi) return;
+
+            const waktuInput = firebase.database.ServerValue.TIMESTAMP;
+            
+            let dataAntrian = {
+                jenis: 'Booking',
+                nomor: nomorAntrian,
+                nopol: bookingData.nopol,
+                nama: bookingData.nama,
+                telp: bookingData.telp || '',
+                pekerjaan: bookingData.pekerjaan || '',
+                sa: saValue || bookingData.sa || '',
+                timestamp: waktuInput,
+                waktuMasuk: waktuInput,
+                bookingKey: getInTargetKey,
+                fromGetIn: true
+            };
+
+            db.ref('antrian/menunggu').push(dataAntrian).then(() => {
+                db.ref('booking/' + getInTargetKey).update({
+                    status: 'dipanggil'
+                });
+                tutupModalGetIn();
+                alert(`✅ Booking ${bookingData.nopol} berhasil masuk antrian dengan nomor ${nomorAntrian}!`);
+            }).catch((err) => {
+                alert("Gagal menambahkan antrian: " + err.message);
+            });
+        }
+
+        // --- UPLOAD EXCEL ---
+        function uploadExcelBooking(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                    if (jsonData.length === 0) {
+                        alert('File Excel kosong!');
+                        return;
+                    }
+
+                    let dataBooking = [];
+                    let isValid = true;
+
+                    jsonData.forEach((row, index) => {
+                        const nopol = row['Nopol'] || row['nopol'] || row['PLAT'] || row['plat'] || '';
+                        const nama = row['Nama'] || row['nama'] || row['NAMA'] || '';
+                        const telp = row['Telpon'] || row['telpon'] || row['TELPON'] || row['No Telpon'] || row['no telpon'] || '';
+                        const pekerjaan = row['Pekerjaan'] || row['pekerjaan'] || row['PEKERJAAN'] || '';
+                        const waktu = row['Waktu'] || row['waktu'] || row['WAKTU'] || '08:00';
+                        const tanggal = row['Tanggal'] || row['tanggal'] || row['TANGGAL'] || getTanggalHariIni();
+                        const sa = row['SA'] || row['sa'] || '';
+
+                        if (!nopol || !nama) {
+                            isValid = false;
+                            alert(`Baris ${index + 1}: Nopol dan Nama harus diisi!`);
+                            return;
+                        }
+
+                        dataBooking.push({
+                            nopol: nopol.toString().trim().toUpperCase(),
+                            nama: nama.toString().trim(),
+                            telp: telp.toString().trim() || '',
+                            pekerjaan: pekerjaan.toString().trim() || '-',
+                            waktu: waktu.toString().trim() || '08:00',
+                            tanggal: tanggal.toString().trim() || getTanggalHariIni(),
+                            sa: sa.toString().trim() || '',
+                            status: 'menunggu'
+                        });
+                    });
+
+                    if (!isValid) return;
+
+                    if (dataBooking.length === 0) {
+                        alert('Tidak ada data yang valid!');
+                        return;
+                    }
+
+                    let konfirmasi = confirm(`📊 Upload ${dataBooking.length} data booking dari Excel?`);
+                    if (!konfirmasi) return;
+
+                    let updates = {};
+                    
+                    dataBooking.forEach((b) => {
+                        let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + Date.now();
+                        updates['booking/' + key] = b;
+                    });
+
+                    db.ref().update(updates).then(() => {
+                        alert(`✅ Berhasil upload ${dataBooking.length} data booking dari Excel!`);
+                    }).catch((err) => {
+                        alert("Gagal upload: " + err.message);
+                    });
+
+                } catch (err) {
+                    alert('Error membaca file Excel: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+
+        // --- MODAL UPLOAD MANUAL ---
+        function bukaModalUpload() {
+            document.getElementById('modal-upload').style.display = 'block';
+            let today = getTanggalHariIni();
+            document.querySelectorAll('.booking-tanggal').forEach(el => {
+                if (!el.value) el.value = today;
+            });
+        }
+
+        function tutupModalUpload() {
+            document.getElementById('modal-upload').style.display = 'none';
+        }
+
+        function tambahRowBooking() {
+            let container = document.getElementById('booking-rows');
+            let row = document.createElement('div');
+            row.className = 'booking-row';
+            let today = getTanggalHariIni();
+            row.innerHTML = `
+                <input type="text" placeholder="Plat Nomor (wajib)" class="booking-nopol">
+                <input type="text" placeholder="Nama Konsumen (wajib)" class="booking-nama">
+                <input type="text" placeholder="No Telpon" class="booking-telp">
+                <input type="text" placeholder="Pekerjaan" class="booking-pekerjaan">
+                <input type="time" class="booking-waktu">
+                <input type="date" class="booking-tanggal" value="${today}">
+                <input type="text" placeholder="SA (Opsional)" class="booking-sa">
+                <button class="btn-remove-row" onclick="hapusRowBooking(this)">✕</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function hapusRowBooking(btn) {
+            let row = btn.parentElement;
+            let container = document.getElementById('booking-rows');
+            if (container.children.length > 1) {
+                row.remove();
+            } else {
+                alert("Minimal harus ada 1 baris!");
+            }
+        }
+
+        function simpanDaftarBooking() {
+            let rows = document.querySelectorAll('.booking-row');
+            let dataBooking = [];
+            let isValid = true;
+
+            rows.forEach(row => {
+                let nopol = row.querySelector('.booking-nopol').value.trim().toUpperCase();
+                let nama = row.querySelector('.booking-nama').value.trim();
+                let telp = row.querySelector('.booking-telp').value.trim();
+                let pekerjaan = row.querySelector('.booking-pekerjaan').value.trim();
+                let waktu = row.querySelector('.booking-waktu').value;
+                let tanggal = row.querySelector('.booking-tanggal').value;
+                let sa = row.querySelector('.booking-sa').value.trim();
+
+                if (nopol === '' || nama === '') {
+                    isValid = false;
+                    alert('Plat Nomor dan Nama Konsumen harus diisi!');
+                    return;
+                }
+
+                if (!tanggal) {
+                    tanggal = getTanggalHariIni();
+                }
+
+                dataBooking.push({
+                    nopol: nopol,
+                    nama: nama,
+                    telp: telp || '',
+                    pekerjaan: pekerjaan || '-',
+                    waktu: waktu || '08:00',
+                    tanggal: tanggal,
+                    sa: sa || '',
+                    status: 'menunggu'
+                });
+            });
+
+            if (!isValid) return;
+
+            if (dataBooking.length === 0) {
+                alert('Tidak ada data booking yang valid!');
+                return;
+            }
+
+            let konfirmasi = confirm(`Upload ${dataBooking.length} data booking?`);
+            if (!konfirmasi) return;
+
+            let updates = {};
+            
+            dataBooking.forEach((b) => {
+                let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + Date.now();
+                updates['booking/' + key] = b;
+            });
+
+            db.ref().update(updates).then(() => {
+                alert(`✅ Berhasil upload ${dataBooking.length} data booking!`);
+                tutupModalUpload();
+            }).catch((err) => {
+                alert("Gagal upload: " + err.message);
+            });
+        }
+
+        // ============================================================
+        // ================ LOGIKA VALEY ===============================
+        // ============================================================
+
+        function tambahAntrianValey(jenis, bookingKey = null) {
+            cekAtauResetHariBaru();
+
+            const nopolInput = document.getElementById('nopol-input');
+            const nomorInput = document.getElementById('nomor-input');
+            const saInput = document.getElementById('sa-input');
+
+            const nopolValue = nopolInput.value.trim().toUpperCase();
+            const nomorValue = nomorInput.value.trim();
+            const saValue = saInput.value.trim();
+
+            if (nopolValue === "") {
+                alert("Harap ketik Nomor Polisi terlebih dahulu!");
+                nopolInput.focus();
+                return;
+            }
+
+            if (nomorValue === "" || isNaN(nomorValue) || parseInt(nomorValue) <= 0) {
+                alert("Harap ketik Nomor Antrian yang valid!");
+                nomorInput.focus();
+                return;
+            }
+
+            const waktuInput = firebase.database.ServerValue.TIMESTAMP;
+            
+            let dataAntrian = {
+                jenis: jenis,
+                nomor: parseInt(nomorValue),
+                nopol: nopolValue,
+                sa: saValue,
+                timestamp: waktuInput,
+                waktuMasuk: waktuInput
+            };
+
+            if (bookingKey) {
+                let bookingData = daftarBookingFiltered.find(b => b.key === bookingKey);
+                if (bookingData) {
+                    dataAntrian.nama = bookingData.nama;
+                    dataAntrian.telp = bookingData.telp || '';
+                    dataAntrian.pekerjaan = bookingData.pekerjaan;
+                    dataAntrian.sa = bookingData.sa || saValue;
+                    dataAntrian.bookingKey = bookingKey;
+                }
+            }
+
+            db.ref('antrian/menunggu').push(dataAntrian).then(() => {
+                nopolInput.value = "";
+                nomorInput.value = "";
+                saInput.value = "";
+                nopolInput.focus();
+            }).catch((err) => {
+                alert("Gagal menambahkan antrian: " + err.message);
+            });
+        }
+
+        // ============================================================
+        // ================ LOGIKA COUNTER =============================
+        // ============================================================
+
         function panggilAntrian(jenis) {
             cekAtauResetHariBaru();
 
@@ -398,9 +1433,12 @@ function tambahAntrianValey(jenis) {
                         dataPanggilanTerakhirKu = {
                             jenis: dataAntrian.jenis,
                             nomor: dataAntrian.nomor,
-                            nopol: dataAntrian.nopol || "-", 
+                            nopol: dataAntrian.nopol || "-",
+                            nama: dataAntrian.nama || "-",
+                            telp: dataAntrian.telp || "",
+                            sa: dataAntrian.sa || "",
                             counter: sessionUser,
-                            status: 'baru', 
+                            status: 'baru',
                             timestamp: waktuPanggil,
                             waktuMasuk: waktuMasukAwal,
                             waktuTunggu: durasiTunggu
@@ -412,9 +1450,18 @@ function tambahAntrianValey(jenis) {
                             jenis: dataAntrian.jenis,
                             nomor: dataAntrian.nomor,
                             nopol: dataAntrian.nopol || "-",
+                            nama: dataAntrian.nama || "-",
+                            telp: dataAntrian.telp || "",
+                            sa: dataAntrian.sa || "",
                             timestamp: waktuPanggil,
                             waktuTunggu: durasiTunggu
                         });
+
+                        if (dataAntrian.bookingKey) {
+                            db.ref('booking/' + dataAntrian.bookingKey).update({
+                                status: 'dipanggil'
+                            });
+                        }
                     }
                 });
 
@@ -424,10 +1471,14 @@ function tambahAntrianValey(jenis) {
             });
         }
 
-        // PEMANGGILAN LANGSUNG SAAT BADGE DAFTAR TUNGGU DIKLIK
+        // ============================================================
+        // ================ KLIK ANTRIAN (POPUP KONFIRMASI) ===========
+        // ============================================================
+
         function panggilAntrianLangsung(keyAntrian) {
             if (!sessionUser.includes('Counter')) {
-                return; // Hanya role counter yang dapat memanggil antrean
+                alert('⚠️ Hanya Counter yang bisa memanggil antrian!');
+                return;
             }
 
             cekAtauResetHariBaru();
@@ -435,17 +1486,37 @@ function tambahAntrianValey(jenis) {
             db.ref('antrian/menunggu/' + keyAntrian).once('value', (snapshot) => {
                 let dataAntrian = snapshot.val();
                 if (dataAntrian) {
+                    let pesan = `⚠️ Yakin mau memanggil antrian ini?\n\n`;
+                    pesan += `📌 ${dataAntrian.jenis} - ${dataAntrian.nomor}\n`;
+                    pesan += `🚗 ${dataAntrian.nopol || '-'}\n`;
+                    if (dataAntrian.nama) pesan += `👤 ${dataAntrian.nama}\n`;
+                    if (dataAntrian.telp) pesan += `📞 ${dataAntrian.telp}\n`;
+                    if (dataAntrian.sa) pesan += `👤 SA: ${dataAntrian.sa}\n`;
+                    
+                    if (!confirm(pesan)) {
+                        return;
+                    }
+
                     let waktuPanggil = Date.now();
                     let waktuMasukAwal = dataAntrian.waktuMasuk || dataAntrian.timestamp;
                     let durasiTunggu = waktuPanggil - waktuMasukAwal;
 
-                    // Hapus antrian dari daftar tunggu
+                    if (dataAntrian.sa && dataAntrian.sa.trim() !== '') {
+                        if (sessionUser !== dataAntrian.sa) {
+                            alert(`Maaf, antrian ini hanya bisa dipanggil oleh SA: ${dataAntrian.sa}`);
+                            return;
+                        }
+                    }
+
                     snapshot.ref.remove();
 
                     dataPanggilanTerakhirKu = {
                         jenis: dataAntrian.jenis,
                         nomor: dataAntrian.nomor,
                         nopol: dataAntrian.nopol || "-",
+                        nama: dataAntrian.nama || "-",
+                        telp: dataAntrian.telp || "",
+                        sa: dataAntrian.sa || "",
                         counter: sessionUser,
                         status: 'baru',
                         timestamp: waktuPanggil,
@@ -459,14 +1530,50 @@ function tambahAntrianValey(jenis) {
                         jenis: dataAntrian.jenis,
                         nomor: dataAntrian.nomor,
                         nopol: dataAntrian.nopol || "-",
+                        nama: dataAntrian.nama || "-",
+                        telp: dataAntrian.telp || "",
+                        sa: dataAntrian.sa || "",
                         timestamp: waktuPanggil,
                         waktuTunggu: durasiTunggu
                     });
+
+                    if (dataAntrian.bookingKey) {
+                        db.ref('booking/' + dataAntrian.bookingKey).update({
+                            status: 'dipanggil'
+                        });
+                    }
                 } else {
                     alert("Antrian ini sudah dipanggil oleh counter lain.");
                 }
             });
         }
+
+        // ============================================================
+        // ================ PANGGIL UNIT SELESAI (PAKAI NOPOL) ========
+        // ============================================================
+
+        function panggilUnitSelesai(counterPemilik, jenis, nomor, nopol) {
+            if (sessionUser !== counterPemilik) {
+                alert(`MAAF! Anda login sebagai ${sessionUser}. Hanya ${counterPemilik} yang bisa memanggil unit ini.`);
+                return;
+            }
+
+            let teksPanggilan = `Unit Selesai. ${jenis} ${nopol} di ${counterPemilik}`;
+
+            db.ref('antrian/panggilan_aktif').set({
+                jenis: jenis,
+                nomor: nomor,
+                nopol: nopol || "-",
+                counter: sessionUser,
+                status: 'selesai',
+                timestamp: Date.now(),
+                teksPanggilan: teksPanggilan
+            });
+        }
+
+        // ============================================================
+        // ================ FUNGSI LAINNYA =============================
+        // ============================================================
 
         function salinNopol() {
             const teksNopol = document.getElementById('last-nopol').innerText;
@@ -489,23 +1596,10 @@ function tambahAntrianValey(jenis) {
             }
         }
 
-        function panggilUnitSelesai(counterPemilik, jenis, nomor, nopol) {
-            if (sessionUser !== counterPemilik) {
-                alert(`MAAF! Anda login sebagai ${sessionUser}. Hanya ${counterPemilik} yang bisa memanggil unit ini.`);
-                return;
-            }
+        // ============================================================
+        // ================ LISTENER FIREBASE ==========================
+        // ============================================================
 
-            db.ref('antrian/panggilan_aktif').set({
-                jenis: jenis,
-                nomor: nomor,
-                nopol: nopol || "-",
-                counter: sessionUser,
-                status: 'selesai',
-                timestamp: Date.now()
-            });
-        }
-
-        // --- 4. LISTENER FIREBASE & REALTIME WAIT TIMER ---
         function mulaiMendengarkanDaftarTunggu() {
             db.ref('antrian/menunggu').orderByChild('timestamp').on('value', (snapshot) => {
                 daftarAntrianMenunggu = [];
@@ -525,18 +1619,27 @@ function tambahAntrianValey(jenis) {
 
             daftarAntrianMenunggu.forEach((d) => {
                 let teksNopol = d.nopol ? ` | ${d.nopol}` : '';
+                let teksNama = d.nama ? ` | ${d.nama}` : '';
+                let teksTelp = d.telp ? ` | 📞${d.telp}` : '';
+                let teksSA = d.sa ? ` | SA: ${d.sa}` : '';
                 let waktuAwal = d.waktuMasuk || d.timestamp || sekarang;
                 let durasiMs = sekarang - waktuAwal;
                 let strTimer = formatWaktuLalu(durasiMs);
 
+                let badgeClass = d.jenis === 'Booking' ? 'badge-booking' : 'badge-non';
+                if (d.sa && d.sa.trim() !== '') {
+                    badgeClass = 'badge-sa';
+                }
+
                 let badgeHtml = `
-    <div style="display: flex; align-items: center; gap: 5px;">
-        <button onclick="editAntrian('${d.key}', '${d.nopol}')" style="padding: 2px 5px; font-size: 10px; cursor: pointer;">Edit</button>
-        <div class="badge-waiting ${d.jenis === 'Booking' ? 'badge-booking' : 'badge-non'}" onclick="panggilAntrianLangsung('${d.key}')" style="flex: 1; cursor: pointer;">
-            ${d.jenis} ${d.nomor}${teksNopol} 
-            <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
-        </div>
-    </div>`;
+                    <div class="antrian-item">
+                        <button onclick="editAntrian('${d.key}', '${d.nopol}')" style="padding: 2px 5px; font-size: 10px; cursor: pointer; background:#6c757d; color:white; border:none; border-radius:3px;">✏️</button>
+                        <div class="badge-waiting ${badgeClass}" onclick="panggilAntrianLangsung('${d.key}')" style="flex: 1; cursor: pointer;">
+                            ${d.jenis} ${d.nomor}${teksNopol}${teksNama}${teksTelp}${teksSA}
+                            <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
+                        </div>
+                        <button class="btn-delete-antrian" onclick="deleteAntrian('${d.key}')" title="Hapus antrian">✕</button>
+                    </div>`;
 
                 if (d.jenis === 'Booking') {
                     htmlBooking += badgeHtml;
@@ -549,14 +1652,14 @@ function tambahAntrianValey(jenis) {
             if (htmlNonBooking === "") htmlNonBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Non Booking</i>";
 
             let finalHtml = `
-                <strong>Daftar Pelanggan Menunggu:</strong>
+                <strong>📋 Daftar Pelanggan Menunggu:</strong>
                 <div class="waiting-grid">
                     <div class="waiting-col">
-                        <h4 style="color: #218838;">KOLOM BOOKING</h4>
+                        <h4 style="color: #218838;">📌 KOLOM BOOKING</h4>
                         ${htmlBooking}
                     </div>
                     <div class="waiting-col">
-                        <h4 style="color: #138496;">KOLOM NON BOOKING</h4>
+                        <h4 style="color: #138496;">📌 KOLOM NON BOOKING</h4>
                         ${htmlNonBooking}
                     </div>
                 </div>
@@ -604,10 +1707,14 @@ function tambahAntrianValey(jenis) {
                         counterSnapshot.forEach((antrianSnapshot) => {
                             let d = antrianSnapshot.val();
                             let classBtn = d.jenis === 'Booking' ? 'btn-hist-book' : 'btn-hist-non';
-                            let teksNopol = d.nopol && d.nopol !== "-" ? `<span class="hist-nopol">${d.nopol}</span>` : '';
-                            let teksWaktu = d.waktuTunggu ? `<span class="hist-time">⏱️ Tunggu: ${formatWaktuTunggu(d.waktuTunggu)}</span>` : '';
+                            let teksNopol = d.nopol && d.nopol !== "-" ? `<span class="hist-nopol" style="font-size:13px; font-weight:bold;">🚗 ${d.nopol}</span>` : '';
+                            let teksNama = d.nama && d.nama !== "-" ? `<span class="hist-nopol">👤 ${d.nama}</span>` : '';
+                            let teksTelp = d.telp ? `<span class="hist-nopol">📞 ${d.telp}</span>` : '';
+                            let teksSA = d.sa ? `<span class="hist-nopol">SA: ${d.sa}</span>` : '';
+                            let teksWaktu = d.waktuTunggu ? `<span class="hist-time">⏱️ ${formatWaktuTunggu(d.waktuTunggu)}</span>` : '';
+                            let teksNomor = d.nomor ? `#${d.nomor}` : '';
                             
-                            let tombolHtml = `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor}, '${d.nopol || '-'}')">${d.jenis} ${d.nomor}${teksNopol}${teksWaktu}</button>`;
+                            let tombolHtml = `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor || 0}, '${d.nopol || '-'}')">${teksNopol}${teksNama}${teksTelp}${teksSA}${teksWaktu}</button>`;
                             
                             if (d.jenis === 'Booking') {
                                 dataTabel[cName].booking.push(tombolHtml);
@@ -640,7 +1747,10 @@ function tambahAntrianValey(jenis) {
                     tbodyHtml = `<tr><td colspan="14" style="padding:15px; color:#666;">Belum ada history antrian.</td></tr>`;
                 }
 
-                document.getElementById('history-table-body').innerHTML = tbodyHtml;
+                let elements = document.querySelectorAll('#history-table-body, #history-table-body-counter');
+                elements.forEach(el => {
+                    el.innerHTML = tbodyHtml;
+                });
             });
         }
 
@@ -652,7 +1762,7 @@ function tambahAntrianValey(jenis) {
                     let teksPanggilan = "";
 
                     if (data.status === 'selesai') {
-                        teksPanggilan = `Unit Selesai. Antrian ${data.jenis} ${data.nomor} di ${data.counter}`;
+                        teksPanggilan = data.teksPanggilan || `Unit Selesai. ${data.jenis} ${data.nopol} di ${data.counter}`;
                     } else {
                         teksPanggilan = `Antrian ${data.jenis} ${data.nomor} di ${data.counter}`;
                     }
@@ -683,7 +1793,6 @@ function tambahAntrianValey(jenis) {
                         }
                     }
                 } else {
-                    // Jika data panggilan aktif kosong (karena reset)
                     if (sessionUser === 'Monitor') {
                         document.getElementById('display-number').innerText = "--";
                         document.getElementById('display-counter').innerText = "Menunggu Panggilan...";
@@ -696,10 +1805,14 @@ function tambahAntrianValey(jenis) {
             });
         }
 
-        // --- 5. LOGIKA ANTREAN SUARA (KHUSUS MONITOR) ---
+        // ============================================================
+        // ================ SISTEM SUARA ===============================
+        // ============================================================
+
         function tambahKeAntreanSuara(teks) {
             if (sessionUser !== 'Monitor') return;
-
+            if (isMuted) return;
+            
             queueSuara.push(teks);
             prosesAntreanSuara();
         }
@@ -707,6 +1820,10 @@ function tambahAntrianValey(jenis) {
         function prosesAntreanSuara() {
             if (sessionUser !== 'Monitor') return;
             if (sedangMemutarSuara || queueSuara.length === 0) return;
+            if (isMuted) {
+                queueSuara = [];
+                return;
+            }
 
             sedangMemutarSuara = true;
             const teksYangDiputar = queueSuara.shift();
@@ -738,19 +1855,27 @@ function tambahAntrianValey(jenis) {
         }
 
         function editAntrian(key, nopolLama) {
-    let nopolBaru = prompt("Edit Nomor Polisi:", nopolLama);
-    
-    // Jika user menekan OK dan input tidak kosong
-    if (nopolBaru !== null && nopolBaru.trim() !== "") {
-        db.ref('antrian/menunggu/' + key).update({
-            nopol: nopolBaru.trim().toUpperCase()
-        }).then(() => {
-            // Data akan otomatis ter-update karena listener 'on' di fungsi listener
-        }).catch((err) => {
-            alert("Gagal mengupdate: " + err.message);
-        });
-    }
-}
+            let nopolBaru = prompt("Edit Nomor Polisi:", nopolLama);
+            if (nopolBaru !== null && nopolBaru.trim() !== "") {
+                db.ref('antrian/menunggu/' + key).update({
+                    nopol: nopolBaru.trim().toUpperCase()
+                }).catch((err) => {
+                    alert("Gagal mengupdate: " + err.message);
+                });
+            }
+        }
+
+        // Tutup modal jika klik di luar
+        window.onclick = function(event) {
+            let modalUpload = document.getElementById('modal-upload');
+            if (event.target == modalUpload) {
+                tutupModalUpload();
+            }
+            let modalGetin = document.getElementById('modal-getin');
+            if (event.target == modalGetin) {
+                tutupModalGetIn();
+            }
+        }
     </script>
 </body>
 </html>
