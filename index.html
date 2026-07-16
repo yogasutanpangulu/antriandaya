@@ -96,8 +96,6 @@
         .btn-upload-excel:hover { background: #218838; }
         .btn-download-template { background: #17a2b8; color: white; padding: 6px 16px; font-size: 13px; }
         .btn-download-template:hover { background: #138496; }
-        .btn-google-sync { background: #ea4335; color: white; padding: 6px 16px; font-size: 13px; }
-        .btn-google-sync:hover { background: #d33426; }
         
         .search-box {
             display: flex;
@@ -352,54 +350,6 @@
             margin-bottom: 0;
         }
 
-        .modal-setup input {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        .modal-setup .info-text {
-            font-size: 13px;
-            color: #666;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            text-align: left;
-        }
-        .modal-setup .info-text code {
-            background: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        .modal-setup .form-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        .modal-setup .form-group label {
-            display: block;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 3px;
-        }
-        .modal-setup .btn-group-sync {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .modal-setup .btn-group-sync button {
-            flex: 1;
-            min-width: 150px;
-        }
-        .modal-setup .btn-danger {
-            background: #dc3545;
-        }
-        .modal-setup .btn-danger:hover {
-            background: #c82333;
-        }
-
         @media (max-width: 768px) {
             .booking-row {
                 grid-template-columns: 1fr 1fr;
@@ -415,8 +365,6 @@
             .modal-content { width: 98%; margin: 2% auto; padding: 15px; }
             .history-table { font-size: 10px; }
             .history-table th, .history-table td { padding: 3px 2px; }
-            .modal-setup .btn-group-sync { flex-direction: column; }
-            .modal-setup .btn-group-sync button { width: 100%; }
         }
     </style>
 </head>
@@ -480,7 +428,6 @@
                         <button class="btn-upload-booking" onclick="bukaModalUpload()">📤 Upload Manual</button>
                         <button class="btn-upload-excel" onclick="document.getElementById('file-excel').click()">📊 Upload Excel</button>
                         <button class="btn-download-template" onclick="downloadTemplate()">📥 Download Template</button>
-                        <button class="btn-google-sync" onclick="bukaModalGoogleSheets()">🔄 Sync Google Sheets</button>
                         <input type="file" id="file-excel" accept=".xlsx,.xls" style="display:none" onchange="uploadExcelBooking(event)">
                     </div>
                 </div>
@@ -650,47 +597,6 @@
         </div>
     </div>
 
-    <!-- ================ MODAL GOOGLE SHEETS SETUP ================ -->
-    <div id="modal-googlesheets" class="modal modal-setup">
-        <div class="modal-content" style="max-width: 700px;">
-            <span class="modal-close" onclick="tutupModalGoogleSheets()">&times;</span>
-            <h2>🔄 Google Sheets Integration</h2>
-            
-            <div class="info-text">
-                <strong>📋 Format Spreadsheet:</strong><br>
-                • <strong>Sheet 1</strong> = Tanggal 1, <strong>Sheet 2</strong> = Tanggal 2, dst<br>
-                • <strong>Kolom B</strong> = Nopol (mulai baris 4)<br>
-                • <strong>Kolom D</strong> = Nama (mulai baris 4)<br>
-                • <strong>Kolom E</strong> = Telpon (mulai baris 4)<br>
-                • <strong>Kolom F</strong> = Pekerjaan (mulai baris 4)<br>
-                • <strong>Kolom G</strong> = Waktu (mulai baris 4)
-            </div>
-            
-            <div class="form-group">
-                <label for="google-sheet-url">URL Google Sheets:</label>
-                <input type="text" id="google-sheet-url" placeholder="https://docs.google.com/spreadsheets/d/...">
-            </div>
-            
-            <div class="form-group">
-                <label for="sync-tanggal">Pilih Tanggal (untuk sync spesifik):</label>
-                <input type="date" id="sync-tanggal" style="width:100%;">
-            </div>
-            
-            <div class="btn-group-sync">
-                <button class="btn-save-getin" onclick="syncAllSheets()" style="flex:1;">📅 Sync Semua</button>
-                <button class="btn-upload-booking" onclick="syncSpecificDate()" style="flex:1; background:#6f42c1;">📅 Sync Tanggal Spesifik</button>
-            </div>
-            
-            <hr style="margin: 15px 0;">
-            
-            <div class="btn-group-sync">
-                <button class="btn-danger" onclick="clearSyncData()" style="flex:1; background:#dc3545;">🗑️ Hapus Semua Data Sync</button>
-            </div>
-            <br>
-            <button class="btn-cancel-getin" onclick="tutupModalGoogleSheets()" style="width:100%;">❌ Tutup</button>
-        </div>
-    </div>
-
     <!-- ================ MODAL GET IN ================ -->
     <div id="modal-getin" class="modal modal-getin">
         <div class="modal-content">
@@ -760,10 +666,6 @@
             return [year, month, day].join('-');
         }
 
-        function getJumlahHariBulan(tahun, bulan) {
-            return new Date(tahun, bulan, 0).getDate();
-        }
-
         function formatTanggalIndonesia(tgl) {
             if (!tgl) return '-';
             let parts = tgl.split('-');
@@ -815,353 +717,6 @@
             }
             key = key.replace(/[.#$\/\[\]]/g, '_');
             return key;
-        }
-
-        // ============================================================
-        // ================ CEK DUPLIKAT ===============================
-        // ============================================================
-        function isDuplicateBooking(dataBaru, existingData) {
-            return existingData.some(b => 
-                b.nopol === dataBaru.nopol && 
-                b.nama === dataBaru.nama && 
-                b.tanggal === dataBaru.tanggal &&
-                b.pekerjaan === dataBaru.pekerjaan
-            );
-        }
-
-        // ============================================================
-        // ================ GOOGLE SHEETS INTEGRATION ==================
-        // ============================================================
-
-        function bukaModalGoogleSheets() {
-            document.getElementById('modal-googlesheets').style.display = 'block';
-            let savedUrl = localStorage.getItem('google_sheets_url');
-            if (savedUrl) {
-                document.getElementById('google-sheet-url').value = savedUrl;
-            }
-        }
-
-        function tutupModalGoogleSheets() {
-            document.getElementById('modal-googlesheets').style.display = 'none';
-        }
-
-        function extractSheetId(url) {
-            let match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-            if (match) return match[1];
-            if (/^[a-zA-Z0-9-_]{20,}$/.test(url)) return url;
-            return null;
-        }
-
-        function parseCSVLine(line) {
-            let result = [];
-            let current = '';
-            let inQuotes = false;
-            
-            for (let i = 0; i < line.length; i++) {
-                let char = line[i];
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current.trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            result.push(current.trim());
-            return result;
-        }
-
-        function cleanValue(value) {
-            if (!value) return '';
-            return value.replace(/^"|"$/g, '').trim();
-        }
-
-        // Fungsi untuk sync dari Google Sheets
-        function syncGoogleSheetsWithFormat(url, tanggal) {
-            let sheetId = extractSheetId(url);
-            if (!sheetId) {
-                return Promise.reject('Invalid URL');
-            }
-
-            let day = parseInt(tanggal.split('-')[2]);
-            let sheetIndex = day - 1;
-            
-            let csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${sheetIndex}`;
-            
-            console.log(`📅 Tanggal: ${tanggal}, Sheet Index: ${sheetIndex}`);
-            console.log(`🔗 URL: ${csvUrl}`);
-            
-            return fetch(csvUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        let fallbackUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
-                        console.log(`⚠️ Fallback ke: ${fallbackUrl}`);
-                        return fetch(fallbackUrl);
-                    }
-                    return response;
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error('Gagal mengakses Google Sheets');
-                    return response.text();
-                })
-                .then(csvData => {
-                    const lines = csvData.split('\n').filter(line => line.trim() !== '');
-                    if (lines.length < 5) {
-                        throw new Error(`Data kosong atau format tidak sesuai untuk tanggal ${tanggal}`);
-                    }
-                    
-                    let dataBooking = [];
-                    
-                    for (let i = 3; i < lines.length; i++) {
-                        let values = parseCSVLine(lines[i]);
-                        
-                        if (values.length < 7) continue;
-                        
-                        const nopol = cleanValue(values[1] || '').toUpperCase();
-                        const nama = cleanValue(values[3] || '');
-                        const telp = cleanValue(values[4] || '');
-                        const pekerjaan = cleanValue(values[5] || '');
-                        const waktu = cleanValue(values[6] || '');
-                        
-                        if (nopol && nama && nopol.length > 0 && nama.length > 0) {
-                            dataBooking.push({
-                                nopol: nopol,
-                                nama: nama,
-                                telp: telp || '',
-                                pekerjaan: pekerjaan || '-',
-                                waktu: waktu || '08:00',
-                                tanggal: tanggal,
-                                sa: '',
-                                status: 'menunggu',
-                                source: 'google_sheets'
-                            });
-                        }
-                    }
-                    
-                    if (dataBooking.length === 0) {
-                        throw new Error(`Tidak ada data valid di sheet tanggal ${tanggal}`);
-                    }
-                    
-                    console.log(`✅ Ditemukan ${dataBooking.length} data untuk tanggal ${tanggal}`);
-                    return dataBooking;
-                });
-        }
-
-        // ============================================================
-        // ================ SYNC SEMUA TANGGAL =========================
-        // ============================================================
-
-        function syncAllSheets() {
-            let url = document.getElementById('google-sheet-url').value.trim();
-            if (!url) {
-                alert('❌ Harap masukkan URL Google Sheets!');
-                return;
-            }
-
-            localStorage.setItem('google_sheets_url', url);
-
-            let now = new Date();
-            let tahun = now.getFullYear();
-            let bulan = now.getMonth() + 1;
-            let totalDays = getJumlahHariBulan(tahun, bulan);
-
-            if (!confirm(`🔄 Sync data dari Google Sheets?\n\nAkan membaca sheet 1-${totalDays} (sesuai tanggal ${bulan}/${tahun}).\nData booking akan diupdate dari spreadsheet.`)) {
-                return;
-            }
-
-            let btn = document.querySelector('.btn-google-sync');
-            let originalText = btn ? btn.innerText : '';
-            if (btn) btn.innerText = '⏳ Loading...';
-
-            // Ambil data existing untuk cek duplikat
-            let existingData = daftarBooking;
-
-            let promises = [];
-            let allData = [];
-            let errors = [];
-            let successCount = 0;
-            
-            for (let day = 1; day <= totalDays; day++) {
-                let tanggal = `${tahun}-${String(bulan).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                promises.push(
-                    syncGoogleSheetsWithFormat(url, tanggal)
-                        .then(data => {
-                            // Filter duplikat
-                            let newData = data.filter(d => !isDuplicateBooking(d, existingData));
-                            if (newData.length > 0) {
-                                allData = allData.concat(newData);
-                                existingData = existingData.concat(newData);
-                            }
-                            successCount++;
-                            return data;
-                        })
-                        .catch(err => {
-                            errors.push(`Tanggal ${tanggal}: ${err.message}`);
-                            return [];
-                        })
-                );
-            }
-
-            Promise.all(promises)
-                .then(results => {
-                    if (allData.length === 0) {
-                        alert('❌ Tidak ada data baru yang ditemukan.\n\n' + errors.join('\n'));
-                        return;
-                    }
-
-                    let konfirmasi = confirm(
-                        `📊 Sync ${allData.length} data booking baru dari Google Sheets!\n\n` +
-                        `✅ ${successCount} sheet berhasil dibaca\n` +
-                        `❌ ${errors.length} sheet error\n\n` +
-                        `Lanjutkan upload?`
-                    );
-                    if (!konfirmasi) return;
-
-                    let updates = {};
-                    allData.forEach((b) => {
-                        let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
-                        updates['booking/' + key] = b;
-                    });
-
-                    db.ref().update(updates).then(() => {
-                        alert(`✅ Berhasil sync ${allData.length} data booking baru dari Google Sheets!`);
-                        tutupModalGoogleSheets();
-                    }).catch((err) => {
-                        alert("❌ Gagal menyimpan data: " + err.message);
-                    });
-
-                })
-                .catch(err => {
-                    alert('❌ Gagal sync: ' + err.message);
-                })
-                .finally(() => {
-                    if (btn) btn.innerText = originalText;
-                });
-        }
-
-        // ============================================================
-        // ================ SYNC TANGGAL SPESIFIK ======================
-        // ============================================================
-
-        function syncSpecificDate() {
-            let url = document.getElementById('google-sheet-url').value.trim();
-            let tanggal = document.getElementById('sync-tanggal').value;
-            
-            if (!url) {
-                alert('❌ Harap masukkan URL Google Sheets!');
-                return;
-            }
-            if (!tanggal) {
-                alert('❌ Harap pilih tanggal!');
-                return;
-            }
-
-            localStorage.setItem('google_sheets_url', url);
-
-            let btn = document.querySelector('.btn-google-sync');
-            let originalText = btn ? btn.innerText : '';
-            if (btn) btn.innerText = '⏳ Loading...';
-
-            let existingData = daftarBooking;
-
-            syncGoogleSheetsWithFormat(url, tanggal)
-                .then(data => {
-                    if (data.length === 0) {
-                        alert(`❌ Tidak ada data untuk tanggal ${tanggal}`);
-                        return;
-                    }
-
-                    // Filter duplikat
-                    let newData = data.filter(d => !isDuplicateBooking(d, existingData));
-
-                    if (newData.length === 0) {
-                        alert(`📭 Tidak ada data baru untuk tanggal ${tanggal}. Data sudah ada.`);
-                        return;
-                    }
-
-                    let konfirmasi = confirm(`📊 Sync ${newData.length} data booking baru dari Google Sheets untuk tanggal ${tanggal}?`);
-                    if (!konfirmasi) return;
-
-                    let updates = {};
-                    newData.forEach((b) => {
-                        let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
-                        updates['booking/' + key] = b;
-                    });
-
-                    db.ref().update(updates).then(() => {
-                        alert(`✅ Berhasil sync ${newData.length} data booking untuk tanggal ${tanggal}!`);
-                        tutupModalGoogleSheets();
-                    }).catch((err) => {
-                        alert("❌ Gagal menyimpan data: " + err.message);
-                    });
-                })
-                .catch(err => {
-                    alert('❌ Gagal sync: ' + err.message);
-                })
-                .finally(() => {
-                    if (btn) btn.innerText = originalText;
-                });
-        }
-
-        // ============================================================
-        // ================ HAPUS SEMUA DATA SYNC ======================
-        // ============================================================
-
-        function clearSyncData() {
-            if (!confirm('⚠️ Yakin ingin menghapus SEMUA data booking dari Google Sheets?\n\nData akan dihapus permanen!')) {
-                return;
-            }
-
-            if (!confirm('⚠️ PERINGATAN! Ini akan menghapus semua data booking yang berasal dari Google Sheets.\n\nTekan OK untuk melanjutkan.')) {
-                return;
-            }
-
-            let btn = document.querySelector('.btn-clear-sync');
-            let originalText = btn ? btn.innerText : '';
-            if (btn) btn.innerText = '⏳ Menghapus...';
-
-            // Cari semua data dengan source = 'google_sheets'
-            let keysToRemove = [];
-            db.ref('booking').once('value', (snapshot) => {
-                snapshot.forEach((child) => {
-                    let data = child.val();
-                    if (data.source === 'google_sheets') {
-                        keysToRemove.push(child.key);
-                    }
-                });
-
-                if (keysToRemove.length === 0) {
-                    alert('📭 Tidak ada data sync yang ditemukan.');
-                    if (btn) btn.innerText = originalText;
-                    return;
-                }
-
-                if (!confirm(`🗑️ Ditemukan ${keysToRemove.length} data booking dari Google Sheets. Hapus semua?`)) {
-                    if (btn) btn.innerText = originalText;
-                    return;
-                }
-
-                let promises = [];
-                keysToRemove.forEach(key => {
-                    promises.push(db.ref('booking/' + key).remove());
-                });
-
-                Promise.all(promises)
-                    .then(() => {
-                        alert(`✅ Berhasil menghapus ${keysToRemove.length} data booking dari Google Sheets!`);
-                        tutupModalGoogleSheets();
-                    })
-                    .catch((err) => {
-                        alert('❌ Gagal menghapus data: ' + err.message);
-                    })
-                    .finally(() => {
-                        if (btn) btn.innerText = originalText;
-                    });
-            }).catch((err) => {
-                alert('❌ Gagal membaca data: ' + err.message);
-                if (btn) btn.innerText = originalText;
-            });
         }
 
         // ============================================================
@@ -1291,52 +846,163 @@
                     daftarBooking.push(data);
                 });
                 
-                // daftarBookingFiltered berisi SEMUA data
-                daftarBookingFiltered = [...daftarBooking];
-                
-                // Render tabel dengan data yang sudah ada
-                renderDaftarBooking();
-                
-                // Set filter tanggal default ke hari ini
+                // Tampilkan booking untuk HARI INI
                 let hariIni = getTanggalHariIni();
-                let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput && !filterInput.value) {
-                    filterInput.value = hariIni;
-                }
-                let filterInputCounter = document.getElementById('filter-tanggal-counter');
-                if (filterInputCounter && !filterInputCounter.value) {
-                    filterInputCounter.value = hariIni;
-                }
+                daftarBookingFiltered = daftarBooking.filter(b => {
+                    return b.tanggal && b.tanggal === hariIni;
+                });
                 
-                // Apply filter default
-                setTimeout(() => {
-                    filterBooking();
-                    filterBookingCounter();
-                }, 100);
+                renderDaftarBooking();
             });
         }
 
-        // ============================================================
-        // ================ RENDER DAFTAR BOOKING ======================
-        // ============================================================
-
         function renderDaftarBooking() {
-            let dataToShow = daftarBookingFiltered || [];
+            let html = '';
+            
+            if (daftarBookingFiltered.length === 0) {
+                html = '<div class="empty-booking">📭 Belum ada booking untuk hari ini.</div>';
+            } else {
+                daftarBookingFiltered.sort((a, b) => {
+                    if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
+                    return 0;
+                });
+
+                html = `
+                    <table class="booking-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30px;">No</th>
+                                <th>Nopol</th>
+                                <th>Nama</th>
+                                <th>Telpon</th>
+                                <th>Pekerjaan</th>
+                                <th>Waktu</th>
+                                <th>Tanggal</th>
+                                <th>SA</th>
+                                <th>Status</th>
+                                <th style="width:180px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                daftarBookingFiltered.forEach((b, index) => {
+                    let statusClass = 'status-menunggu';
+                    let statusText = 'Menunggu';
+                    let disabled = false;
+                    if (b.status === 'dipanggil') { 
+                        statusClass = 'status-dipanggil'; 
+                        statusText = 'Dipanggil'; 
+                        disabled = true;
+                    }
+                    if (b.status === 'selesai') { 
+                        statusClass = 'status-selesai'; 
+                        statusText = 'Selesai';
+                        disabled = true;
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${index + 1}</strong></td>
+                            <td><strong>${b.nopol || '-'}</strong></td>
+                            <td>${b.nama || '-'}</td>
+                            <td>${b.telp || '-'}</td>
+                            <td>${b.pekerjaan || '-'}</td>
+                            <td>${b.waktu || '-'}</td>
+                            <td>${formatTanggalIndonesia(b.tanggal)}</td>
+                            <td>${b.sa || '-'}</td>
+                            <td><span class="${statusClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn-get-in" ${disabled ? 'disabled' : ''} onclick="bukaModalGetIn('${b.key}')" title="Masukkan ke antrian">🚪 Get In</button>
+                                ${b.status === 'dipanggil' ? `<button class="btn-restore-booking" onclick="restoreBooking('${b.key}')" title="Kembalikan ke daftar booking">↩️</button>` : ''}
+                                <button class="btn-delete-booking" onclick="deleteBooking('${b.key}')" title="Hapus booking">✕</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
             
             let containerValey = document.getElementById('booking-list');
             if (containerValey) {
-                renderFilteredBooking(dataToShow, containerValey);
+                containerValey.innerHTML = html;
             }
             
             let containerCounter = document.getElementById('booking-list-counter');
             if (containerCounter) {
-                renderFilteredBooking(dataToShow, containerCounter);
+                containerCounter.innerHTML = html;
             }
         }
 
         // ============================================================
-        // ================ RENDER FILTERED BOOKING ====================
+        // ================ FILTER TANGGAL =============================
         // ============================================================
+
+        function filterBooking() {
+            let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
+            let tanggal = document.getElementById('filter-tanggal').value;
+            
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                document.getElementById('filter-tanggal').value = tanggal;
+            }
+            
+            let filtered = daftarBooking.filter(b => {
+                let match = true;
+                
+                if (keyword) {
+                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp).toLowerCase();
+                    if (!text.includes(keyword)) match = false;
+                }
+                
+                if (tanggal) {
+                    if (b.tanggal !== tanggal) match = false;
+                }
+                
+                return match;
+            });
+            
+            daftarBookingFiltered = filtered;
+            
+            let container = document.getElementById('booking-list');
+            if (container) {
+                renderFilteredBooking(filtered, container);
+            }
+        }
+
+        function filterBookingCounter() {
+            let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
+            let tanggal = document.getElementById('filter-tanggal-counter').value;
+            
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                document.getElementById('filter-tanggal-counter').value = tanggal;
+            }
+            
+            let filtered = daftarBooking.filter(b => {
+                let match = true;
+                
+                if (keyword) {
+                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp).toLowerCase();
+                    if (!text.includes(keyword)) match = false;
+                }
+                
+                if (tanggal) {
+                    if (b.tanggal !== tanggal) match = false;
+                }
+                
+                return match;
+            });
+            
+            let container = document.getElementById('booking-list-counter');
+            if (container) {
+                renderFilteredBooking(filtered, container);
+            }
+        }
 
         function renderFilteredBooking(data, container) {
             if (!container) return;
@@ -1346,18 +1012,14 @@
                 return;
             }
             
-            // ========== PERBAIKAN ==========
-            // Filter data yang tidak memiliki tanggal
             let validData = data.filter(b => b.tanggal);
             
             if (validData.length === 0) {
-                container.innerHTML = '<div class="empty-booking">📭 Data booking tidak valid (tidak memiliki tanggal).</div>';
+                container.innerHTML = '<div class="empty-booking">📭 Data booking tidak valid.</div>';
                 return;
             }
             
-            // Urutkan berdasarkan tanggal dan waktu
             validData.sort((a, b) => {
-                // Pastikan kedua data memiliki tanggal
                 if (a.tanggal && b.tanggal && a.tanggal !== b.tanggal) {
                     return a.tanggal.localeCompare(b.tanggal);
                 }
@@ -1366,7 +1028,6 @@
                 }
                 return 0;
             });
-            // ===============================
             
             let html = `
                 <table class="booking-table">
@@ -1429,77 +1090,6 @@
             
             container.innerHTML = html;
         }
-
-        // ============================================================
-        // ================ FILTER TANGGAL =============================
-        // ============================================================
-
-        function filterBooking() {
-            let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
-            let tanggal = document.getElementById('filter-tanggal').value;
-            
-            if (!tanggal) {
-                tanggal = getTanggalHariIni();
-                document.getElementById('filter-tanggal').value = tanggal;
-            }
-            
-            // Filter dari daftarBooking (data lengkap)
-            let filtered = daftarBooking.filter(b => {
-                let match = true;
-                
-                if (keyword) {
-                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp).toLowerCase();
-                    if (!text.includes(keyword)) match = false;
-                }
-                
-                if (tanggal) {
-                    if (b.tanggal !== tanggal) match = false;
-                }
-                
-                return match;
-            });
-            
-            daftarBookingFiltered = filtered;
-            
-            let container = document.getElementById('booking-list');
-            if (container) {
-                renderFilteredBooking(filtered, container);
-            }
-        }
-
-        function filterBookingCounter() {
-            let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
-            let tanggal = document.getElementById('filter-tanggal-counter').value;
-            
-            if (!tanggal) {
-                tanggal = getTanggalHariIni();
-                document.getElementById('filter-tanggal-counter').value = tanggal;
-            }
-            
-            let filtered = daftarBooking.filter(b => {
-                let match = true;
-                
-                if (keyword) {
-                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp).toLowerCase();
-                    if (!text.includes(keyword)) match = false;
-                }
-                
-                if (tanggal) {
-                    if (b.tanggal !== tanggal) match = false;
-                }
-                
-                return match;
-            });
-            
-            let container = document.getElementById('booking-list-counter');
-            if (container) {
-                renderFilteredBooking(filtered, container);
-            }
-        }
-
-        // ============================================================
-        // ================ RESET FILTER ===============================
-        // ============================================================
 
         function resetFilter() {
             document.getElementById('search-booking').value = '';
@@ -1749,8 +1339,7 @@
                             waktu: waktu.toString().trim() || '08:00',
                             tanggal: tanggal.toString().trim() || getTanggalHariIni(),
                             sa: sa.toString().trim() || '',
-                            status: 'menunggu',
-                            source: 'excel'
+                            status: 'menunggu'
                         });
                     });
 
@@ -1765,6 +1354,7 @@
                     if (!konfirmasi) return;
 
                     let updates = {};
+                    
                     dataBooking.forEach((b) => {
                         let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
                         updates['booking/' + key] = b;
@@ -1857,8 +1447,7 @@
                     waktu: waktu || '08:00',
                     tanggal: tanggal,
                     sa: sa || '',
-                    status: 'menunggu',
-                    source: 'manual'
+                    status: 'menunggu'
                 });
             });
 
@@ -2410,10 +1999,6 @@
             let modalGetin = document.getElementById('modal-getin');
             if (event.target == modalGetin) {
                 tutupModalGetIn();
-            }
-            let modalSheets = document.getElementById('modal-googlesheets');
-            if (event.target == modalSheets) {
-                tutupModalGoogleSheets();
             }
         }
     </script>
