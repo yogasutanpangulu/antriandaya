@@ -352,7 +352,6 @@
             margin-bottom: 0;
         }
 
-        /* Modal Setup Google Sheets */
         .modal-setup input {
             width: 100%;
             padding: 10px;
@@ -790,6 +789,21 @@
         }
 
         // ============================================================
+        // ================ GENERATE SAFE KEY ==========================
+        // ============================================================
+        function generateSafeKey(nopol, nama, tanggal = '') {
+            let key;
+            if (tanggal) {
+                key = nopol + '_' + nama.replace(/\s/g, '') + '_' + tanggal + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            } else {
+                key = nopol + '_' + nama.replace(/\s/g, '') + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            }
+            // Replace karakter yang tidak diizinkan Firebase
+            key = key.replace(/[.#$\/\[\]]/g, '_');
+            return key;
+        }
+
+        // ============================================================
         // ================ GOOGLE SHEETS INTEGRATION ==================
         // ============================================================
 
@@ -968,7 +982,7 @@
 
                     let updates = {};
                     finalData.forEach((b) => {
-                        let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + b.tanggal + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                        let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
                         updates['booking/' + key] = b;
                     });
 
@@ -1020,7 +1034,7 @@
 
                     let updates = {};
                     data.forEach((b) => {
-                        let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + b.tanggal + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                        let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
                         updates['booking/' + key] = b;
                     });
 
@@ -1568,7 +1582,7 @@
                     let updates = {};
                     
                     dataBooking.forEach((b) => {
-                        let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                        let key = generateSafeKey(b.nopol, b.nama);
                         updates['booking/' + key] = b;
                     });
 
@@ -1676,7 +1690,7 @@
             let updates = {};
             
             dataBooking.forEach((b) => {
-                let key = b.nopol + '_' + b.nama.replace(/\s/g, '') + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                let key = generateSafeKey(b.nopol, b.nama);
                 updates['booking/' + key] = b;
             });
 
