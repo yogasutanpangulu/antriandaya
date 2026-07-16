@@ -804,7 +804,7 @@
         }
 
         // ============================================================
-        // ================ PARSING TANGGAL (DIPERBAIKI) ===============
+        // ================ PARSING TANGGAL (DIPERBAIKI) ==============
         // ============================================================
         function parseTanggal(value) {
             // Jika value kosong/null/undefined
@@ -815,6 +815,24 @@
             
             // Jika kosong setelah trim
             if (!strValue) return getTanggalHariIni();
+            
+            // ===== CEK APAKAH ANGKA (EXCEL DATE SERIAL NUMBER) =====
+            if (!isNaN(strValue) && strValue.length > 0) {
+                let excelDate = parseFloat(strValue);
+                // Excel date serial number biasanya antara 40000-50000 untuk tahun 2010-2030
+                if (excelDate > 30000 && excelDate < 60000) {
+                    // Excel date dimulai dari 1900-01-01 (serial 1)
+                    let epoch = new Date(1899, 11, 30);
+                    let date = new Date(epoch.getTime() + excelDate * 86400000);
+                    let year = date.getFullYear();
+                    let month = String(date.getMonth() + 1).padStart(2, '0');
+                    let day = String(date.getDate()).padStart(2, '0');
+                    if (year > 2000 && year < 2100) {
+                        return `${year}-${month}-${day}`;
+                    }
+                }
+            }
+            // ========================================================
             
             // Jika sudah dalam format YYYY-MM-DD
             if (/^\d{4}-\d{2}-\d{2}$/.test(strValue)) {
@@ -864,21 +882,6 @@
                     }
                     if (year && day && month) {
                         day = day.padStart(2, '0');
-                        return `${year}-${month}-${day}`;
-                    }
-                }
-            }
-            
-            // Coba parse sebagai angka (Excel date serial number)
-            if (!isNaN(strValue) && strValue.length > 0) {
-                let excelDate = parseInt(strValue);
-                if (excelDate > 0 && excelDate < 50000) {
-                    let epoch = new Date(1899, 11, 30);
-                    let date = new Date(epoch.getTime() + excelDate * 86400000);
-                    let year = date.getFullYear();
-                    let month = String(date.getMonth() + 1).padStart(2, '0');
-                    let day = String(date.getDate()).padStart(2, '0');
-                    if (year > 2000 && year < 2100) {
                         return `${year}-${month}-${day}`;
                     }
                 }
@@ -1584,6 +1587,7 @@
 
                         // ===== PERBAIKAN: Parsing tanggal dengan fungsi baru =====
                         let tanggalParsed = parseTanggal(tanggal);
+                        console.log(`Baris ${index + 1}: Tanggal asli = ${tanggal} -> parsed = ${tanggalParsed}`);
                         // =======================================================
 
                         // Ambil tanggal pertama sebagai referensi
