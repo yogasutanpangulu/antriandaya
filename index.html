@@ -420,7 +420,6 @@
             font-weight: normal;
         }
 
-        /* Paste Magic Info */
         .paste-info {
             background: #e3f0ff;
             border: 1px dashed #007bff;
@@ -438,6 +437,49 @@
             font-size: 12px;
         }
 
+        .edit-input {
+            width: 100%;
+            padding: 4px 6px;
+            font-size: 11px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background: white;
+            min-width: 60px;
+        }
+        .edit-input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        .edit-input-sm {
+            width: 100%;
+            padding: 3px 4px;
+            font-size: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background: white;
+        }
+        .btn-save-row {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        .btn-save-row:hover { background: #218838; }
+        .btn-cancel-row {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        .btn-cancel-row:hover { background: #c82333; }
+
         @media (max-width: 768px) {
             .booking-row {
                 grid-template-columns: 1fr 1fr;
@@ -453,6 +495,7 @@
             .modal-content { width: 98%; margin: 2% auto; padding: 15px; }
             .history-table { font-size: 10px; }
             .history-table th, .history-table td { padding: 3px 2px; }
+            .edit-input { font-size: 10px; padding: 3px 4px; }
         }
     </style>
 </head>
@@ -522,7 +565,7 @@
                 <!-- Paste Magic Info -->
                 <div class="paste-info">
                     💡 <strong>Paste Magic:</strong> Copy data dari spreadsheet (format: <code>Nopol | Tipe | Nama | Telpon | Pekerjaan | Waktu | Tanggal | SA</code>) 
-                    dan paste langsung ke kolom yang tersedia. Baris baru akan otomatis bertambah.
+                    dan paste langsung ke kolom Nopol. Data akan otomatis terisi ke kolom yang sesuai.
                 </div>
                 
                 <div class="search-box">
@@ -862,7 +905,6 @@
             let strValue = String(value).trim();
             if (!strValue) return getTanggalHariIni();
             
-            // Excel serial number
             if (!isNaN(strValue) && strValue.length > 0) {
                 let excelDate = parseFloat(strValue);
                 if (excelDate > 30000 && excelDate < 60000) {
@@ -933,39 +975,76 @@
         // ================ TAMBAH BARIS MANUAL ========================
         // ============================================================
         function tambahBarisManual() {
-            // Tambahkan baris kosong di daftar booking yang sedang tampil
             let container = document.getElementById('booking-list');
+            
+            // Cek apakah sudah ada tabel
             let table = container.querySelector('table');
             
             if (!table) {
-                // Jika belum ada tabel, render ulang
-                renderDaftarBooking();
-                return;
+                // Jika belum ada tabel, buat tabel kosong dulu
+                let hariIni = getTanggalHariIni();
+                let filterInput = document.getElementById('filter-tanggal');
+                if (filterInput) {
+                    filterInput.value = hariIni;
+                }
+                // Refresh data
+                filterBooking();
+                table = container.querySelector('table');
+                if (!table) {
+                    // Buat tabel kosong
+                    let html = `
+                        <table class="booking-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:30px;">No</th>
+                                    <th>Nopol</th>
+                                    <th>Tipe</th>
+                                    <th>Nama</th>
+                                    <th>Telpon</th>
+                                    <th>Pekerjaan</th>
+                                    <th>Waktu</th>
+                                    <th>Tanggal</th>
+                                    <th>SA</th>
+                                    <th>Status</th>
+                                    <th style="width:180px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    `;
+                    container.innerHTML = html;
+                    table = container.querySelector('table');
+                }
             }
             
             let tbody = table.querySelector('tbody');
-            let newRow = document.createElement('tr');
-            
-            // Ambil jumlah baris untuk nomor urut
             let rowCount = tbody.querySelectorAll('tr').length;
+            let hariIni = getTanggalHariIni();
             
+            let newRow = document.createElement('tr');
+            newRow.className = 'edit-row';
             newRow.innerHTML = `
                 <td><strong>${rowCount + 1}</strong></td>
-                <td><input type="text" class="edit-nopol" placeholder="Nopol" style="width:100%; padding:4px; font-size:11px; border:1px solid #ccc; border-radius:3px;"></td>
-                <td><input type="text" class="edit-tipe" placeholder="Tipe" style="width:100%; padding:4px; font-size:11px; border:1px solid #ccc; border-radius:3px;"></td>
-                <td><input type="text" class="edit-nama" placeholder="Nama" style="width:100%; padding:4px; font-size:11px; border:1px solid #ccc; border-radius:3px;"></td>
-                <td><input type="text" class="edit-telp" placeholder="Telpon" style="width:100%; padding:4px; font-size:11px; border:1px solid #ccc; border-radius:3px;"></td>
-                <td><input type="text" class="edit-pekerjaan" placeholder="Pekerjaan" style="width:100%; padding:4px; font-size:11px; border:1px solid #ccc; border-radius:3px;"></td>
-                <td><input type="time" class="edit-waktu" style="width:100%; padding:4px; font-size:11px; border:1px solid #ccc; border-radius:3px;"></td>
-                <td><input type="date" class="edit-tanggal" value="${getTanggalHariIni()}" style="width:100%; padding:4px; font-size:11px; border:1px solid #ccc; border-radius:3px;"></td>
-                <td><input type="text" class="edit-sa" placeholder="SA" style="width:100%; padding:4px; font-size:11px; border:1px solid #ccc; border-radius:3px;"></td>
+                <td><input type="text" class="edit-input edit-nopol" placeholder="Nopol" value=""></td>
+                <td><input type="text" class="edit-input edit-tipe" placeholder="Tipe" value=""></td>
+                <td><input type="text" class="edit-input edit-nama" placeholder="Nama" value=""></td>
+                <td><input type="text" class="edit-input edit-telp" placeholder="Telpon" value=""></td>
+                <td><input type="text" class="edit-input edit-pekerjaan" placeholder="Pekerjaan" value=""></td>
+                <td><input type="time" class="edit-input edit-waktu" value="08:00"></td>
+                <td><input type="date" class="edit-input edit-tanggal" value="${hariIni}"></td>
+                <td><input type="text" class="edit-input edit-sa" placeholder="SA" value=""></td>
                 <td>
-                    <button class="btn-save-row" onclick="simpanBarisManual(this)" style="background:#28a745; color:white; border:none; padding:2px 8px; border-radius:3px; cursor:pointer; font-size:10px;">💾</button>
-                    <button class="btn-cancel-row" onclick="hapusBarisManual(this)" style="background:#dc3545; color:white; border:none; padding:2px 8px; border-radius:3px; cursor:pointer; font-size:10px;">✕</button>
+                    <button class="btn-save-row" onclick="simpanBarisManual(this)" title="Simpan">💾</button>
+                    <button class="btn-cancel-row" onclick="hapusBarisManual(this)" title="Batal">✕</button>
                 </td>
             `;
             
             tbody.appendChild(newRow);
+            
+            // Fokus ke input pertama
+            let firstInput = newRow.querySelector('.edit-nopol');
+            if (firstInput) firstInput.focus();
             
             // Scroll ke baris baru
             newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -983,7 +1062,7 @@
             let sa = row.querySelector('.edit-sa').value.trim();
 
             if (!nopol || !nama) {
-                alert('Nopol dan Nama harus diisi!');
+                alert('⚠️ Nopol dan Nama harus diisi!');
                 return;
             }
 
@@ -1014,12 +1093,20 @@
             let updates = {};
             updates['booking/' + key] = dataBaru;
 
+            let btnSave = row.querySelector('.btn-save-row');
+            btnSave.textContent = '⏳';
+            btnSave.disabled = true;
+
             db.ref().update(updates).then(() => {
                 alert('✅ Booking berhasil ditambahkan!');
-                // Hapus baris input
                 row.remove();
+                // Refresh data
+                let tanggalFilter = document.getElementById('filter-tanggal').value || getTanggalHariIni();
+                filterBooking();
             }).catch((err) => {
                 alert('❌ Gagal menyimpan: ' + err.message);
+                btnSave.textContent = '💾';
+                btnSave.disabled = false;
             });
         }
 
@@ -1027,6 +1114,13 @@
             let row = btn.closest('tr');
             if (confirm('Hapus baris ini?')) {
                 row.remove();
+                // Update nomor urut
+                let tbody = row.closest('tbody');
+                let rows = tbody.querySelectorAll('tr');
+                rows.forEach((r, idx) => {
+                    let td = r.querySelector('td:first-child');
+                    if (td) td.innerHTML = `<strong>${idx + 1}</strong>`;
+                });
             }
         }
 
@@ -1034,7 +1128,7 @@
         // ================ DOWNLOAD LAPORAN ===========================
         // ============================================================
         function downloadReport() {
-            let data = daftarBookingFiltered || daftarBooking;
+            let data = daftarBookingFiltered.length > 0 ? daftarBookingFiltered : daftarBooking;
             
             if (data.length === 0) {
                 alert('📭 Tidak ada data booking untuk diunduh.');
@@ -1057,7 +1151,6 @@
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(reportData);
             
-            // Set kolom width
             ws['!cols'] = [
                 { wch: 5 },   // No
                 { wch: 15 },  // Nopol
@@ -1233,11 +1326,11 @@
                 let hariIni = getTanggalHariIni();
                 
                 let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput) {
+                if (filterInput && !filterInput.value) {
                     filterInput.value = hariIni;
                 }
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
-                if (filterInputCounter) {
+                if (filterInputCounter && !filterInputCounter.value) {
                     filterInputCounter.value = hariIni;
                 }
                 
@@ -1264,7 +1357,12 @@
             let html = '';
             
             if (daftarBookingFiltered.length === 0) {
-                html = '<div class="empty-booking">📭 Tidak ada booking untuk hari ini.</div>';
+                html = `
+                    <div class="empty-booking">📭 Tidak ada booking untuk hari ini.</div>
+                    <div style="margin-top:10px;">
+                        <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
+                    </div>
+                `;
             } else {
                 daftarBookingFiltered.sort((a, b) => {
                     if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
@@ -1330,6 +1428,9 @@
                 html += `
                         </tbody>
                     </table>
+                    <div style="margin-top:10px; text-align:center;">
+                        <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
+                    </div>
                 `;
             }
             
@@ -1414,14 +1515,24 @@
             if (!container) return;
             
             if (data.length === 0) {
-                container.innerHTML = '<div class="empty-booking">📭 Tidak ada booking untuk filter ini.</div>';
+                container.innerHTML = `
+                    <div class="empty-booking">📭 Tidak ada booking untuk filter ini.</div>
+                    <div style="margin-top:10px;">
+                        <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
+                    </div>
+                `;
                 return;
             }
             
             let validData = data.filter(b => b.tanggal);
             
             if (validData.length === 0) {
-                container.innerHTML = '<div class="empty-booking">📭 Data booking tidak valid.</div>';
+                container.innerHTML = `
+                    <div class="empty-booking">📭 Data booking tidak valid.</div>
+                    <div style="margin-top:10px;">
+                        <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
+                    </div>
+                `;
                 return;
             }
             
@@ -1494,6 +1605,9 @@
             html += `
                     </tbody>
                 </table>
+                <div style="margin-top:10px; text-align:center;">
+                    <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
+                </div>
             `;
             
             container.innerHTML = html;
@@ -1779,7 +1893,6 @@
                     tanggalUpload = tanggal;
                 }
 
-                // Cek duplikat
                 let dataBaru = {
                     nopol: nopol,
                     tipe: tipe || '',
