@@ -191,9 +191,10 @@
         }
         .booking-table tr:nth-child(even) { background: #f8f9fa; }
         .booking-table tr:hover { background: #e3f0ff; }
-        .booking-table .status-menunggu { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
-        .booking-table .status-dipanggil { background: #28a745; color: #fff; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
-        .booking-table .status-selesai { background: #dc3545; color: #fff; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+        
+        .status-belum-datang { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+        .status-dipanggil { background: #28a745; color: #fff; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+        .status-selesai { background: #dc3545; color: #fff; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
         
         .btn-get-in {
             background: #28a745;
@@ -235,6 +236,18 @@
         }
         .btn-restore-booking:hover { background: #e8590c; }
         
+        .btn-edit-booking {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .btn-edit-booking:hover { background: #138496; }
+        
         .btn-delete-antrian {
             background: #dc3545;
             color: white;
@@ -256,7 +269,7 @@
         }
 
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fefefe; margin: 3% auto; padding: 25px; border: 1px solid #888; width: 95%; max-width: 500px; border-radius: 10px; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background-color: #fefefe; margin: 3% auto; padding: 25px; border: 1px solid #888; width: 95%; max-width: 600px; border-radius: 10px; max-height: 80vh; overflow-y: auto; }
         .modal-close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .modal-close:hover { color: #000; }
 
@@ -342,6 +355,7 @@
             border: none;
             cursor: pointer;
             margin-left: 10px;
+            transition: 0.3s;
         }
         .btn-mute.active {
             background: #dc3545;
@@ -525,6 +539,66 @@
             font-size: 16px;
             border-radius: 5px;
             border: 1px solid #ccc;
+        }
+
+        /* MODAL EDIT */
+        .modal-edit .modal-content {
+            max-width: 500px;
+        }
+        .modal-edit .form-group {
+            margin-bottom: 12px;
+            text-align: left;
+        }
+        .modal-edit .form-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 3px;
+        }
+        .modal-edit .form-group input {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        /* Sembunyikan kolom Pekerjaan untuk Counter */
+        .hide-pekerjaan .col-pekerjaan {
+            display: none;
+        }
+        .hide-pekerjaan .col-pekerjaan-header {
+            display: none;
+        }
+
+        .row-dipanggil {
+            background: #e8f5e9 !important;
+        }
+        .row-dipanggil td {
+            border-bottom: 1px solid #a5d6a7;
+        }
+        .row-menunggu {
+            background: #fff3e0 !important;
+        }
+        .row-menunggu td {
+            border-bottom: 1px solid #ffcc80;
+        }
+        .row-selesai {
+            background: #fce4ec !important;
+        }
+        .row-selesai td {
+            border-bottom: 1px solid #ef9a9a;
+        }
+
+        .separator-row td {
+            background: #e0e0e0 !important;
+            color: #555;
+            font-weight: bold;
+            padding: 6px;
+            text-align: center;
+            font-size: 13px;
+            border-top: 2px solid #999;
+            border-bottom: 2px solid #999;
         }
 
         @media (max-width: 768px) {
@@ -832,6 +906,51 @@
         </div>
     </div>
 
+    <!-- ================ MODAL EDIT ================ -->
+    <div id="modal-edit" class="modal modal-edit">
+        <div class="modal-content">
+            <span class="modal-close" onclick="tutupModalEdit()">&times;</span>
+            <h2>✏️ Edit Booking</h2>
+            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">
+                Edit data booking di bawah ini.
+            </p>
+            
+            <div id="edit-key" style="display:none;"></div>
+            
+            <div class="form-group">
+                <label for="edit-nopol">Nopol:</label>
+                <input type="text" id="edit-nopol" style="text-transform:uppercase;">
+            </div>
+            <div class="form-group">
+                <label for="edit-tipe">Tipe:</label>
+                <input type="text" id="edit-tipe">
+            </div>
+            <div class="form-group">
+                <label for="edit-nama">Nama:</label>
+                <input type="text" id="edit-nama">
+            </div>
+            <div class="form-group">
+                <label for="edit-telp">Telpon:</label>
+                <input type="text" id="edit-telp">
+            </div>
+            <div class="form-group">
+                <label for="edit-pekerjaan">Pekerjaan:</label>
+                <input type="text" id="edit-pekerjaan">
+            </div>
+            <div class="form-group">
+                <label for="edit-waktu">Waktu:</label>
+                <input type="text" id="edit-waktu">
+            </div>
+            <div class="form-group">
+                <label for="edit-sa">SA:</label>
+                <input type="text" id="edit-sa">
+            </div>
+            
+            <button class="btn-save-getin" onclick="simpanEdit()" style="background:#17a2b8;">💾 Simpan Perubahan</button>
+            <button class="btn-cancel-getin" onclick="tutupModalEdit()">❌ Batal</button>
+        </div>
+    </div>
+
     <script>
         // ============================================================
         // ================ KONFIGURASI FIREBASE =======================
@@ -856,6 +975,7 @@
         let daftarBookingFiltered = [];
         let getInTargetKey = null;
         let isMuted = false;
+        let editTargetKey = null;
 
         let queueSuara = [];
         let sedangMemutarSuara = false;
@@ -930,6 +1050,33 @@
         }
 
         // ============================================================
+        // ================ CEK APAKAH COUNTER DI-MUTE =================
+        // ============================================================
+        function isCounterMuted(counterName) {
+            if (!counterName) return false;
+            let muteStatus = localStorage.getItem('mute_counter_' + counterName);
+            return muteStatus === 'true';
+        }
+
+        // ============================================================
+        // ================ MUTE COUNTER ===============================
+        // ============================================================
+        function toggleMute() {
+            isMuted = !isMuted;
+            let btn = document.getElementById('btn-mute-counter');
+            if (isMuted) {
+                btn.innerText = '🔇 Suara OFF';
+                btn.classList.add('active');
+                btn.style.background = '#dc3545';
+            } else {
+                btn.innerText = '🔊 Suara ON';
+                btn.classList.remove('active');
+                btn.style.background = '#6c757d';
+            }
+            localStorage.setItem('mute_counter_' + sessionUser, isMuted);
+        }
+
+        // ============================================================
         // ================ TAMBAH BARIS MANUAL ========================
         // ============================================================
         function tambahBarisManual() {
@@ -937,9 +1084,11 @@
             
             let table = container.querySelector('table');
             
+            let filterInput = document.getElementById('filter-tanggal');
+            let tanggalFilter = filterInput ? filterInput.value : getTanggalHariIni();
+            
             if (!table) {
                 let hariIni = getTanggalHariIni();
-                let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput) {
                     filterInput.value = hariIni;
                 }
@@ -955,12 +1104,12 @@
                                     <th>Tipe</th>
                                     <th>Nama</th>
                                     <th>Telpon</th>
-                                    <th>Pekerjaan</th>
+                                    <th class="col-pekerjaan-header">Pekerjaan</th>
                                     <th>Waktu</th>
                                     <th>Tanggal</th>
                                     <th>SA</th>
                                     <th>Status</th>
-                                    <th style="width:180px;">Aksi</th>
+                                    <th style="width:200px;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -983,10 +1132,11 @@
                 <td><input type="text" class="edit-input edit-tipe" placeholder="Tipe" value=""></td>
                 <td><input type="text" class="edit-input edit-nama" placeholder="Nama" value=""></td>
                 <td><input type="text" class="edit-input edit-telp" placeholder="Telpon" value=""></td>
-                <td><input type="text" class="edit-input edit-pekerjaan" placeholder="Pekerjaan" value=""></td>
+                <td class="col-pekerjaan"><input type="text" class="edit-input edit-pekerjaan" placeholder="Pekerjaan" value=""></td>
                 <td><input type="text" class="edit-input edit-waktu-text" placeholder="Waktu" value=""></td>
-                <td style="color:#999; font-size:11px;">-</td>
+                <td style="color:#999; font-size:11px;">${tanggalFilter ? formatTanggalIndonesia(tanggalFilter) : '-'}</td>
                 <td><input type="text" class="edit-input edit-sa" placeholder="SA" value=""></td>
+                <td style="font-size:10px; color:#999;">-</td>
                 <td>
                     <button class="btn-cancel-row" onclick="hapusBarisManual(this)" title="Hapus baris">✕</button>
                 </td>
@@ -1001,6 +1151,10 @@
             }
             
             newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            if (sessionUser && sessionUser.includes('Counter')) {
+                hidePekerjaanColumn();
+            }
         }
 
         function hapusBarisManual(btn) {
@@ -1017,7 +1171,20 @@
         }
 
         // ============================================================
-        // ================ PASTE MAGIC MULTI ROW (DIPERBAIKI) ========
+        // ================ HIDE PEKERJAAN UNTUK COUNTER ==============
+        // ============================================================
+        function hidePekerjaanColumn() {
+            let tables = document.querySelectorAll('.booking-table');
+            tables.forEach(table => {
+                let headers = table.querySelectorAll('th.col-pekerjaan-header');
+                headers.forEach(th => th.style.display = 'none');
+                let cells = table.querySelectorAll('td.col-pekerjaan');
+                cells.forEach(td => td.style.display = 'none');
+            });
+        }
+
+        // ============================================================
+        // ================ PASTE MAGIC MULTI ROW ======================
         // ============================================================
         document.addEventListener('paste', function(e) {
             let target = e.target;
@@ -1030,24 +1197,22 @@
             
             if (!pastedText) return;
             
-            // ===== PERBAIKAN: Deteksi separator =====
-            let separator = '\t'; // Default: tab
+            let filterInput = document.getElementById('filter-tanggal');
+            let tanggalFilter = filterInput ? filterInput.value : getTanggalHariIni();
+            
+            let separator = '\t';
             let lines = pastedText.split('\n').filter(line => line.trim() !== '');
             
             if (lines.length === 0) return;
             
-            // Cek apakah ada tab di baris pertama
             let hasTab = lines[0].includes('\t');
-            // Cek apakah ada pipe di baris pertama
             let hasPipe = lines[0].includes('|');
             
-            // Prioritas: tab > pipe
             if (hasTab) {
                 separator = '\t';
             } else if (hasPipe) {
                 separator = '|';
             }
-            // ========================================
             
             e.preventDefault();
             
@@ -1057,18 +1222,21 @@
             lines.forEach((line, lineIndex) => {
                 let parts = line.split(separator).map(s => s.trim());
                 
-                // Jika hanya 1 bagian, paste normal di baris pertama
                 if (parts.length < 2 && lineIndex === 0) {
                     let input = row.querySelector('.edit-nopol');
                     if (input) input.value = parts[0] || '';
                     return;
                 }
                 
+                while (parts.length < 7) {
+                    parts.push('');
+                }
+                
                 if (lineIndex === 0) {
-                    fillRow(row, parts);
+                    fillRow(row, parts, tanggalFilter);
                 } else {
-                    let newRow = duplicateRow(row);
-                    fillRow(newRow, parts);
+                    let newRow = duplicateRow(row, tanggalFilter);
+                    fillRow(newRow, parts, tanggalFilter);
                     
                     let tbody = row.closest('tbody');
                     let rows = tbody.querySelectorAll('tr');
@@ -1078,9 +1246,13 @@
                     });
                 }
             });
+            
+            if (sessionUser && sessionUser.includes('Counter')) {
+                hidePekerjaanColumn();
+            }
         }, true);
 
-        function fillRow(row, parts) {
+        function fillRow(row, parts, tanggal) {
             let fields = [
                 { class: 'edit-nopol', value: parts[0] || '' },
                 { class: 'edit-tipe', value: parts[1] || '' },
@@ -1098,15 +1270,25 @@
                     input.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             });
+            
+            let tglCell = row.querySelector('td:nth-child(8)');
+            if (tglCell && tanggal) {
+                tglCell.textContent = formatTanggalIndonesia(tanggal);
+            }
         }
 
-        function duplicateRow(row) {
+        function duplicateRow(row, tanggal) {
             let tbody = row.closest('tbody');
             let newRow = row.cloneNode(true);
             
             newRow.querySelectorAll('input').forEach(input => {
                 input.value = '';
             });
+            
+            let tglCell = newRow.querySelector('td:nth-child(8)');
+            if (tglCell && tanggal) {
+                tglCell.textContent = formatTanggalIndonesia(tanggal);
+            }
             
             tbody.appendChild(newRow);
             return newRow;
@@ -1343,7 +1525,6 @@
             });
         }
 
-        // Event listener untuk perubahan tanggal pada modal hapus
         document.addEventListener('DOMContentLoaded', function() {
             let inputTanggal = document.getElementById('hapus-tanggal');
             if (inputTanggal) {
@@ -1442,7 +1623,7 @@
                 'Waktu': b.waktu || '',
                 'Tanggal': b.tanggal || '',
                 'SA': b.sa || '',
-                'Status': b.status || 'Menunggu'
+                'Status': b.status === 'dipanggil' ? 'DIPANGGIL' : (b.status === 'selesai' ? 'SELESAI' : 'BELUM DATANG')
             }));
 
             const wb = XLSX.utils.book_new();
@@ -1585,6 +1766,78 @@
         }
 
         // ============================================================
+        // ================ MODAL EDIT ================================
+        // ============================================================
+
+        function bukaModalEdit(key) {
+            let bookingData = daftarBooking.find(b => b.key === key);
+            if (!bookingData) {
+                alert("Data booking tidak ditemukan!");
+                return;
+            }
+
+            editTargetKey = key;
+            
+            document.getElementById('edit-nopol').value = bookingData.nopol || '';
+            document.getElementById('edit-tipe').value = bookingData.tipe || '';
+            document.getElementById('edit-nama').value = bookingData.nama || '';
+            document.getElementById('edit-telp').value = bookingData.telp || '';
+            document.getElementById('edit-pekerjaan').value = bookingData.pekerjaan || '';
+            document.getElementById('edit-waktu').value = bookingData.waktu || '';
+            document.getElementById('edit-sa').value = bookingData.sa || '';
+            
+            document.getElementById('modal-edit').style.display = 'block';
+        }
+
+        function tutupModalEdit() {
+            document.getElementById('modal-edit').style.display = 'none';
+            editTargetKey = null;
+        }
+
+        function simpanEdit() {
+            if (!editTargetKey) {
+                alert('Error: Tidak ada data yang dipilih!');
+                return;
+            }
+
+            let nopol = document.getElementById('edit-nopol').value.trim().toUpperCase();
+            let tipe = document.getElementById('edit-tipe').value.trim();
+            let nama = document.getElementById('edit-nama').value.trim();
+            let telp = document.getElementById('edit-telp').value.trim();
+            let pekerjaan = document.getElementById('edit-pekerjaan').value.trim();
+            let waktu = document.getElementById('edit-waktu').value.trim();
+            let sa = document.getElementById('edit-sa').value.trim();
+
+            if (!nopol || !nama) {
+                alert('⚠️ Nopol dan Nama harus diisi!');
+                return;
+            }
+
+            let updates = {};
+            updates['booking/' + editTargetKey + '/nopol'] = nopol;
+            updates['booking/' + editTargetKey + '/tipe'] = tipe || '';
+            updates['booking/' + editTargetKey + '/nama'] = nama;
+            updates['booking/' + editTargetKey + '/telp'] = telp || '';
+            updates['booking/' + editTargetKey + '/pekerjaan'] = pekerjaan || '-';
+            updates['booking/' + editTargetKey + '/waktu'] = waktu || '';
+            updates['booking/' + editTargetKey + '/sa'] = sa || '';
+
+            let btn = document.querySelector('.modal-edit .btn-save-getin');
+            btn.textContent = '⏳ Menyimpan...';
+            btn.disabled = true;
+
+            db.ref().update(updates).then(() => {
+                alert('✅ Data booking berhasil diupdate!');
+                tutupModalEdit();
+                filterBooking();
+            }).catch((err) => {
+                alert('❌ Gagal mengupdate: ' + err.message);
+                btn.textContent = '💾 Simpan Perubahan';
+                btn.disabled = false;
+            });
+        }
+
+        // ============================================================
         // ================ LOGIN ======================================
         // ============================================================
 
@@ -1623,12 +1876,22 @@
             } else {
                 document.getElementById('counter-view').style.display = 'block';
                 document.getElementById('counter-name-display').innerText = id;
+                
+                // Load mute status dari localStorage
                 let savedMute = localStorage.getItem('mute_counter_' + id);
                 if (savedMute === 'true') {
                     isMuted = true;
                     document.getElementById('btn-mute-counter').innerText = '🔇 Suara OFF';
                     document.getElementById('btn-mute-counter').classList.add('active');
+                    document.getElementById('btn-mute-counter').style.background = '#dc3545';
+                } else {
+                    isMuted = false;
+                    document.getElementById('btn-mute-counter').innerText = '🔊 Suara ON';
+                    document.getElementById('btn-mute-counter').classList.remove('active');
+                    document.getElementById('btn-mute-counter').style.background = '#6c757d';
                 }
+                
+                setTimeout(hidePekerjaanColumn, 500);
             }
             
             mulaiMendengarkanPanggilanAktif();
@@ -1650,19 +1913,6 @@
             window.speechSynthesis.speak(wakeUp);
             document.getElementById('btn-enable-audio').innerText = "✅ Suara Monitor Aktif";
             document.getElementById('btn-enable-audio').style.background = "#28a745";
-        }
-
-        function toggleMute() {
-            isMuted = !isMuted;
-            let btn = document.getElementById('btn-mute-counter');
-            if (isMuted) {
-                btn.innerText = '🔇 Suara OFF';
-                btn.classList.add('active');
-            } else {
-                btn.innerText = '🔊 Suara ON';
-                btn.classList.remove('active');
-            }
-            localStorage.setItem('mute_counter_' + sessionUser, isMuted);
         }
 
         // ============================================================
@@ -1691,8 +1941,10 @@
                     filterInputCounter.value = hariIni;
                 }
                 
+                let tanggalFilter = filterInput ? filterInput.value : hariIni;
+                
                 daftarBookingFiltered = daftarBooking.filter(b => {
-                    return b.tanggal && b.tanggal === hariIni;
+                    return b.tanggal && b.tanggal === tanggalFilter;
                 });
                 
                 renderDaftarBooking();
@@ -1713,7 +1965,23 @@
         function renderDaftarBooking() {
             let html = '';
             
-            if (daftarBookingFiltered.length === 0) {
+            let belumDatang = daftarBookingFiltered.filter(b => b.status !== 'dipanggil' && b.status !== 'selesai');
+            let sudahDipanggil = daftarBookingFiltered.filter(b => b.status === 'dipanggil' || b.status === 'selesai');
+            
+            belumDatang.sort((a, b) => {
+                if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
+                return 0;
+            });
+            
+            sudahDipanggil.sort((a, b) => {
+                if (a.status === 'dipanggil' && b.status === 'selesai') return -1;
+                if (a.status === 'selesai' && b.status === 'dipanggil') return 1;
+                return 0;
+            });
+            
+            let allData = [...belumDatang, ...sudahDipanggil];
+            
+            if (allData.length === 0) {
                 html = `
                     <div class="empty-booking">📭 Tidak ada booking untuk hari ini.</div>
                     <div style="margin-top:10px;">
@@ -1721,11 +1989,9 @@
                     </div>
                 `;
             } else {
-                daftarBookingFiltered.sort((a, b) => {
-                    if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
-                    return 0;
-                });
-
+                let isCounter = sessionUser && sessionUser.includes('Counter');
+                let colSpan = isCounter ? 10 : 11;
+                
                 html = `
                     <table class="booking-table">
                         <thead>
@@ -1735,52 +2001,36 @@
                                 <th>Tipe</th>
                                 <th>Nama</th>
                                 <th>Telpon</th>
-                                <th>Pekerjaan</th>
+                                <th class="col-pekerjaan-header ${isCounter ? 'hide-pekerjaan' : ''}">Pekerjaan</th>
                                 <th>Waktu</th>
                                 <th>Tanggal</th>
                                 <th>SA</th>
                                 <th>Status</th>
-                                <th style="width:180px;">Aksi</th>
+                                <th style="width:200px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                 `;
                 
-                daftarBookingFiltered.forEach((b, index) => {
-                    let statusClass = 'status-menunggu';
-                    let statusText = 'Menunggu';
-                    let disabled = false;
-                    if (b.status === 'dipanggil') { 
-                        statusClass = 'status-dipanggil'; 
-                        statusText = 'Dipanggil'; 
-                        disabled = true;
-                    }
-                    if (b.status === 'selesai') { 
-                        statusClass = 'status-selesai'; 
-                        statusText = 'Selesai';
-                        disabled = true;
-                    }
-                    
+                let counter = 0;
+                let hasDipanggil = sudahDipanggil.length > 0;
+                
+                belumDatang.forEach((b) => {
+                    counter++;
+                    html += renderRow(b, counter, 'belum-datang');
+                });
+                
+                if (hasDipanggil) {
                     html += `
-                        <tr>
-                            <td><strong>${index + 1}</strong></td>
-                            <td><strong>${b.nopol || '-'}</strong></td>
-                            <td>${b.tipe || '-'}</td>
-                            <td>${b.nama || '-'}</td>
-                            <td>${b.telp || '-'}</td>
-                            <td>${b.pekerjaan || '-'}</td>
-                            <td>${b.waktu || '-'}</td>
-                            <td>${formatTanggalIndonesia(b.tanggal)}</td>
-                            <td>${b.sa || '-'}</td>
-                            <td><span class="${statusClass}">${statusText}</span></td>
-                            <td>
-                                <button class="btn-get-in" ${disabled ? 'disabled' : ''} onclick="bukaModalGetIn('${b.key}')" title="Masukkan ke antrian">🚪 Get In</button>
-                                ${b.status === 'dipanggil' ? `<button class="btn-restore-booking" onclick="restoreBooking('${b.key}')" title="Kembalikan ke daftar booking">↩️</button>` : ''}
-                                <button class="btn-delete-booking" onclick="deleteBooking('${b.key}')" title="Hapus booking">✕</button>
-                            </td>
+                        <tr class="separator-row">
+                            <td colspan="${colSpan}">📌 BOOKING YANG SUDAH DIPANGGIL / SELESAI</td>
                         </tr>
                     `;
-                });
+                    sudahDipanggil.forEach((b) => {
+                        counter++;
+                        html += renderRow(b, counter, 'dipanggil');
+                    });
+                }
                 
                 html += `
                         </tbody>
@@ -1800,6 +2050,53 @@
             if (containerCounter) {
                 containerCounter.innerHTML = html;
             }
+            
+            if (sessionUser && sessionUser.includes('Counter')) {
+                hidePekerjaanColumn();
+            }
+        }
+
+        function renderRow(b, index, group) {
+            let statusClass = 'status-belum-datang';
+            let statusText = 'BELUM DATANG';
+            let rowClass = 'row-menunggu';
+            let disabled = false;
+            
+            if (b.status === 'dipanggil') { 
+                statusClass = 'status-dipanggil'; 
+                statusText = 'DIPANGGIL'; 
+                rowClass = 'row-dipanggil';
+                disabled = true;
+            }
+            if (b.status === 'selesai') { 
+                statusClass = 'status-selesai'; 
+                statusText = 'SELESAI'; 
+                rowClass = 'row-selesai';
+                disabled = true;
+            }
+            
+            let isCounter = sessionUser && sessionUser.includes('Counter');
+            
+            return `
+                <tr class="${rowClass}">
+                    <td><strong>${index}</strong></td>
+                    <td><strong>${b.nopol || '-'}</strong></td>
+                    <td>${b.tipe || '-'}</td>
+                    <td>${b.nama || '-'}</td>
+                    <td>${b.telp || '-'}</td>
+                    <td class="col-pekerjaan ${isCounter ? 'hide-pekerjaan' : ''}">${b.pekerjaan || '-'}</td>
+                    <td>${b.waktu || '-'}</td>
+                    <td>${formatTanggalIndonesia(b.tanggal)}</td>
+                    <td>${b.sa || '-'}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                    <td>
+                        <button class="btn-edit-booking" onclick="bukaModalEdit('${b.key}')" title="Edit">✏️</button>
+                        <button class="btn-get-in" ${disabled ? 'disabled' : ''} onclick="bukaModalGetIn('${b.key}')" title="Masukkan ke antrian">🚪 Get In</button>
+                        ${b.status === 'dipanggil' ? `<button class="btn-restore-booking" onclick="restoreBooking('${b.key}')" title="Kembalikan ke daftar booking">↩️</button>` : ''}
+                        <button class="btn-delete-booking" onclick="deleteBooking('${b.key}')" title="Hapus booking">✕</button>
+                    </td>
+                </tr>
+            `;
         }
 
         // ============================================================
@@ -1862,6 +2159,8 @@
                 return match;
             });
             
+            daftarBookingFiltered = filtered;
+            
             let container = document.getElementById('booking-list-counter');
             if (container) {
                 renderFilteredBooking(filtered, container);
@@ -1871,7 +2170,23 @@
         function renderFilteredBooking(data, container) {
             if (!container) return;
             
-            if (data.length === 0) {
+            let belumDatang = data.filter(b => b.status !== 'dipanggil' && b.status !== 'selesai');
+            let sudahDipanggil = data.filter(b => b.status === 'dipanggil' || b.status === 'selesai');
+            
+            belumDatang.sort((a, b) => {
+                if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
+                return 0;
+            });
+            
+            sudahDipanggil.sort((a, b) => {
+                if (a.status === 'dipanggil' && b.status === 'selesai') return -1;
+                if (a.status === 'selesai' && b.status === 'dipanggil') return 1;
+                return 0;
+            });
+            
+            let allData = [...belumDatang, ...sudahDipanggil];
+            
+            if (allData.length === 0) {
                 container.innerHTML = `
                     <div class="empty-booking">📭 Tidak ada booking untuk filter ini.</div>
                     <div style="margin-top:10px;">
@@ -1881,27 +2196,8 @@
                 return;
             }
             
-            let validData = data.filter(b => b.tanggal);
-            
-            if (validData.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-booking">📭 Data booking tidak valid.</div>
-                    <div style="margin-top:10px;">
-                        <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
-                    </div>
-                `;
-                return;
-            }
-            
-            validData.sort((a, b) => {
-                if (a.tanggal && b.tanggal && a.tanggal !== b.tanggal) {
-                    return a.tanggal.localeCompare(b.tanggal);
-                }
-                if (a.waktu && b.waktu && a.waktu !== b.waktu) {
-                    return a.waktu.localeCompare(b.waktu);
-                }
-                return 0;
-            });
+            let isCounter = sessionUser && sessionUser.includes('Counter');
+            let colSpan = isCounter ? 10 : 11;
             
             let html = `
                 <table class="booking-table">
@@ -1912,52 +2208,36 @@
                             <th>Tipe</th>
                             <th>Nama</th>
                             <th>Telpon</th>
-                            <th>Pekerjaan</th>
+                            <th class="col-pekerjaan-header ${isCounter ? 'hide-pekerjaan' : ''}">Pekerjaan</th>
                             <th>Waktu</th>
                             <th>Tanggal</th>
                             <th>SA</th>
                             <th>Status</th>
-                            <th style="width:180px;">Aksi</th>
+                            <th style="width:200px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
             
-            validData.forEach((b, index) => {
-                let statusClass = 'status-menunggu';
-                let statusText = 'Menunggu';
-                let disabled = false;
-                if (b.status === 'dipanggil') { 
-                    statusClass = 'status-dipanggil'; 
-                    statusText = 'Dipanggil'; 
-                    disabled = true;
-                }
-                if (b.status === 'selesai') { 
-                    statusClass = 'status-selesai'; 
-                    statusText = 'Selesai';
-                    disabled = true;
-                }
-                
+            let counter = 0;
+            let hasDipanggil = sudahDipanggil.length > 0;
+            
+            belumDatang.forEach((b) => {
+                counter++;
+                html += renderRow(b, counter, 'belum-datang');
+            });
+            
+            if (hasDipanggil) {
                 html += `
-                    <tr>
-                        <td><strong>${index + 1}</strong></td>
-                        <td><strong>${b.nopol || '-'}</strong></td>
-                        <td>${b.tipe || '-'}</td>
-                        <td>${b.nama || '-'}</td>
-                        <td>${b.telp || '-'}</td>
-                        <td>${b.pekerjaan || '-'}</td>
-                        <td>${b.waktu || '-'}</td>
-                        <td>${formatTanggalIndonesia(b.tanggal)}</td>
-                        <td>${b.sa || '-'}</td>
-                        <td><span class="${statusClass}">${statusText}</span></td>
-                        <td>
-                            <button class="btn-get-in" ${disabled ? 'disabled' : ''} onclick="bukaModalGetIn('${b.key}')" title="Masukkan ke antrian">🚪 Get In</button>
-                            ${b.status === 'dipanggil' ? `<button class="btn-restore-booking" onclick="restoreBooking('${b.key}')" title="Kembalikan ke daftar booking">↩️</button>` : ''}
-                            <button class="btn-delete-booking" onclick="deleteBooking('${b.key}')" title="Hapus booking">✕</button>
-                        </td>
+                    <tr class="separator-row">
+                        <td colspan="${colSpan}">📌 BOOKING YANG SUDAH DIPANGGIL / SELESAI</td>
                     </tr>
                 `;
-            });
+                sudahDipanggil.forEach((b) => {
+                    counter++;
+                    html += renderRow(b, counter, 'dipanggil');
+                });
+            }
             
             html += `
                     </tbody>
@@ -1968,6 +2248,10 @@
             `;
             
             container.innerHTML = html;
+            
+            if (sessionUser && sessionUser.includes('Counter')) {
+                hidePekerjaanColumn();
+            }
         }
 
         function resetFilter() {
@@ -2005,7 +2289,7 @@
         // ============================================================
 
         function restoreBooking(key) {
-            if (!confirm('↩️ Yakin ingin mengembalikan booking ini ke daftar booking?\n\nBooking akan dikembalikan ke status "Menunggu".')) {
+            if (!confirm('↩️ Yakin ingin mengembalikan booking ini ke daftar booking?\n\nBooking akan dikembalikan ke status "BELUM DATANG".')) {
                 return;
             }
             
@@ -2023,7 +2307,7 @@
         // ============================================================
 
         function deleteAntrian(key) {
-            if (!confirm('⚠️ Yakin ingin menghapus antrian ini?\n\nData akan dihapus permanen dari daftar tunggu!\nStatus booking akan dikembalikan ke "Menunggu".')) {
+            if (!confirm('⚠️ Yakin ingin menghapus antrian ini?\n\nData akan dihapus permanen dari daftar tunggu!\nStatus booking akan dikembalikan ke "BELUM DATANG".')) {
                 return;
             }
             
@@ -2034,7 +2318,7 @@
                         db.ref('booking/' + dataAntrian.bookingKey).update({
                             status: 'menunggu'
                         }).then(() => {
-                            alert('✅ Antrian berhasil dihapus!\nStatus booking dikembalikan ke "Menunggu".');
+                            alert('✅ Antrian berhasil dihapus!\nStatus booking dikembalikan ke "BELUM DATANG".');
                         }).catch((err) => {
                             alert('❌ Gagal mengembalikan status booking: ' + err.message);
                         });
@@ -2483,9 +2767,14 @@
                             document.getElementById('display-counter').innerText = data.counter;
                         }
                         
-                        if (data.timestamp !== lastPlayedTimestamp) {
+                        // CEK APAKAH COUNTER YANG MEMANGGIL SEDANG DI-MUTE
+                        let counterName = data.counter;
+                        if (counterName && isCounterMuted(counterName)) {
+                            // Tampilkan tapi tanpa suara
+                            console.log(`🔇 Suara dimatikan untuk ${counterName}`);
+                        } else if (data.timestamp !== lastPlayedTimestamp) {
                             lastPlayedTimestamp = data.timestamp;
-                            tambahKeAntreanSuara(teksPanggilan);
+                            tambahKeAntreanSuara(teksPanggilan, counterName);
                         }
 
                     } else if (sessionUser === data.counter && data.status !== 'selesai') {
@@ -2516,9 +2805,15 @@
         // ================ SISTEM SUARA ===============================
         // ============================================================
 
-        function tambahKeAntreanSuara(teks) {
+        function tambahKeAntreanSuara(teks, counterName) {
+            // HANYA MONITOR YANG BISA MEMUTAR SUARA
             if (sessionUser !== 'Monitor') return;
-            if (isMuted) return;
+            
+            // CEK APAKAH COUNTER YANG MEMANGGIL SEDANG DI-MUTE
+            if (counterName && isCounterMuted(counterName)) {
+                console.log(`🔇 Suara dimatikan untuk ${counterName}`);
+                return; // Skip suara jika counter di-mute
+            }
             
             queueSuara.push(teks);
             prosesAntreanSuara();
@@ -2527,10 +2822,6 @@
         function prosesAntreanSuara() {
             if (sessionUser !== 'Monitor') return;
             if (sedangMemutarSuara || queueSuara.length === 0) return;
-            if (isMuted) {
-                queueSuara = [];
-                return;
-            }
 
             sedangMemutarSuara = true;
             const teksYangDiputar = queueSuara.shift();
@@ -2585,6 +2876,10 @@
             let modalTanggal = document.getElementById('modal-tanggal');
             if (event.target == modalTanggal) {
                 tutupModalTanggal();
+            }
+            let modalEdit = document.getElementById('modal-edit');
+            if (event.target == modalEdit) {
+                tutupModalEdit();
             }
         }
     </script>
