@@ -3265,9 +3265,15 @@ function aktifkanSuaraCustomer() {
             let qrTextEl = document.getElementById('qr-fs-url-text');
             if (!qrContainer) return;
 
-            let currentUrl = window.location.href.split('?')[0] + '?view=customer';
+            // Mengambil URL dasar website Anda di GitHub (membersihkan hash atau parameter lama)
+            let baseUrl = window.location.href.split('?')[0].split('#')[0];
+            
+            // Pastikan URL berakhiran / atau index.html agar tidak salah jalur
+            let currentUrl = baseUrl + (baseUrl.endsWith('/') ? '' : '/') + '?view=customer';
+            
             if(qrTextEl) qrTextEl.innerText = currentUrl;
 
+            // Merender QR Code dengan URL yang valid
             let qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentUrl)}`;
             qrContainer.innerHTML = `<img src="${qrApiUrl}" alt="QR Code Fullscreen">`;
         }
