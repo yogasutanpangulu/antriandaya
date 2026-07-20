@@ -768,7 +768,10 @@
             <strong id="last-nopol">-</strong>
         </div>
 
-        <button class="btn-recall" onclick="panggilUlang()">Panggil Ulang Nomor Ini</button>
+        <div style="display: flex; justify-content: center; gap: 10px; width: 90%; margin: 0 auto 15px auto;">
+    <button class="btn-recall" onclick="panggilUlang()" style="width: 50%; margin: 0;">Panggil Ulang</button>
+    <button onclick="kembalikanAntrian()" style="width: 50%; margin: 0; background: #dc3545; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; padding: 10px;">Kembalikan Antrian</button>
+</div>
         
         <div class="waiting-list-container">Memuat daftar tunggu...</div>
 
@@ -2430,8 +2433,10 @@
                             status: 'baru',
                             timestamp: waktuPanggil,
                             waktuMasuk: waktuMasukAwal,
-                            waktuTunggu: durasiTunggu
-                        };
+                            waktuTunggu: durasiTunggu,
+			    bookingKey: dataAntrian.bookingKey || null,
+    			    muteSuara: isMuted // <--- TAMBAHKAN BARIS INI
+			};
                         
                         db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
                         
@@ -2444,7 +2449,8 @@
                             telp: dataAntrian.telp || "",
                             sa: dataAntrian.sa || "",
                             timestamp: waktuPanggil,
-                            waktuTunggu: durasiTunggu
+                            waktuTunggu: durasiTunggu,
+			    bookingKey: dataAntrian.bookingKey || null // <--- TAMBAHKAN BARIS INI
                         });
 
                         if (dataAntrian.bookingKey) {
@@ -2512,8 +2518,10 @@
                         status: 'baru',
                         timestamp: waktuPanggil,
                         waktuMasuk: waktuMasukAwal,
-                        waktuTunggu: durasiTunggu
-                    };
+                        waktuTunggu: durasiTunggu,
+			bookingKey: dataAntrian.bookingKey || null,
+    			muteSuara: isMuted // <--- TAMBAHKAN BARIS INI
+		    };
 
                     db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
 
@@ -2526,7 +2534,8 @@
                         telp: dataAntrian.telp || "",
                         sa: dataAntrian.sa || "",
                         timestamp: waktuPanggil,
-                        waktuTunggu: durasiTunggu
+                        waktuTunggu: durasiTunggu,
+			bookingKey: dataAntrian.bookingKey || null // <--- TAMBAHKAN BARIS INI
                     });
 
                     if (dataAntrian.bookingKey) {
@@ -2559,8 +2568,9 @@
                 counter: sessionUser,
                 status: 'selesai',
                 timestamp: Date.now(),
-                teksPanggilan: teksPanggilan
-            });
+                teksPanggilan: teksPanggilan,
+    		muteSuara: isMuted // <--- TAMBAHKAN BARIS INI (jangan lupa beri koma di baris atasnya)
+	    });
         }
 
         // ============================================================
@@ -2582,6 +2592,7 @@
         function panggilUlang() {
             if (dataPanggilanTerakhirKu) {
                 dataPanggilanTerakhirKu.timestamp = Date.now();
+		dataPanggilanTerakhirKu.muteSuara = isMuted; // <--- TAMBAHKAN BARIS INI
                 db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
             } else {
                 alert("Anda belum menarik antrian baru!");
@@ -2603,6 +2614,58 @@
                 renderDaftarTunggu();
             });
         }
+
+// ============================================================
+// ================ KEMBALIKAN ANTRIAN =========================
+// ============================================================
+
+function kembalikanAntrian() {
+    if (!dataPanggilanTerakhirKu) {
+        alert("⚠️ Tidak ada antrian yang sedang dipanggil!");
+        return;
+    }
+
+    if (!confirm("↩️ Kembalikan antrian nomor " + dataPanggilanTerakhirKu.nomor + " (" + dataPanggilanTerakhirKu.jenis + ") ke daftar tunggu?")) {
+        return;
+    }
+
+    let waktuKembali = Date.now();
+    
+    // Susun ulang data untuk dimasukkan kembali ke antrian
+    let dataKembali = {
+        jenis: dataPanggilanTerakhirKu.jenis,
+        nomor: dataPanggilanTerakhirKu.nomor,
+        nopol: dataPanggilanTerakhirKu.nopol === "-" ? "" : dataPanggilanTerakhirKu.nopol,
+        nama: dataPanggilanTerakhirKu.nama === "-" ? "" : dataPanggilanTerakhirKu.nama,
+        tipe: dataPanggilanTerakhirKu.tipe || "",
+        telp: dataPanggilanTerakhirKu.telp || "",
+        sa: dataPanggilanTerakhirKu.sa || "",
+        timestamp: waktuKembali, // Di-update agar berada di antrian paling belakang (antrian baru)
+        waktuMasuk: dataPanggilanTerakhirKu.waktuMasuk || waktuKembali // Mempertahankan timer durasi dari awal datang
+    };
+
+    // Jika data aslinya adalah booking, kembalikan key dan ubah status tabel booking ke menunggu
+    if (dataPanggilanTerakhirKu.bookingKey) {
+        dataKembali.bookingKey = dataPanggilanTerakhirKu.bookingKey;
+        db.ref('booking/' + dataPanggilanTerakhirKu.bookingKey).update({ status: 'menunggu' });
+    }
+
+    // 1. Masukkan data kembali ke daftar tunggu
+    db.ref('antrian/menunggu').push(dataKembali).then(() => {
+        // 2. Hapus panggilan aktif di layar monitor utama (akan kembali kosong)
+        db.ref('antrian/panggilan_aktif').remove();
+        
+        // 3. Reset informasi di layar Counter saat ini
+        dataPanggilanTerakhirKu = null;
+        document.getElementById('last-called').innerText = "Belum ada";
+        document.getElementById('nopol-display-area').style.display = 'none';
+        document.getElementById('waktu-tunggu-counter').innerText = "";
+        
+        alert("✅ Antrian berhasil dikembalikan ke daftar tunggu!");
+    }).catch((err) => {
+        alert("❌ Gagal mengembalikan antrian: " + err.message);
+    });
+}
 
         function renderDaftarTunggu() {
             let htmlBooking = "";
@@ -2767,16 +2830,15 @@
                             document.getElementById('display-counter').innerText = data.counter;
                         }
                         
-                        // CEK APAKAH COUNTER YANG MEMANGGIL SEDANG DI-MUTE
-                        let counterName = data.counter;
-                        if (counterName && isCounterMuted(counterName)) {
-                            // Tampilkan tapi tanpa suara
-                            console.log(`🔇 Suara dimatikan untuk ${counterName}`);
-                        } else if (data.timestamp !== lastPlayedTimestamp) {
-                            lastPlayedTimestamp = data.timestamp;
-                            tambahKeAntreanSuara(teksPanggilan, counterName);
-                        }
-
+                        // CEK APAKAH COUNTER YANG MEMANGGIL SEDANG DI-MUTE VIA FIREBASE
+			    if (data.muteSuara === true) {
+    			    // Tampilkan nomor antrian di layar besar tapi jangan panggil suaranya
+    			    console.log(`🔇 Suara dimatikan untuk ${data.counter}`);
+			    } else if (data.timestamp !== lastPlayedTimestamp) {
+    			    lastPlayedTimestamp = data.timestamp;
+    			    tambahKeAntreanSuara(teksPanggilan, data.counter);
+			}
+                           
                     } else if (sessionUser === data.counter && data.status !== 'selesai') {
                         document.getElementById('last-called').innerText = teksTampilan;
                         document.getElementById('nopol-display-area').style.display = 'flex';
