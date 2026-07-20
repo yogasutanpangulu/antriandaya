@@ -618,6 +618,241 @@
             .history-table th, .history-table td { padding: 3px 2px; }
             .edit-input { font-size: 10px; padding: 3px 4px; }
         }
+
+/* Layout Utama Monitor Model 2 Kolom */
+        #monitor-view {
+            display: none;
+            max-width: 99% !important;
+            padding: 15px !important;
+            background: #eef2f5 !important;
+        }
+        .monitor-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            height: 82vh;
+        }
+        /* Kolom Kiri: Panggilan Saat Ini dengan Watermark Logo */
+        .monitor-left {
+            flex: 1.2;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 2px solid #007bff;
+            
+            /* Menjadikan logo sebagai background/watermark transparan */
+            background-image: url('LOGO DAYA.webp');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 65%;
+            position: relative;
+        }
+
+        /* Memberikan efek lapisan putih tipis agar logo samar dan tulisan tetap jelas */
+        .monitor-left::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.88);
+            z-index: 1;
+        }
+
+        /* Memastikan isi teks berada di atas lapisan watermark */
+        .monitor-header-call, .monitor-body-call {
+            position: relative;
+            z-index: 2;
+        }
+        .monitor-header-call {
+            background: #007bff;
+            color: white;
+            font-size: 26px;
+            font-weight: bold;
+            padding: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .monitor-body-call {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .monitor-type-display {
+            font-size: 55px;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .monitor-number-display {
+            font-size: 140px;
+            font-weight: bold;
+            color: #dc3545;
+            line-height: 1;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .monitor-counter-display {
+            font-size: 52px; /* Ditingkatkan agar seukuran tulisan Booking/Non Booking */
+            font-weight: bold;
+            color: #333;
+            background: #ffc107;
+            padding: 10px 40px;
+            border-radius: 40px;
+            margin-top: 15px;
+            letter-spacing: 1px;
+        }
+
+        /* Kolom Kanan: Daftar Pelanggan Menunggu */
+        .monitor-right {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 2px solid #6c757d;
+        }
+        .monitor-header-waiting {
+            background: #343a40;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 15px;
+            letter-spacing: 1px;
+        }
+        .monitor-waiting-grid {
+            display: flex;
+            height: calc(100% - 60px);
+        }
+        .monitor-waiting-col {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            border-right: 1px solid #dee2e6;
+        }
+        .monitor-waiting-col:last-child {
+            border-right: none;
+        }
+        .monitor-waiting-col h5 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            padding: 8px;
+            border-radius: 5px;
+            color: white;
+        }
+        .col-booking-title { background: #28a745; }
+        .col-non-title { background: #17a2b8; }
+        
+        /* List Item Menunggu yang Profesional */
+        .monitor-item-card {
+            background: #f8f9fa;
+            border-left: 5px solid #007bff;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            text-align: left;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-size: 15px;
+            font-weight: bold;
+            color: #333;
+        }
+
+.monitor-logo {
+            height: 45px; /* Sesuaikan tinggi logo */
+            object-fit: contain;
+        }
+
+/* Tampilan Khusus Pelanggan via HP (Scan Barcode) */
+        #customer-view {
+            display: none;
+            max-width: 500px !important;
+            margin: 20px auto;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .customer-card-box {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 10px rgba(0,123,255,0.3);
+        }
+        .customer-big-number {
+            font-size: 90px;
+            font-weight: bold;
+            color: #ffc107;
+            line-height: 1;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .customer-type {
+            font-size: 28px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .customer-counter {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+/* Mode Layar Penuh QR Code (Screen Saver) */
+        #qr-fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #0056b3, #003d82);
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            animation: fadeInQR 0.5s ease-in-out;
+        }
+        @keyframes fadeInQR {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .qr-fs-card {
+            background: white;
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            color: #333;
+            max-width: 450px;
+            width: 90%;
+        }
+        #qrcode-fullscreen-container img {
+            width: 250px !important;
+            height: 250px !important;
+            display: block;
+            margin: 0 auto;
+            border-radius: 10px;
+            border: 3px solid #eee;
+        }
     </style>
 </head>
 <body>
@@ -739,12 +974,78 @@
 
     <!-- ================ VIEW MONITOR ================ -->
     <div id="monitor-view" class="container" style="display: none;">
-        <h2>📺 Layar Monitor Utama</h2>
-        <button id="btn-enable-audio" onclick="aktifkanSuaraMonitor()">🔊 Klik di Sini Aktifkan Suara Monitor</button>
-        <div class="calling-counter">PANGGILAN SAAT INI</div>
-        <div class="big-number" id="display-number">--</div>
-        <div class="calling-counter" id="display-counter">Menunggu Panggilan...</div>
-        <div class="waiting-list-container">Memuat daftar tunggu...</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px;">
+            <h2 style="margin: 0; color: #333; font-size: 20px;">📺 Layar Monitor Utama - Daya Toyota</h2>
+            <button id="btn-enable-audio" onclick="aktifkanSuaraMonitor()" style="margin: 0; padding: 8px 15px; font-size: 14px;">🔊 Aktifkan Suara Monitor</button>
+        </div>
+
+        <div class="monitor-layout">
+            <!-- Kolom Kiri (Panggilan Aktif dengan Background Watermark Logo) -->
+            <div class="monitor-left">
+                <div class="monitor-header-call">Panggilan Saat Ini</div>
+                <div class="monitor-body-call">
+                    <div class="monitor-type-display" id="display-type">--</div>
+                    <div class="monitor-number-display" id="display-number">--</div>
+                    <div class="monitor-counter-display" id="display-counter">Menunggu Panggilan...</div>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan (Daftar Pelanggan Menunggu) -->
+            <div class="monitor-right">
+                <div class="monitor-header-waiting">DAFTAR PELANGGAN MENUNGGU</div>
+                <div class="monitor-waiting-grid">
+                    <div class="monitor-waiting-col">
+                        <h5 class="col-booking-title">BOOKING</h5>
+                        <div id="monitor-waiting-booking">
+                            <i style="color: #777; font-size: 13px;">Belum ada antrian</i>
+                        </div>
+                    </div>
+                    <div class="monitor-waiting-col">
+                        <h5 class="col-non-title">NON BOOKING</h5>
+                        <div id="monitor-waiting-non">
+                            <i style="color: #777; font-size: 13px;">Belum ada antrian</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- ================ VIEW CUSTOMER (KHUSUS HP PELANGGAN) ================ -->
+    <div id="customer-view" class="container" style="display: none;">
+        <h3 style="margin: 0; color: #333;">🚗 Daya Toyota</h3>
+        <p style="font-size: 13px; color: #666; margin-top: 2px;">Live Monitor Antrian Service</p>
+        
+        <!-- Tombol Aktivasi Suara di HP Pelanggan -->
+        <button id="btn-enable-customer-audio" onclick="aktifkanSuaraCustomer()" style="width: 100%; background: #28a745; padding: 12px; font-size: 15px; border-radius: 8px; margin-bottom: 10px;">
+            🔊 Ketuk di Sini untuk Aktifkan Suara Panggilan HP
+        </button>
+
+        <div class="customer-card-box">
+            <div style="font-size: 14px; opacity: 0.9;">PANGGILAN SAAT INI</div>
+            <div class="customer-type" id="cust-display-type">--</div>
+            <div class="customer-big-number" id="cust-display-number">--</div>
+            <div class="customer-counter" id="cust-display-counter">Menunggu Panggilan...</div>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: left; margin-top: 15px; border: 1px solid #dee2e6;">
+            <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #333;">📋 Daftar Pelanggan Menunggu:</h4>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <div style="background: #28a745; color: white; padding: 4px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px 4px 0 0;">BOOKING</div>
+                    <div id="cust-waiting-booking" style="background: white; padding: 8px; min-height: 80px; max-height: 150px; overflow-y: auto; font-size: 12px; border: 1px solid #dee2e6; border-radius: 0 0 4px 4px;">
+                        <i>Memuat...</i>
+                    </div>
+                </div>
+                <div style="flex: 1;">
+                    <div style="background: #17a2b8; color: white; padding: 4px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px 4px 0 0;">NON BOOKING</div>
+                    <div id="cust-waiting-non" style="background: white; padding: 8px; min-height: 80px; max-height: 150px; overflow-y: auto; font-size: 12px; border: 1px solid #dee2e6; border-radius: 0 0 4px 4px;">
+                        <i>Memuat...</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p style="font-size: 11px; color: #888; margin-top: 15px;">Halaman ini terhubung secara otomatis ke sistem antrian.</p>
     </div>
 
     <!-- ================ VIEW COUNTER ================ -->
@@ -1845,6 +2146,23 @@
         // ============================================================
 
         window.onload = function() {
+            // Cek apakah diakses via scan barcode HP pelanggan (?view=customer)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('view') === 'customer') {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('valey-view').style.display = 'none';
+                document.getElementById('monitor-view').style.display = 'none';
+                document.getElementById('counter-view').style.display = 'none';
+                let custView = document.getElementById('customer-view');
+                if (custView) custView.style.display = 'block';
+                
+                sessionUser = 'CustomerMobile';
+                
+                mulaiMendengarkanPanggilanAktif();
+                mulaiMendengarkanDaftarTunggu();
+                return;
+            }
+
             cekAtauResetHariBaru();
             setInterval(cekAtauResetHariBaru, 60000);
             cekLoginSebelumnya();
@@ -1874,6 +2192,7 @@
 
             if (id === 'Monitor') {
                 document.getElementById('monitor-view').style.display = 'block';
+                mulaiSlideshowMonitor(); // <--- Menjalankan layar screen saver bergantian otomatis
             } else if (id === 'Valey') {
                 document.getElementById('valey-view').style.display = 'block';
             } else {
@@ -2670,6 +2989,10 @@ function kembalikanAntrian() {
         function renderDaftarTunggu() {
             let htmlBooking = "";
             let htmlNonBooking = "";
+            
+            let monitorBookingHtml = "";
+            let monitorNonHtml = "";
+
             let sekarang = Date.now();
 
             daftarAntrianMenunggu.forEach((d) => {
@@ -2686,9 +3009,10 @@ function kembalikanAntrian() {
                     badgeClass = 'badge-sa';
                 }
 
+                // 1. Tampilan lengkap dengan Tombol Edit (Pensil), Nama SA, Timer, & Tombol Hapus (✕) untuk Valey / Counter
                 let badgeHtml = `
                     <div class="antrian-item">
-                        <button onclick="editAntrian('${d.key}', '${d.nopol}')" style="padding: 2px 5px; font-size: 10px; cursor: pointer; background:#6c757d; color:white; border:none; border-radius:3px;">✏️</button>
+                        <button onclick="editAntrian('${d.key}', '${d.nopol}')" style="padding: 2px 5px; font-size: 10px; cursor: pointer; background:#6c757d; color:white; border:none; border-radius:3px;" title="Edit Nopol">✏️</button>
                         <div class="badge-waiting ${badgeClass}" onclick="panggilAntrianLangsung('${d.key}')" style="flex: 1; cursor: pointer;">
                             ${d.jenis} ${d.nomor}${teksNopol}${teksNama}${teksTelp}${teksSA}
                             <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
@@ -2696,15 +3020,28 @@ function kembalikanAntrian() {
                         <button class="btn-delete-antrian" onclick="deleteAntrian('${d.key}')" title="Hapus antrian">✕</button>
                     </div>`;
 
+                // 2. Tampilan bersih khusus Layar Monitor & HP Pelanggan (Dilengkapi nomor, nopol, nama, SA, dan Timer)
+                let monitorCardHtml = `
+                    <div class="monitor-item-card" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>📍 <strong>${d.nomor}</strong>${teksNopol}${teksNama}${teksSA}</div>
+                        <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
+                    </div>
+                `;
+
                 if (d.jenis === 'Booking') {
                     htmlBooking += badgeHtml;
+                    monitorBookingHtml += monitorCardHtml;
                 } else {
                     htmlNonBooking += badgeHtml;
+                    monitorNonHtml += monitorCardHtml;
                 }
             });
 
             if (htmlBooking === "") htmlBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Booking</i>";
             if (htmlNonBooking === "") htmlNonBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Non Booking</i>";
+
+            if (monitorBookingHtml === "") monitorBookingHtml = "<i style='color:#777; font-size:13px;'>Belum ada antrian</i>";
+            if (monitorNonHtml === "") monitorNonHtml = "<i style='color:#777; font-size:13px;'>Belum ada antrian</i>";
 
             let finalHtml = `
                 <strong>📋 Daftar Pelanggan Menunggu:</strong>
@@ -2720,92 +3057,23 @@ function kembalikanAntrian() {
                 </div>
             `;
             
+            // Update untuk Valey dan Counter
             let elements = document.getElementsByClassName('waiting-list-container');
             for(let i=0; i<elements.length; i++) {
                 elements[i].innerHTML = finalHtml;
             }
-        }
 
-        function mulaiTimerRealtime() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                let sekarang = Date.now();
-                daftarAntrianMenunggu.forEach((d) => {
-                    let el = document.querySelectorAll(`[id="timer-${d.key}"]`);
-                    if (el && el.length > 0) {
-                        let waktuAwal = d.waktuMasuk || d.timestamp || sekarang;
-                        let durasiMs = sekarang - waktuAwal;
-                        let strTimer = formatWaktuLalu(durasiMs);
-                        el.forEach(e => e.innerText = `⏱️ ${strTimer}`);
-                    }
-                });
-            }, 1000);
-        }
+            // Update khusus untuk Kolom Kanan Layar Monitor
+            let monBookEl = document.getElementById('monitor-waiting-booking');
+            let monNonEl = document.getElementById('monitor-waiting-non');
+            if (monBookEl) monBookEl.innerHTML = monitorBookingHtml;
+            if (monNonEl) monNonEl.innerHTML = monitorNonHtml;
 
-        function mulaiMendengarkanHistory() {
-            db.ref('antrian/history').on('value', (snapshot) => {
-                let dataTabel = {
-                    "Counter 2": { booking: [], nonBooking: [] },
-                    "Counter 3": { booking: [], nonBooking: [] },
-                    "Counter 4": { booking: [], nonBooking: [] },
-                    "Counter 5": { booking: [], nonBooking: [] },
-                    "Counter 6": { booking: [], nonBooking: [] },
-                    "Counter 7": { booking: [], nonBooking: [] },
-                    "Counter 8": { booking: [], nonBooking: [] }
-                };
-
-                let maxBaris = 0;
-
-                snapshot.forEach((counterSnapshot) => {
-                    let cName = counterSnapshot.key;
-                    if(dataTabel[cName]) {
-                        counterSnapshot.forEach((antrianSnapshot) => {
-                            let d = antrianSnapshot.val();
-                            let classBtn = d.jenis === 'Booking' ? 'btn-hist-book' : 'btn-hist-non';
-                            let teksNopol = d.nopol && d.nopol !== "-" ? `<span class="hist-nopol" style="font-size:13px; font-weight:bold;">🚗 ${d.nopol}</span>` : '';
-                            let teksNama = d.nama && d.nama !== "-" ? `<span class="hist-nopol">👤 ${d.nama}</span>` : '';
-                            let teksTelp = d.telp ? `<span class="hist-nopol">📞 ${d.telp}</span>` : '';
-                            let teksSA = d.sa ? `<span class="hist-nopol">SA: ${d.sa}</span>` : '';
-                            let teksWaktu = d.waktuTunggu ? `<span class="hist-time">⏱️ ${formatWaktuTunggu(d.waktuTunggu)}</span>` : '';
-                            
-                            let tombolHtml = `<button class="${classBtn}" onclick="panggilUnitSelesai('${cName}', '${d.jenis}', ${d.nomor || 0}, '${d.nopol || '-'}')">${teksNopol}${teksNama}${teksTelp}${teksSA}${teksWaktu}</button>`;
-                            
-                            if (d.jenis === 'Booking') {
-                                dataTabel[cName].booking.push(tombolHtml);
-                            } else {
-                                dataTabel[cName].nonBooking.push(tombolHtml);
-                            }
-                        });
-                        
-                        let panjangMaksCounterIni = Math.max(dataTabel[cName].booking.length, dataTabel[cName].nonBooking.length);
-                        if (panjangMaksCounterIni > maxBaris) {
-                            maxBaris = panjangMaksCounterIni;
-                        }
-                    }
-                });
-
-                let tbodyHtml = "";
-                for (let i = 0; i < maxBaris; i++) {
-                    tbodyHtml += "<tr>";
-                    for (let c = 2; c <= 8; c++) {
-                        let cName = "Counter " + c;
-                        let btnB = dataTabel[cName].booking[i] || "";
-                        let btnN = dataTabel[cName].nonBooking[i] || "";
-                        
-                        tbodyHtml += `<td>${btnB}</td><td>${btnN}</td>`;
-                    }
-                    tbodyHtml += "</tr>";
-                }
-
-                if (maxBaris === 0) {
-                    tbodyHtml = `<tr><td colspan="14" style="padding:15px; color:#666;">Belum ada history antrian.</td></tr>`;
-                }
-
-                let elements = document.querySelectorAll('#history-table-body, #history-table-body-counter');
-                elements.forEach(el => {
-                    el.innerHTML = tbodyHtml;
-                });
-            });
+            // Update khusus untuk Tampilan HP Customer (Scan Barcode)
+            let custBookEl = document.getElementById('cust-waiting-booking');
+            let custNonEl = document.getElementById('cust-waiting-non');
+            if (custBookEl) custBookEl.innerHTML = monitorBookingHtml;
+            if (custNonEl) custNonEl.innerHTML = monitorNonHtml;
         }
 
         function mulaiMendengarkanPanggilanAktif() {
@@ -2822,22 +3090,25 @@ function kembalikanAntrian() {
                     }
 
                     if (sessionUser === 'Monitor') {
-                        document.getElementById('display-number').innerText = teksTampilan;
+                        // Memisahkan jenis antrian dan nomor agar tampil keren di layout Monitor
+                        let typeDisplay = document.getElementById('display-type');
+                        if (typeDisplay) typeDisplay.innerText = data.jenis || "--";
+                        
+                        document.getElementById('display-number').innerText = data.nomor || "--";
                         
                         if (data.status === 'selesai') {
-                            document.getElementById('display-counter').innerText = `Unit Selesai -> ${data.counter}`;
+                            document.getElementById('display-counter').innerText = `UNIT SELESAI -> ${data.counter}`;
                         } else {
                             document.getElementById('display-counter').innerText = data.counter;
                         }
                         
                         // CEK APAKAH COUNTER YANG MEMANGGIL SEDANG DI-MUTE VIA FIREBASE
-			    if (data.muteSuara === true) {
-    			    // Tampilkan nomor antrian di layar besar tapi jangan panggil suaranya
-    			    console.log(`🔇 Suara dimatikan untuk ${data.counter}`);
-			    } else if (data.timestamp !== lastPlayedTimestamp) {
-    			    lastPlayedTimestamp = data.timestamp;
-    			    tambahKeAntreanSuara(teksPanggilan, data.counter);
-			}
+                        if (data.muteSuara === true) {
+                            console.log(`🔇 Suara dimatikan untuk ${data.counter}`);
+                        } else if (data.timestamp !== lastPlayedTimestamp) {
+                            lastPlayedTimestamp = data.timestamp;
+                            tambahKeAntreanSuara(teksPanggilan, data.counter);
+                        }
                            
                     } else if (sessionUser === data.counter && data.status !== 'selesai') {
                         document.getElementById('last-called').innerText = teksTampilan;
@@ -2852,6 +3123,9 @@ function kembalikanAntrian() {
                     }
                 } else {
                     if (sessionUser === 'Monitor') {
+                        let typeDisplay = document.getElementById('display-type');
+                        if (typeDisplay) typeDisplay.innerText = "--";
+                        
                         document.getElementById('display-number').innerText = "--";
                         document.getElementById('display-counter').innerText = "Menunggu Panggilan...";
                     } else if (sessionUser.includes('Counter')) {
@@ -2944,6 +3218,73 @@ function kembalikanAntrian() {
                 tutupModalEdit();
             }
         }
+
+function aktifkanSuaraCustomer() {
+            let wakeUp = new SpeechSynthesisUtterance('Suara antrian HP aktif');
+            wakeUp.lang = 'id-ID';
+            window.speechSynthesis.speak(wakeUp);
+            let btn = document.getElementById('btn-enable-customer-audio');
+            if(btn) {
+                btn.innerText = "✅ Suara HP Aktif & Siap Mendengar";
+                btn.style.background = "#138496";
+            }
+        }
+
+        let qrSlideInterval = null;
+
+        function mulaiSlideshowMonitor() {
+            if (sessionUser !== 'Monitor') return;
+
+            let waktuTampilMonitor = 30000; // 30 detik tampil layar utama
+            let waktuTampilQR = 10000;      // 10 detik tampil screen saver QR Code
+
+            function jalankanSiklusQR() {
+                let monitorContainer = document.getElementById('monitor-view');
+                let qrOverlay = document.getElementById('qr-fullscreen-overlay');
+                
+                if (monitorContainer && qrOverlay && sessionUser === 'Monitor') {
+                    monitorContainer.style.display = 'none';
+                    qrOverlay.style.display = 'flex';
+                    generateQRCodeFullscreen();
+
+                    setTimeout(() => {
+                        if (sessionUser === 'Monitor') {
+                            qrOverlay.style.display = 'none';
+                            monitorContainer.style.display = 'block';
+                        }
+                    }, waktuTampilQR);
+                }
+            }
+
+            if (qrSlideInterval) clearInterval(qrSlideInterval);
+            qrSlideInterval = setInterval(jalankanSiklusQR, waktuTampilMonitor + waktuTampilQR);
+        }
+
+        function generateQRCodeFullscreen() {
+            let qrContainer = document.getElementById('qrcode-fullscreen-container');
+            let qrTextEl = document.getElementById('qr-fs-url-text');
+            if (!qrContainer) return;
+
+            let currentUrl = window.location.href.split('?')[0] + '?view=customer';
+            if(qrTextEl) qrTextEl.innerText = currentUrl;
+
+            let qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentUrl)}`;
+            qrContainer.innerHTML = `<img src="${qrApiUrl}" alt="QR Code Fullscreen">`;
+        }
     </script>
+
+<!-- ================ SCREEN SAVER QR CODE FULLSCREEN ================ -->
+    <div id="qr-fullscreen-overlay">
+        <div class="qr-fs-card">
+            <h2 style="margin: 0 0 5px 0; color: #0056b3; font-size: 26px;">🚗 Daya Toyota</h2>
+            <p style="margin: 0 0 20px 0; font-size: 14px; color: #666;">Scan QR Code untuk Buka Antrian & Suara di HP</p>
+            
+            <div id="qrcode-fullscreen-container"></div>
+            
+            <p style="margin: 15px 0 0 0; font-size: 12px; color: #888; word-break: break-all;" id="qr-fs-url-text"></p>
+        </div>
+        <p style="margin-top: 20px; font-size: 13px; opacity: 0.8; letter-spacing: 1px;">⏳ Layar akan kembali otomatis...</p>
+    </div>
+
 </body>
 </html>
