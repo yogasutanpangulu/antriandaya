@@ -3022,9 +3022,8 @@ function kembalikanAntrian() {
 
                 // 2. Tampilan bersih khusus Layar Monitor & HP Pelanggan (Dilengkapi nomor, nopol, nama, SA, dan Timer)
                 let monitorCardHtml = `
-                    <div class="monitor-item-card" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>📍 <strong>${d.nomor}</strong>${teksNopol}${teksNama}${teksSA}</div>
-                        <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
+                    <div class="monitor-item-card">
+                        📍 <strong>${d.nomor}</strong>${teksNopol}${teksNama}${teksSA}
                     </div>
                 `;
 
@@ -3089,49 +3088,61 @@ function kembalikanAntrian() {
                         teksPanggilan = `Antrian ${data.jenis} ${data.nomor} di ${data.counter}`;
                     }
 
-                    if (sessionUser === 'Monitor') {
-                        // Memisahkan jenis antrian dan nomor agar tampil keren di layout Monitor
-                        let typeDisplay = document.getElementById('display-type');
-                        if (typeDisplay) typeDisplay.innerText = data.jenis || "--";
+                    if (sessionUser === 'Monitor' || sessionUser === 'CustomerMobile') {
+                        let isCust = (sessionUser === 'CustomerMobile');
                         
-                        document.getElementById('display-number').innerText = data.nomor || "--";
+                        // Menyesuaikan target elemen berdasarkan apakah ini Monitor atau HP Customer
+                        let typeEl = document.getElementById(isCust ? 'cust-display-type' : 'display-type');
+                        let numEl = document.getElementById(isCust ? 'cust-display-number' : 'display-number');
+                        let cntEl = document.getElementById(isCust ? 'cust-display-counter' : 'display-counter');
                         
-                        if (data.status === 'selesai') {
-                            document.getElementById('display-counter').innerText = `UNIT SELESAI -> ${data.counter}`;
-                        } else {
-                            document.getElementById('display-counter').innerText = data.counter;
+                        if (typeEl) typeEl.innerText = data.jenis || "--";
+                        if (numEl) numEl.innerText = data.nomor || "--";
+                        if (cntEl) {
+                            cntEl.innerText = data.status === 'selesai' ? `UNIT SELESAI -> ${data.counter}` : data.counter;
                         }
                         
-                        // CEK APAKAH COUNTER YANG MEMANGGIL SEDANG DI-MUTE VIA FIREBASE
                         if (data.muteSuara === true) {
-                            console.log(`🔇 Suara dimatikan untuk ${data.counter}`);
+                            console.log(`🔇 Suara dimatikan`);
                         } else if (data.timestamp !== lastPlayedTimestamp) {
                             lastPlayedTimestamp = data.timestamp;
                             tambahKeAntreanSuara(teksPanggilan, data.counter);
                         }
                            
-                    } else if (sessionUser === data.counter && data.status !== 'selesai') {
-                        document.getElementById('last-called').innerText = teksTampilan;
-                        document.getElementById('nopol-display-area').style.display = 'flex';
-                        document.getElementById('last-nopol').innerText = data.nopol || "-";
+                    } else if (sessionUser === sessionUser && sessionUser.includes('Counter') && data.status !== 'selesai') {
+                        let lastCalledEl = document.getElementById('last-called');
+                        let nopolArea = document.getElementById('nopol-display-area');
+                        let lastNopol = document.getElementById('last-nopol');
+                        let tungguCounter = document.getElementById('waktu-tunggu-counter');
+
+                        if(lastCalledEl) lastCalledEl.innerText = teksTampilan;
+                        if(nopolArea) nopolArea.style.display = 'flex';
+                        if(lastNopol) lastNopol.innerText = data.nopol || "-";
                         
-                        if (data.waktuTunggu) {
-                            document.getElementById('waktu-tunggu-counter').innerText = `⏱️ Total Waktu Tunggu: ${formatWaktuTunggu(data.waktuTunggu)}`;
-                        } else {
-                            document.getElementById('waktu-tunggu-counter').innerText = "";
+                        if (data.waktuTunggu && tungguCounter) {
+                            tungguCounter.innerText = `⏱️ Total Waktu Tunggu: ${formatWaktuTunggu(data.waktuTunggu)}`;
+                        } else if(tungguCounter) {
+                            tungguCounter.innerText = "";
                         }
                     }
                 } else {
-                    if (sessionUser === 'Monitor') {
-                        let typeDisplay = document.getElementById('display-type');
-                        if (typeDisplay) typeDisplay.innerText = "--";
+                    if (sessionUser === 'Monitor' || sessionUser === 'CustomerMobile') {
+                        let isCust = (sessionUser === 'CustomerMobile');
+                        let typeEl = document.getElementById(isCust ? 'cust-display-type' : 'display-type');
+                        let numEl = document.getElementById(isCust ? 'cust-display-number' : 'display-number');
+                        let cntEl = document.getElementById(isCust ? 'cust-display-counter' : 'display-counter');
                         
-                        document.getElementById('display-number').innerText = "--";
-                        document.getElementById('display-counter').innerText = "Menunggu Panggilan...";
-                    } else if (sessionUser.includes('Counter')) {
-                        document.getElementById('last-called').innerText = "Belum ada";
-                        document.getElementById('nopol-display-area').style.display = 'none';
-                        document.getElementById('waktu-tunggu-counter').innerText = "";
+                        if (typeEl) typeEl.innerText = "--";
+                        if (numEl) numEl.innerText = "--";
+                        if (cntEl) cntEl.innerText = "Menunggu Panggilan...";
+                    } else if (sessionUser && sessionUser.includes('Counter')) {
+                        let lastCalledEl = document.getElementById('last-called');
+                        let nopolArea = document.getElementById('nopol-display-area');
+                        let tungguCounter = document.getElementById('waktu-tunggu-counter');
+
+                        if(lastCalledEl) lastCalledEl.innerText = "Belum ada";
+                        if(nopolArea) nopolArea.style.display = 'none';
+                        if(tungguCounter) tungguCounter.innerText = "";
                     }
                 }
             });
