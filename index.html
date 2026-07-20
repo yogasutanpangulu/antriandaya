@@ -3153,13 +3153,13 @@ function kembalikanAntrian() {
         // ============================================================
 
         function tambahKeAntreanSuara(teks, counterName) {
-            // HANYA MONITOR YANG BISA MEMUTAR SUARA
-            if (sessionUser !== 'Monitor') return;
+            // Izinkan Monitor dan HP Customer untuk memutar suara
+            if (sessionUser !== 'Monitor' && sessionUser !== 'CustomerMobile') return;
             
             // CEK APAKAH COUNTER YANG MEMANGGIL SEDANG DI-MUTE
             if (counterName && isCounterMuted(counterName)) {
                 console.log(`🔇 Suara dimatikan untuk ${counterName}`);
-                return; // Skip suara jika counter di-mute
+                return;
             }
             
             queueSuara.push(teks);
@@ -3167,7 +3167,7 @@ function kembalikanAntrian() {
         }
 
         function prosesAntreanSuara() {
-            if (sessionUser !== 'Monitor') return;
+            if (sessionUser !== 'Monitor' && sessionUser !== 'CustomerMobile') return;
             if (sedangMemutarSuara || queueSuara.length === 0) return;
 
             sedangMemutarSuara = true;
@@ -3231,9 +3231,15 @@ function kembalikanAntrian() {
         }
 
 function aktifkanSuaraCustomer() {
-            let wakeUp = new SpeechSynthesisUtterance('Suara antrian HP aktif');
-            wakeUp.lang = 'id-ID';
-            window.speechSynthesis.speak(wakeUp);
+            // Memaksa inisialisasi audio di HP dengan teks pancingan
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Bersihkan antrian suara sebelumnya
+                let wakeUp = new SpeechSynthesisUtterance('Suara antrian HP aktif');
+                wakeUp.lang = 'id-ID';
+                wakeUp.rate = 1.0;
+                window.speechSynthesis.speak(wakeUp);
+            }
+            
             let btn = document.getElementById('btn-enable-customer-audio');
             if(btn) {
                 btn.innerText = "✅ Suara HP Aktif & Siap Mendengar";
