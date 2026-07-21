@@ -1667,19 +1667,27 @@
         function simpanSemuaBooking() {
             let tanggal = document.getElementById('tanggal-simpan').value;
             if (!tanggal) {
-                alert('⚠️ Harap pilih tanggal!');
-                return;
+                tanggal = getTanggalHariIni();
             }
             
             let container = document.getElementById('booking-list');
             let table = container.querySelector('table');
+            if (!table) {
+                alert('⚠️ Tidak ada data untuk disimpan!');
+                return;
+            }
+            
             let tbody = table.querySelector('tbody');
             let rows = tbody.querySelectorAll('tr.edit-row');
+            
+            if (rows.length === 0) {
+                alert('⚠️ Tidak ada data baru untuk disimpan!');
+                return;
+            }
             
             let dataBooking = [];
             let dataDuplicate = [];
             let isValid = true;
-            
             let existingData = daftarBooking;
             
             rows.forEach(row => {
@@ -1728,26 +1736,16 @@
                 return;
             }
 
-            if (dataDuplicate.length > 0) {
-                let msg = `⚠️ Data berikut sudah ada dan akan dilewati:\n\n`;
-                dataDuplicate.forEach(d => msg += `• ${d}\n`);
-                msg += `\n📊 ${dataBooking.length} data baru akan disimpan. Lanjutkan?`;
-                if (!confirm(msg)) return;
-            }
-
             if (dataBooking.length === 0) {
-                alert('⚠️ Tidak ada data baru yang bisa disimpan!');
+                alert('⚠️ Tidak ada data baru yang bisa disimpan (mungkin duplikat)!');
                 return;
             }
 
-            let konfirmasi = confirm(
-                `📅 Simpan ${dataBooking.length} data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}?`
-            );
-            if (!konfirmasi) return;
-
             let btn = document.querySelector('.btn-save-all-modal');
-            btn.textContent = '⏳ Menyimpan...';
-            btn.disabled = true;
+            if(btn) {
+                btn.textContent = '⏳ Menyimpan...';
+                btn.disabled = true;
+            }
 
             let updates = {};
             dataBooking.forEach((b) => {
@@ -1758,16 +1756,26 @@
             db.ref().update(updates).then(() => {
                 alert(`✅ Berhasil menyimpan ${dataBooking.length} data booking baru!`);
                 tutupModalTanggal();
+                
+                // Set filter tanggal utama ke tanggal yang baru disimpan agar langsung terlihat
+                let filterInput = document.getElementById('filter-tanggal');
+                if (filterInput) filterInput.value = tanggal;
+                let filterInputCounter = document.getElementById('filter-tanggal-counter');
+                if (filterInputCounter) filterInputCounter.value = tanggal;
+
                 let editRows = document.querySelectorAll('tr.edit-row');
                 editRows.forEach(r => r.remove());
                 filterBooking();
             }).catch((err) => {
                 alert('❌ Gagal menyimpan: ' + err.message);
-                btn.textContent = '💾 Simpan Semua';
-                btn.disabled = false;
+            }).finally(() => {
+                if(btn) {
+                    btn.textContent = '💾 Simpan Semua';
+                    btn.disabled = false;
+                }
             });
         }
-
+		
         // ============================================================
         // ================ HAPUS BOOKING BERDASARKAN TANGGAL ==========
         // ============================================================
@@ -2270,13 +2278,13 @@
                 
                 let hariIni = getTanggalHariIni(); // Format: YYYY-MM-DD
                 
-                // Pastikan input tanggal terisi otomatis dengan TODAY jika masih kosong
+                // Pastikan input tanggal terisi otomatis dengan TODAY jika masih kosong/format salah
                 let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput && !filterInput.value) {
+                if (filterInput && (!filterInput.value || filterInput.value === 'dd/mm/yyyy')) {
                     filterInput.value = hariIni;
                 }
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
-                if (filterInputCounter && !filterInputCounter.value) {
+                if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value === 'dd/mm/yyyy')) {
                     filterInputCounter.value = hariIni;
                 }
                 
