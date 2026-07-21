@@ -2200,9 +2200,18 @@ function simpanSemuaBooking() {
     if (id === 'Monitor') {
         document.getElementById('monitor-view').style.display = 'block';
         mulaiSlideshowMonitor();
+        // Monitor juga perlu mendengarkan booking? Tidak, karena tidak ada daftar booking di Monitor
     } else if (id === 'Valey') {
         document.getElementById('valey-view').style.display = 'block';
+        // Valey: panggil setelah view ditampilkan
+        setTimeout(function() {
+            mulaiMendengarkanBooking();
+            mulaiMendengarkanDaftarTunggu();
+            mulaiMendengarkanHistory();
+            mulaiTimerRealtime();
+        }, 300);
     } else {
+        // COUNTER
         document.getElementById('counter-view').style.display = 'block';
         document.getElementById('counter-name-display').innerText = id;
         
@@ -2219,14 +2228,15 @@ function simpanSemuaBooking() {
             document.getElementById('btn-mute-counter').style.background = '#6c757d';
         }
         
-        setTimeout(hidePekerjaanColumn, 500);
+        // TAMBAHKAN INI - panggil setelah view ditampilkan dengan delay
+        setTimeout(function() {
+            hidePekerjaanColumn();
+            mulaiMendengarkanBooking();   // <-- INI PENTING UNTUK COUNTER
+            mulaiMendengarkanDaftarTunggu();
+            mulaiMendengarkanHistory();
+            mulaiTimerRealtime();
+        }, 500);
     }
-    
-    mulaiMendengarkanBooking();
-    mulaiTimerRealtime();  // <-- TAMBAHKAN BARIS INI DI SINI
-    mulaiMendengarkanPanggilanAktif();
-    mulaiMendengarkanDaftarTunggu();
-    mulaiMendengarkanHistory();
 }
 
         function logoutAkun() {
@@ -2251,8 +2261,13 @@ function simpanSemuaBooking() {
 
         function mulaiMendengarkanBooking() {
     let containerValey = document.getElementById('booking-list');
+    let containerCounter = document.getElementById('booking-list-counter');
+    
     if (containerValey) {
         containerValey.innerHTML = `<div class="empty-booking">⏳ Memuat data dari server...</div>`;
+    }
+    if (containerCounter) {
+        containerCounter.innerHTML = `<div class="empty-booking">⏳ Memuat data dari server...</div>`;
     }
 
     db.ref('booking').on('value', (snapshot) => {
@@ -2267,10 +2282,13 @@ function simpanSemuaBooking() {
         
         let hariIni = getTanggalHariIni(); 
         
+        // Update filter untuk Valey
         let filterInput = document.getElementById('filter-tanggal');
         if (filterInput && (!filterInput.value || filterInput.value.includes('/'))) {
             filterInput.value = hariIni;
         }
+        
+        // Update filter untuk Counter
         let filterInputCounter = document.getElementById('filter-tanggal-counter');
         if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value.includes('/'))) {
             filterInputCounter.value = hariIni;
@@ -2281,7 +2299,7 @@ function simpanSemuaBooking() {
         if (daftarBooking.length > 0) {
             let filtered = daftarBooking.filter(b => {
                 if (!b.tanggal) return true;
-                return b.tanggal === tanggalFilter || b.tanggal.includes(tanggalFilter) || tanggalFilter.includes(b.tanggal);
+                return b.tanggal === tanggalFilter;
             });
             
             daftarBookingFiltered = filtered.length > 0 ? filtered : daftarBooking;
@@ -2289,11 +2307,22 @@ function simpanSemuaBooking() {
             daftarBookingFiltered = [];
         }
         
-        renderDaftarBooking();
+        // RENDER UNTUK VALEY
+        if (containerValey) {
+            renderFilteredBooking(daftarBookingFiltered, containerValey);
+        }
+        
+        // RENDER UNTUK COUNTER
+        if (containerCounter) {
+            renderFilteredBooking(daftarBookingFiltered, containerCounter);
+        }
     }, (error) => {
         console.error("Firebase error:", error);
         if (containerValey) {
             containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data: ${error.message}</div>`;
+        }
+        if (containerCounter) {
+            containerCounter.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data: ${error.message}</div>`;
         }
     });
 }
