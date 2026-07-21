@@ -2251,11 +2251,24 @@ function simpanSemuaBooking() {
 
         function mulaiMendengarkanBooking() {
             let containerValey = document.getElementById('booking-list');
-            if (containerValey && containerValey.innerHTML.includes('Memuat')) {
-                containerValey.innerHTML = `<div class="empty-booking">⏳ Menghubungkan ke database...</div>`;
+            if (containerValey) {
+                containerValey.innerHTML = `<div class="empty-booking">⏳ Menghubungkan ke server Firebase...</div>`;
             }
 
+            console.log("Mulai mencoba koneksi ke database booking...");
+
+            // Cek apakah database terhubung
+            db.ref('booking').once('value').then((snapshot) => {
+                console.log("Koneksi berhasil! Data mentah dari Firebase:", snapshot.val());
+            }).catch((err) => {
+                console.error("Koneksi Firebase Gagal / Diblokir Rules:", err);
+                if (containerValey) {
+                    containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal terhubung ke Firebase: ${err.message}</div>`;
+                }
+            });
+
             db.ref('booking').on('value', (snapshot) => {
+                console.log("Menerima pembaruan data booking...");
                 daftarBooking = [];
                 snapshot.forEach((child) => {
                     let data = child.val();
@@ -2265,8 +2278,7 @@ function simpanSemuaBooking() {
                 
                 updateTotalInfo();
                 
-                let hariIni = getTanggalHariIni(); // Format mesin: YYYY-MM-DD
-                
+                let hariIni = getTanggalHariIni();
                 let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput && (!filterInput.value || filterInput.value.includes('/'))) {
                     filterInput.value = hariIni;
@@ -2279,23 +2291,20 @@ function simpanSemuaBooking() {
                 
                 let tanggalFilter = filterInput ? filterInput.value : hariIni;
                 
-                // Filter data dengan pengecekan fleksibel terhadap format tanggal
                 daftarBookingFiltered = daftarBooking.filter(b => {
-                    if (!b.tanggal) return true; // Jika data lama tidak memiliki tanggal, tetap muat
-                    // Cocokan apakah tanggal sama persis atau mengandung string yang sama
+                    if (!b.tanggal) return true;
                     return b.tanggal === tanggalFilter || b.tanggal.includes(tanggalFilter) || tanggalFilter.includes(b.tanggal);
                 });
                 
-                // Pengaman: Jika hasil filter tanggal kosong tapi total data di database ada, tampilkan semua agar tidak kosong
                 if (daftarBookingFiltered.length === 0 && daftarBooking.length > 0) {
                     daftarBookingFiltered = daftarBooking;
                 }
                 
                 renderDaftarBooking();
             }, (error) => {
-                console.error("Firebase error:", error);
+                console.error("Error pada listener on value:", error);
                 if (containerValey) {
-                    containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data: ${error.message}</div>`;
+                    containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Error Listener: ${error.message}</div>`;
                 }
             });
         }
