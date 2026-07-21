@@ -1658,22 +1658,19 @@
 // ============================================================
 
 function simpanSemuaBooking() {
-            let tanggalInputVal = document.getElementById('tanggal-simpan').value;
-            if (!tanggalInputVal) {
+            let inputTanggalModal = document.getElementById('tanggal-simpan').value;
+            if (!inputTanggalModal) {
                 alert('⚠️ Harap pilih tanggal!');
                 return;
             }
             
-            // Pastikan format tanggal selalu YYYY-MM-DD (mengatasi format strip/garis miring browser)
-            let tanggal = tanggalInputVal;
-            if (tanggalInputVal.includes('/')) {
-                let parts = tanggalInputVal.split('/');
+            // Pastikan format tanggal bersih menjadi YYYY-MM-DD
+            let tanggal = inputTanggalModal;
+            if (inputTanggalModal.includes('/')) {
+                let parts = inputTanggalModal.split('/');
                 if (parts.length === 3) {
                     tanggal = `${parts[2]}-${parts[1]}-${parts[0]}`;
                 }
-            }
-            if (!tanggal || tanggal.length !== 10) {
-                tanggal = getTanggalHariIni();
             }
             
             let container = document.getElementById('booking-list');
@@ -1709,6 +1706,7 @@ function simpanSemuaBooking() {
                     return;
                 }
 
+                // Menggunakan variabel 'tanggal' yang sudah dibersihkan di atas
                 let dataBaru = {
                     nopol: nopol,
                     tipe: tipe || '',
@@ -1716,7 +1714,7 @@ function simpanSemuaBooking() {
                     telp: telp || '',
                     pekerjaan: pekerjaan || '-',
                     waktu: waktu || '',
-                    tanggal: tanggal, // Tanggal bersih berformat YYYY-MM-DD
+                    tanggal: tanggal, 
                     sa: sa || '',
                     status: 'menunggu',
                     source: 'manual'
@@ -1764,6 +1762,7 @@ function simpanSemuaBooking() {
                 alert(`✅ Berhasil menyimpan ${dataBooking.length} data booking!`);
                 tutupModalTanggal();
                 
+                // Menyamakan nilai filter utama dengan tanggal data yang baru disimpan
                 let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput) filterInput.value = tanggal;
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
@@ -2261,30 +2260,30 @@ function simpanSemuaBooking() {
                 
                 updateTotalInfo();
                 
-                let hariIni = getTanggalHariIni(); // Format standar: YYYY-MM-DD
+                let hariIni = getTanggalHariIni(); // Format: YYYY-MM-DD
                 
                 let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput) {
-                    if (!filterInput.value || filterInput.value.includes('/')) {
-                        filterInput.value = hariIni;
-                    }
+                if (filterInput && (!filterInput.value || filterInput.value.includes('/'))) {
+                    filterInput.value = hariIni;
                 }
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
-                if (filterInputCounter) {
-                    if (!filterInputCounter.value || filterInputCounter.value.includes('/')) {
-                        filterInputCounter.value = hariIni;
-                    }
+                if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value.includes('/'))) {
+                    filterInputCounter.value = hariIni;
                 }
                 
+                // Untuk memastikan data langsung tampil, kita ambil semua data atau cocokkan secara longgar
                 let tanggalFilter = filterInput ? filterInput.value : hariIni;
                 
-                // Pencocokan fleksibel (mendukung format YYYY-MM-DD maupun konversi garis miring)
                 daftarBookingFiltered = daftarBooking.filter(b => {
-                    if (!b.tanggal) return false;
-                    let tglData = b.tanggal;
-                    // Jika data di database tersimpan dengan format lain, normalisasi ke string
-                    return tglData === tanggalFilter;
+                    if (!b.tanggal) return true; // Jika data lama tidak ada tanggalnya, tetap tampilkan
+                    // Cocokkan apakah tanggal data mengandung hari yang sama
+                    return b.tanggal === tanggalFilter || b.tanggal.includes(tanggalFilter) || tanggalFilter.includes(b.tanggal);
                 });
+                
+                // Jika hasil filter kosong tapi data total ada, tampilkan semua data hari ini sebagai cadangan agar tabel tidak kosong
+                if (daftarBookingFiltered.length === 0 && daftarBooking.length > 0) {
+                    daftarBookingFiltered = daftarBooking;
+                }
                 
                 renderDaftarBooking();
             });
