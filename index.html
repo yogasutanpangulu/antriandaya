@@ -2252,23 +2252,10 @@ function simpanSemuaBooking() {
         function mulaiMendengarkanBooking() {
             let containerValey = document.getElementById('booking-list');
             if (containerValey) {
-                containerValey.innerHTML = `<div class="empty-booking">⏳ Menghubungkan ke server Firebase...</div>`;
+                containerValey.innerHTML = `<div class="empty-booking">⏳ Memuat data dari server...</div>`;
             }
 
-            console.log("Mulai mencoba koneksi ke database booking...");
-
-            // Cek apakah database terhubung
-            db.ref('booking').once('value').then((snapshot) => {
-                console.log("Koneksi berhasil! Data mentah dari Firebase:", snapshot.val());
-            }).catch((err) => {
-                console.error("Koneksi Firebase Gagal / Diblokir Rules:", err);
-                if (containerValey) {
-                    containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal terhubung ke Firebase: ${err.message}</div>`;
-                }
-            });
-
             db.ref('booking').on('value', (snapshot) => {
-                console.log("Menerima pembaruan data booking...");
                 daftarBooking = [];
                 snapshot.forEach((child) => {
                     let data = child.val();
@@ -2278,12 +2265,12 @@ function simpanSemuaBooking() {
                 
                 updateTotalInfo();
                 
-                let hariIni = getTanggalHariIni();
+                let hariIni = getTanggalHariIni(); // Format: YYYY-MM-DD
+                
                 let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput && (!filterInput.value || filterInput.value.includes('/'))) {
                     filterInput.value = hariIni;
                 }
-                
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
                 if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value.includes('/'))) {
                     filterInputCounter.value = hariIni;
@@ -2291,24 +2278,29 @@ function simpanSemuaBooking() {
                 
                 let tanggalFilter = filterInput ? filterInput.value : hariIni;
                 
-                daftarBookingFiltered = daftarBooking.filter(b => {
-                    if (!b.tanggal) return true;
-                    return b.tanggal === tanggalFilter || b.tanggal.includes(tanggalFilter) || tanggalFilter.includes(b.tanggal);
-                });
-                
-                if (daftarBookingFiltered.length === 0 && daftarBooking.length > 0) {
-                    daftarBookingFiltered = daftarBooking;
+                // PENGAMAN UTAMA: Tampilkan semua data yang ada di database jika totalnya ada, 
+                // atau cocokan secara longgar agar tidak pernah kosong
+                if (daftarBooking.length > 0) {
+                    // Jika ada filter tanggal, coba saring, tapi jika kosong/tidak cocok, paksa tampilkan semua data booking
+                    let filtered = daftarBooking.filter(b => {
+                        if (!b.tanggal) return true;
+                        return b.tanggal === tanggalFilter || b.tanggal.includes(tanggalFilter) || tanggalFilter.includes(b.tanggal);
+                    });
+                    
+                    daftarBookingFiltered = filtered.length > 0 ? filtered : daftarBooking;
+                } else {
+                    daftarBookingFiltered = [];
                 }
                 
                 renderDaftarBooking();
             }, (error) => {
-                console.error("Error pada listener on value:", error);
+                console.error("Firebase error:", error);
                 if (containerValey) {
-                    containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Error Listener: ${error.message}</div>`;
+                    containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data: ${error.message}</div>`;
                 }
             });
         }
-
+		
         function filterBooking() {
             let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
             let filterInput = document.getElementById('filter-tanggal');
