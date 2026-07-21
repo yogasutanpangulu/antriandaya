@@ -2189,44 +2189,47 @@ function simpanSemuaBooking() {
         }
 
         function loginProses() {
-            const id = document.getElementById('login-id').value;
-            sessionUser = id;
-            
-            localStorage.setItem("sesi_user_antriandaya", id);
-            localStorage.setItem("tanggal_login_antriandaya", getTanggalHariIni());
+    const id = document.getElementById('login-id').value;
+    sessionUser = id;
+    
+    localStorage.setItem("sesi_user_antriandaya", id);
+    localStorage.setItem("tanggal_login_antriandaya", getTanggalHariIni());
 
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('btn-logout').style.display = 'inline-block';
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('btn-logout').style.display = 'inline-block';
 
-            if (id === 'Monitor') {
-                document.getElementById('monitor-view').style.display = 'block';
-                mulaiSlideshowMonitor();
-            } else if (id === 'Valey') {
-                document.getElementById('valey-view').style.display = 'block';
-            } else {
-                document.getElementById('counter-view').style.display = 'block';
-                document.getElementById('counter-name-display').innerText = id;
-                
-                let savedMute = localStorage.getItem('mute_counter_' + id);
-                if (savedMute === 'true') {
-                    isMuted = true;
-                    document.getElementById('btn-mute-counter').innerText = '🔇 Suara OFF';
-                    document.getElementById('btn-mute-counter').classList.add('active');
-                    document.getElementById('btn-mute-counter').style.background = '#dc3545';
-                } else {
-                    isMuted = false;
-                    document.getElementById('btn-mute-counter').innerText = '🔊 Suara ON';
-                    document.getElementById('btn-mute-counter').classList.remove('active');
-                    document.getElementById('btn-mute-counter').style.background = '#6c757d';
-                }
-                
-                setTimeout(hidePekerjaanColumn, 500);
-            }
-            
-            mulaiMendengarkanPanggilanAktif();
-            mulaiMendengarkanDaftarTunggu();
-            mulaiMendengarkanHistory(); // <-- Pastikan baris ini aktif untuk membaca riwayat counter
+    if (id === 'Monitor') {
+        document.getElementById('monitor-view').style.display = 'block';
+        mulaiSlideshowMonitor();
+    } else if (id === 'Valey') {
+        document.getElementById('valey-view').style.display = 'block';
+    } else {
+        document.getElementById('counter-view').style.display = 'block';
+        document.getElementById('counter-name-display').innerText = id;
+        
+        let savedMute = localStorage.getItem('mute_counter_' + id);
+        if (savedMute === 'true') {
+            isMuted = true;
+            document.getElementById('btn-mute-counter').innerText = '🔇 Suara OFF';
+            document.getElementById('btn-mute-counter').classList.add('active');
+            document.getElementById('btn-mute-counter').style.background = '#dc3545';
+        } else {
+            isMuted = false;
+            document.getElementById('btn-mute-counter').innerText = '🔊 Suara ON';
+            document.getElementById('btn-mute-counter').classList.remove('active');
+            document.getElementById('btn-mute-counter').style.background = '#6c757d';
         }
+        
+        setTimeout(hidePekerjaanColumn, 500);
+    }
+    
+    // --- TAMBAHKAN BARIS INI AGAR COUNTER JUGA MEMUAT DATA BOOKING ---
+    mulaiMendengarkanBooking(); 
+    
+    mulaiMendengarkanPanggilanAktif();
+    mulaiMendengarkanDaftarTunggu();
+    mulaiMendengarkanHistory();
+}
 
         function logoutAkun() {
             if (confirm("Anda yakin ingin keluar?")) {
