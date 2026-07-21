@@ -2261,138 +2261,93 @@ function simpanSemuaBooking() {
                 
                 updateTotalInfo();
                 
-                let hariIni = getTanggalHariIni(); // Format wajib: YYYY-MM-DD
+                let hariIni = getTanggalHariIni(); // Format standar: YYYY-MM-DD
                 
                 let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput) {
-                    // Jika nilai kosong atau formatnya bukan YYYY-MM-DD (mengandung garis miring /), set paksa ke hari ini
-                    if (!filterInput.value || filterInput.value.includes('/') || filterInput.value === 'dd/mm/yyyy') {
+                    if (!filterInput.value || filterInput.value.includes('/')) {
                         filterInput.value = hariIni;
                     }
                 }
-                
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
                 if (filterInputCounter) {
-                    if (!filterInputCounter.value || filterInputCounter.value.includes('/') || filterInputCounter.value === 'dd/mm/yyyy') {
+                    if (!filterInputCounter.value || filterInputCounter.value.includes('/')) {
                         filterInputCounter.value = hariIni;
                     }
                 }
                 
                 let tanggalFilter = filterInput ? filterInput.value : hariIni;
                 
+                // Pencocokan fleksibel (mendukung format YYYY-MM-DD maupun konversi garis miring)
                 daftarBookingFiltered = daftarBooking.filter(b => {
-                    return b.tanggal && b.tanggal === tanggalFilter;
+                    if (!b.tanggal) return false;
+                    let tglData = b.tanggal;
+                    // Jika data di database tersimpan dengan format lain, normalisasi ke string
+                    return tglData === tanggalFilter;
                 });
                 
                 renderDaftarBooking();
-            }, (error) => {
-                console.error("Gagal memuat booking:", error);
-                let containerValey = document.getElementById('booking-list');
-                if (containerValey) containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data dari database.</div>`;
             });
-        }
-        function updateTotalInfo() {
-            let totalInfo = document.getElementById('total-booking-info');
-            if (totalInfo) {
-                totalInfo.innerHTML = `📊 Total: ${daftarBooking.length} booking`;
-            }
-            let totalInfoCounter = document.getElementById('total-booking-info-counter');
-            if (totalInfoCounter) {
-                totalInfoCounter.innerHTML = `📊 Total: ${daftarBooking.length} booking`;
-            }
         }
 
-        function renderDaftarBooking() {
-            let html = '';
+        function filterBooking() {
+            let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
+            let filterInput = document.getElementById('filter-tanggal');
+            let tanggal = filterInput ? filterInput.value : getTanggalHariIni();
             
-            let belumDatang = daftarBookingFiltered.filter(b => b.status !== 'dipanggil' && b.status !== 'selesai');
-            let sudahDipanggil = daftarBookingFiltered.filter(b => b.status === 'dipanggil' || b.status === 'selesai');
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                if(filterInput) filterInput.value = tanggal;
+            }
             
-            belumDatang.sort((a, b) => {
-                if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
-                return 0;
-            });
-            
-            sudahDipanggil.sort((a, b) => {
-                if (a.status === 'dipanggil' && b.status === 'selesai') return -1;
-                if (a.status === 'selesai' && b.status === 'dipanggil') return 1;
-                return 0;
-            });
-            
-            let allData = [...belumDatang, ...sudahDipanggil];
-            
-            if (allData.length === 0) {
-                html = `
-                    <div class="empty-booking">📭 Tidak ada booking untuk hari ini.</div>
-                    <div style="margin-top:10px;">
-                        <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
-                    </div>
-                `;
-            } else {
-                let isCounter = sessionUser && sessionUser.includes('Counter');
-                let colSpan = isCounter ? 10 : 11;
+            let filtered = daftarBooking.filter(b => {
+                let match = true;
                 
-                html = `
-                    <table class="booking-table">
-                        <thead>
-                            <tr>
-                                <th style="width:30px;">No</th>
-                                <th>Nopol</th>
-                                <th>Tipe</th>
-                                <th>Nama</th>
-                                <th>Telpon</th>
-                                <th class="col-pekerjaan-header ${isCounter ? 'hide-pekerjaan' : ''}">Pekerjaan</th>
-                                <th>Waktu</th>
-                                <th>Tanggal</th>
-                                <th>SA</th>
-                                <th>Status</th>
-                                <th style="width:200px;">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-                
-                let counter = 0;
-                let hasDipanggil = sudahDipanggil.length > 0;
-                
-                belumDatang.forEach((b) => {
-                    counter++;
-                    html += renderRow(b, counter, 'belum-datang');
-                });
-                
-                if (hasDipanggil) {
-                    html += `
-                        <tr class="separator-row">
-                            <td colspan="${colSpan}">📌 BOOKING YANG SUDAH DIPANGGIL / SELESAI</td>
-                        </tr>
-                    `;
-                    sudahDipanggil.forEach((b) => {
-                        counter++;
-                        html += renderRow(b, counter, 'dipanggil');
-                    });
+                if (keyword) {
+                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
+                    if (!text.includes(keyword)) match = false;
                 }
                 
-                html += `
-                        </tbody>
-                    </table>
-                    <div style="margin-top:10px; text-align:center;">
-                        <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
-                    </div>
-                `;
+                if (tanggal) {
+                    if (!b.tanggal || b.tanggal !== tanggal) match = false;
+                }
+                
+                return match;
+            });
+            
+            daftarBookingFiltered = filtered;
+            renderFilteredBooking(filtered, document.getElementById('booking-list'));
+        }
+
+        function filterBookingCounter() {
+            let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
+            let filterInput = document.getElementById('filter-tanggal-counter');
+            let tanggal = filterInput ? filterInput.value : getTanggalHariIni();
+            
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                if(filterInput) filterInput.value = tanggal;
             }
             
-            let containerValey = document.getElementById('booking-list');
-            if (containerValey) {
-                containerValey.innerHTML = html;
-            }
+            let filtered = daftarBooking.filter(b => {
+                let match = true;
+                
+                if (keyword) {
+                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
+                    if (!text.includes(keyword)) match = false;
+                }
+                
+                if (tanggal) {
+                    if (!b.tanggal || b.tanggal !== tanggal) match = false;
+                }
+                
+                return match;
+            });
             
-            let containerCounter = document.getElementById('booking-list-counter');
-            if (containerCounter) {
-                containerCounter.innerHTML = html;
-            }
-            
-            if (sessionUser && sessionUser.includes('Counter')) {
-                hidePekerjaanColumn();
+            daftarBookingFiltered = filtered;
+            let container = document.getElementById('booking-list-counter');
+            if (container) {
+                renderFilteredBooking(filtered, container);
             }
         }
 
