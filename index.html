@@ -853,6 +853,21 @@
             border-radius: 10px;
             border: 3px solid #eee;
         }
+		        /* Mode Customer - Sembunyikan elemen yang tidak diperlukan */
+        .customer-mode #login-section {
+            display: none !important;
+        }
+        .customer-mode #btn-logout {
+            display: none !important;
+        }
+        .customer-mode #valey-view,
+        .customer-mode #counter-view,
+        .customer-mode #monitor-view {
+            display: none !important;
+        }
+        .customer-mode #customer-view {
+            display: block !important;
+        }
     </style>
 </head>
 <body>
@@ -1287,6 +1302,57 @@
         let daftarAntrianMenunggu = [];
         let timerInterval = null;
 
+		// ============================================================
+// ================ MODE CUSTOMER (VIEW ONLY) ==================
+// ============================================================
+function isCustomerMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('view') === 'customer';
+}
+
+// Jika mode customer, langsung tampilkan view customer tanpa login
+if (isCustomerMode()) {
+    document.body.classList.add('customer-mode');  // ← TAMBAHKAN INI
+    sessionUser = 'CustomerMobile';
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('customer-view').style.display = 'block';
+    document.getElementById('btn-logout').style.display = 'none';
+    
+    // Jalankan listener yang diperlukan untuk customer
+    setTimeout(function() {
+        mulaiMendengarkanDaftarTunggu();
+        mulaiMendengarkanPanggilanAktif();
+        mulaiTimerRealtime();
+        // Aktifkan suara otomatis setelah 1 detik
+        setTimeout(aktifkanSuaraCustomer, 1000);
+    }, 300);
+}
+		
+		// ============================================================
+// ================ DETEKSI MODE CUSTOMER ======================
+// ============================================================
+function isCustomerMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('view') === 'customer';
+}
+
+// Jika mode customer, langsung tampilkan view customer tanpa login
+if (isCustomerMode()) {
+    sessionUser = 'CustomerMobile';
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('customer-view').style.display = 'block';
+    document.getElementById('btn-logout').style.display = 'none';
+    
+    // Jalankan listener yang diperlukan untuk customer
+    setTimeout(function() {
+        mulaiMendengarkanDaftarTunggu();
+        mulaiMendengarkanPanggilanAktif();
+        mulaiTimerRealtime();
+        // Aktifkan suara otomatis setelah 1 detik
+        setTimeout(aktifkanSuaraCustomer, 1000);
+    }, 300);
+}
+		
         // ============================================================
         // ================ HELPER =====================================
         // ============================================================
@@ -2158,6 +2224,12 @@ function simpanSemuaBooking() {
         // ============================================================
 
         window.onload = function() {
+    // CEK APAKAH MODE CUSTOMER
+    if (isCustomerMode()) {
+        // Sudah ditangani di atas, tidak perlu login
+        return;
+    }
+    
     // Inisialisasi otomatis tanggal hari ini (TODAY) pada filter booking
     let hariIni = getTanggalHariIni();
     let filterInput = document.getElementById('filter-tanggal');
@@ -2172,8 +2244,6 @@ function simpanSemuaBooking() {
     cekAtauResetHariBaru();
     setInterval(cekAtauResetHariBaru, 60000);
     cekLoginSebelumnya();
-    // mulaiTimerRealtime();  // KOMENTARI ATAU HAPUS BARIS INI
-    // atau panggil setelah login
     mulaiMendengarkanBooking();
 };
 
@@ -3291,22 +3361,22 @@ function aktifkanSuaraCustomer() {
         }
 
         function generateQRCodeFullscreen() {
-            let qrContainer = document.getElementById('qrcode-fullscreen-container');
-            let qrTextEl = document.getElementById('qr-fs-url-text');
-            if (!qrContainer) return;
+    let qrContainer = document.getElementById('qrcode-fullscreen-container');
+    let qrTextEl = document.getElementById('qr-fs-url-text');
+    if (!qrContainer) return;
 
-            // Mengambil URL dasar website Anda di GitHub (membersihkan hash atau parameter lama)
-            let baseUrl = window.location.href.split('?')[0].split('#')[0];
-            
-            // Pastikan URL berakhiran / atau index.html agar tidak salah jalur
-            let currentUrl = baseUrl + (baseUrl.endsWith('/') ? '' : '/') + '?view=customer';
-            
-            if(qrTextEl) qrTextEl.innerText = currentUrl;
+    // Mengambil URL dasar website Anda
+    let baseUrl = window.location.href.split('?')[0].split('#')[0];
+    
+    // Pastikan URL berakhiran / atau index.html
+    let currentUrl = baseUrl + (baseUrl.endsWith('/') ? '' : '/') + '?view=customer';
+    
+    if(qrTextEl) qrTextEl.innerText = currentUrl;
 
-            // Merender QR Code dengan URL yang valid
-            let qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentUrl)}`;
-            qrContainer.innerHTML = `<img src="${qrApiUrl}" alt="QR Code Fullscreen">`;
-        }
+    // Merender QR Code dengan URL yang valid
+    let qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentUrl)}`;
+    qrContainer.innerHTML = `<img src="${qrApiUrl}" alt="QR Code Fullscreen">`;
+}
 
 		function mulaiMendengarkanHistory() {
             db.ref('antrian/history').on('value', (snapshot) => {
