@@ -2287,16 +2287,21 @@ function simpanSemuaBooking() {
                 
                 updateTotalInfo();
                 
-                let hariIni = getTanggalHariIni(); // Format: YYYY-MM-DD
+                let hariIni = getTanggalHariIni(); // Format wajib: YYYY-MM-DD
                 
-                // Pastikan input tanggal terisi otomatis dengan TODAY jika masih kosong/format salah
                 let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput && (!filterInput.value || filterInput.value === 'dd/mm/yyyy')) {
-                    filterInput.value = hariIni;
+                if (filterInput) {
+                    // Jika nilai kosong atau formatnya bukan YYYY-MM-DD (mengandung garis miring /), set paksa ke hari ini
+                    if (!filterInput.value || filterInput.value.includes('/') || filterInput.value === 'dd/mm/yyyy') {
+                        filterInput.value = hariIni;
+                    }
                 }
+                
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
-                if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value === 'dd/mm/yyyy')) {
-                    filterInputCounter.value = hariIni;
+                if (filterInputCounter) {
+                    if (!filterInputCounter.value || filterInputCounter.value.includes('/') || filterInputCounter.value === 'dd/mm/yyyy') {
+                        filterInputCounter.value = hariIni;
+                    }
                 }
                 
                 let tanggalFilter = filterInput ? filterInput.value : hariIni;
@@ -2306,9 +2311,12 @@ function simpanSemuaBooking() {
                 });
                 
                 renderDaftarBooking();
+            }, (error) => {
+                console.error("Gagal memuat booking:", error);
+                let containerValey = document.getElementById('booking-list');
+                if (containerValey) containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data dari database.</div>`;
             });
         }
-
         function updateTotalInfo() {
             let totalInfo = document.getElementById('total-booking-info');
             if (totalInfo) {
