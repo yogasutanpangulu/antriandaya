@@ -2149,10 +2149,16 @@
             // Cek apakah diakses via scan barcode HP pelanggan (?view=customer)
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('view') === 'customer') {
-                document.getElementById('login-section').style.display = 'none';
-                document.getElementById('valey-view').style.display = 'none';
-                document.getElementById('monitor-view').style.display = 'none';
-                document.getElementById('counter-view').style.display = 'none';
+                let loginSec = document.getElementById('login-section');
+                let valeyView = document.getElementById('valey-view');
+                let monitorView = document.getElementById('monitor-view');
+                let counterView = document.getElementById('counter-view');
+                
+                if(loginSec) loginSec.style.display = 'none';
+                if(valeyView) valeyView.style.display = 'none';
+                if(monitorView) monitorView.style.display = 'none';
+                if(counterView) counterView.style.display = 'none';
+                
                 let custView = document.getElementById('customer-view');
                 if (custView) custView.style.display = 'block';
                 
@@ -2162,6 +2168,24 @@
                 mulaiMendengarkanDaftarTunggu();
                 return;
             }
+
+            // Inisialisasi otomatis tanggal hari ini (TODAY) pada filter booking
+            let hariIni = getTanggalHariIni();
+            let filterInput = document.getElementById('filter-tanggal');
+            if (filterInput && !filterInput.value) {
+                filterInput.value = hariIni;
+            }
+            let filterInputCounter = document.getElementById('filter-tanggal-counter');
+            if (filterInputCounter && !filterInputCounter.value) {
+                filterInputCounter.value = hariIni;
+            }
+
+            cekAtauResetHariBaru();
+            setInterval(cekAtauResetHariBaru, 60000);
+            cekLoginSebelumnya();
+            mulaiTimerRealtime();
+            mulaiMendengarkanBooking();
+        };
 
             cekAtauResetHariBaru();
             setInterval(cekAtauResetHariBaru, 60000);
@@ -2252,8 +2276,9 @@
                 
                 updateTotalInfo();
                 
-                let hariIni = getTanggalHariIni();
+                let hariIni = getTanggalHariIni(); // Format: YYYY-MM-DD
                 
+                // Pastikan input tanggal terisi otomatis dengan TODAY jika masih kosong
                 let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput && !filterInput.value) {
                     filterInput.value = hariIni;
