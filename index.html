@@ -1385,44 +1385,35 @@
         // ============================================================
         function tambahBarisManual() {
             let container = document.getElementById('booking-list');
-            
             let table = container.querySelector('table');
             
             let filterInput = document.getElementById('filter-tanggal');
             let tanggalFilter = filterInput ? filterInput.value : getTanggalHariIni();
             
             if (!table) {
-                let hariIni = getTanggalHariIni();
-                if (filterInput) {
-                    filterInput.value = hariIni;
-                }
-                filterBooking();
+                let html = `
+                    <table class="booking-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30px;">No</th>
+                                <th>Nopol</th>
+                                <th>Tipe</th>
+                                <th>Nama</th>
+                                <th>Telpon</th>
+                                <th class="col-pekerjaan-header">Pekerjaan</th>
+                                <th>Waktu</th>
+                                <th>Tanggal</th>
+                                <th>SA</th>
+                                <th>Status</th>
+                                <th style="width:200px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                `;
+                container.innerHTML = html;
                 table = container.querySelector('table');
-                if (!table) {
-                    let html = `
-                        <table class="booking-table">
-                            <thead>
-                                <tr>
-                                    <th style="width:30px;">No</th>
-                                    <th>Nopol</th>
-                                    <th>Tipe</th>
-                                    <th>Nama</th>
-                                    <th>Telpon</th>
-                                    <th class="col-pekerjaan-header">Pekerjaan</th>
-                                    <th>Waktu</th>
-                                    <th>Tanggal</th>
-                                    <th>SA</th>
-                                    <th>Status</th>
-                                    <th style="width:200px;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-                    `;
-                    container.innerHTML = html;
-                    table = container.querySelector('table');
-                }
             }
             
             let tbody = table.querySelector('tbody');
@@ -1438,7 +1429,7 @@
                 <td><input type="text" class="edit-input edit-telp" placeholder="Telpon" value=""></td>
                 <td class="col-pekerjaan"><input type="text" class="edit-input edit-pekerjaan" placeholder="Pekerjaan" value=""></td>
                 <td><input type="text" class="edit-input edit-waktu-text" placeholder="Waktu" value=""></td>
-                <td style="color:#999; font-size:11px;">${tanggalFilter ? formatTanggalIndonesia(tanggalFilter) : '-'}</td>
+                <td class="edit-tanggal-cell" data-tanggal="${tanggalFilter}" style="color:#333; font-weight:bold; font-size:11px;">${formatTanggalIndonesia(tanggalFilter)}</td>
                 <td><input type="text" class="edit-input edit-sa" placeholder="SA" value=""></td>
                 <td style="font-size:10px; color:#999;">-</td>
                 <td>
@@ -1618,6 +1609,16 @@
                 return;
             }
             
+            // Ambil tanggal dari baris pertama yang sedang diinput, jika kosong ambil dari filter
+            let firstRowCell = rows[0].querySelector('.edit-tanggal-cell');
+            let tanggalAktif = firstRowCell ? firstRowCell.getAttribute('data-tanggal') : '';
+            if (!tanggalAktif) {
+                let filterInput = document.getElementById('filter-tanggal');
+                tanggalAktif = filterInput ? filterInput.value : getTanggalHariIni();
+            }
+            
+            document.getElementById('tanggal-simpan').value = tanggalAktif;
+            
             let existingData = daftarBooking;
             let duplicateList = [];
             let newCount = 0;
@@ -1625,13 +1626,12 @@
             rows.forEach(row => {
                 let nopol = row.querySelector('.edit-nopol').value.trim().toUpperCase();
                 let nama = row.querySelector('.edit-nama').value.trim();
-                let tanggal = document.getElementById('tanggal-simpan').value || getTanggalHariIni();
                 
                 if (nopol && nama) {
                     let isDuplicate = existingData.some(b => 
                         b.nopol === nopol && 
                         b.nama === nama && 
-                        b.tanggal === tanggal
+                        b.tanggal === tanggalAktif
                     );
                     if (isDuplicate) {
                         duplicateList.push(`${nopol} - ${nama}`);
@@ -1642,20 +1642,12 @@
             });
             
             let info = document.getElementById('modal-tanggal-info');
-            let infoHtml = `📊 Menyimpan <strong>${rows.length}</strong> data booking.<br>`;
+            let infoHtml = `📊 Menyimpan <strong>${rows.length}</strong> data booking untuk tanggal <strong>${formatTanggalIndonesia(tanggalAktif)}</strong>.<br>`;
             infoHtml += `🆕 <span class="new-item">Data baru: ${newCount}</span><br>`;
             if (duplicateList.length > 0) {
                 infoHtml += `⚠️ <span class="duplicate-item">Data duplikat: ${duplicateList.length} (akan dilewati)</span><br>`;
-                infoHtml += `<div style="font-size:11px; color:#dc3545; margin-top:5px;">`;
-                duplicateList.forEach(d => {
-                    infoHtml += `• ${d}<br>`;
-                });
-                infoHtml += `</div>`;
             }
             info.innerHTML = infoHtml;
-            
-            let today = getTanggalHariIni();
-            document.getElementById('tanggal-simpan').value = today;
             
             document.getElementById('modal-tanggal').style.display = 'block';
         }
@@ -1667,26 +1659,18 @@
         function simpanSemuaBooking() {
             let tanggal = document.getElementById('tanggal-simpan').value;
             if (!tanggal) {
-                tanggal = getTanggalHariIni();
+                alert('⚠️ Harap pilih tanggal!');
+                return;
             }
             
             let container = document.getElementById('booking-list');
             let table = container.querySelector('table');
-            if (!table) {
-                alert('⚠️ Tidak ada data untuk disimpan!');
-                return;
-            }
+            if (!table) return;
             
             let tbody = table.querySelector('tbody');
             let rows = tbody.querySelectorAll('tr.edit-row');
             
-            if (rows.length === 0) {
-                alert('⚠️ Tidak ada data baru untuk disimpan!');
-                return;
-            }
-            
             let dataBooking = [];
-            let dataDuplicate = [];
             let isValid = true;
             let existingData = daftarBooking;
             
@@ -1723,11 +1707,8 @@
                     b.tanggal === dataBaru.tanggal
                 );
 
-                if (isDuplicate) {
-                    dataDuplicate.push(`${nopol} - ${nama}`);
-                } else {
+                if (!isDuplicate) {
                     dataBooking.push(dataBaru);
-                    existingData.push(dataBaru);
                 }
             });
 
@@ -1737,7 +1718,7 @@
             }
 
             if (dataBooking.length === 0) {
-                alert('⚠️ Tidak ada data baru yang bisa disimpan (mungkin duplikat)!');
+                alert('⚠️ Semua data yang dimasukkan sudah ada (duplikat) di tanggal tersebut!');
                 return;
             }
 
@@ -1749,15 +1730,16 @@
 
             let updates = {};
             dataBooking.forEach((b) => {
-                let key = generateSafeKey(b.nopol, b.nama, b.tanggal);
-                updates['booking/' + key] = b;
+                // Key yang stabil mencegah data hilang/bentrok saat refresh
+                let cleanKey = (b.nopol + '_' + b.nama + '_' + b.tanggal).replace(/[.#$\/\[\]\s]/g, '_');
+                updates['booking/' + cleanKey] = b;
             });
 
             db.ref().update(updates).then(() => {
-                alert(`✅ Berhasil menyimpan ${dataBooking.length} data booking baru!`);
+                alert(`✅ Berhasil menyimpan ${dataBooking.length} data booking!`);
                 tutupModalTanggal();
                 
-                // Set filter tanggal utama ke tanggal yang baru disimpan agar langsung terlihat
+                // Set filter tanggal utama ke tanggal yang baru disimpan
                 let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput) filterInput.value = tanggal;
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
