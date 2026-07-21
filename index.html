@@ -2253,7 +2253,7 @@ function simpanSemuaBooking() {
             
             mulaiMendengarkanPanggilanAktif();
             mulaiMendengarkanDaftarTunggu();
-            mulaiMendengarkanHistory();
+            mulaiMendengarkanHistory(); // <-- Pastikan baris ini aktif untuk membaca riwayat counter
         }
 
         function logoutAkun() {
@@ -2462,62 +2462,34 @@ function simpanSemuaBooking() {
 // ============================================================
 
 function filterBooking() {
-    let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
-    let tanggal = document.getElementById('filter-tanggal').value;
-    
-    // Jika tanggal kosong, set ke hari ini
-    if (!tanggal) {
-        tanggal = getTanggalHariIni();
-        document.getElementById('filter-tanggal').value = tanggal;
-    }
-    
-    // Filter data dari daftarBooking yang sudah ada
-    let filtered = daftarBooking.filter(b => {
-        let match = true;
-        
-        if (keyword) {
-            let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
-            if (!text.includes(keyword)) match = false;
+            let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
+            let tanggal = document.getElementById('filter-tanggal').value;
+            
+            // Jika tanggal kosong, set ke hari ini
+            if (!tanggal) {
+                tanggal = getTanggalHariIni();
+                document.getElementById('filter-tanggal').value = tanggal;
+            }
+            
+            // Filter data dari daftarBooking yang sudah ada
+            let filtered = daftarBooking.filter(b => {
+                let match = true;
+                
+                if (keyword) {
+                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
+                    if (!text.includes(keyword)) match = false;
+                }
+                
+                if (tanggal) {
+                    if (b.tanggal !== tanggal) match = false;
+                }
+                
+                return match;
+            });
+            
+            daftarBookingFiltered = filtered;
+            renderFilteredBooking(filtered, document.getElementById('booking-list'));
         }
-        
-        if (tanggal) {
-            if (b.tanggal !== tanggal) match = false;
-        }
-        
-        return match;
-    });
-    
-    daftarBookingFiltered = filtered;
-    renderFilteredBooking(filtered, document.getElementById('booking-list'));
-}
-
-function filterBookingCounter() {
-    let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
-    let tanggal = document.getElementById('filter-tanggal-counter').value;
-    
-    if (!tanggal) {
-        tanggal = getTanggalHariIni();
-        document.getElementById('filter-tanggal-counter').value = tanggal;
-    }
-    
-    let filtered = daftarBooking.filter(b => {
-        let match = true;
-        
-        if (keyword) {
-            let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
-            if (!text.includes(keyword)) match = false;
-        }
-        
-        if (tanggal) {
-            if (b.tanggal !== tanggal) match = false;
-        }
-        
-        return match;
-    });
-    
-    daftarBookingFiltered = filtered;
-    renderFilteredBooking(filtered, document.getElementById('booking-list-counter'));
-}
 
         function filterBookingCounter() {
             let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
@@ -2550,7 +2522,7 @@ function filterBookingCounter() {
                 renderFilteredBooking(filtered, container);
             }
         }
-
+	
         function renderFilteredBooking(data, container) {
             if (!container) return;
             
@@ -3355,6 +3327,78 @@ function aktifkanSuaraCustomer() {
             // Merender QR Code dengan URL yang valid
             let qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentUrl)}`;
             qrContainer.innerHTML = `<img src="${qrApiUrl}" alt="QR Code Fullscreen">`;
+        }
+
+		function mulaiMendengarkanHistory() {
+            db.ref('antrian/history').on('value', (snapshot) => {
+                let historyData = snapshot.val();
+                let tbodyValey = document.getElementById('history-table-body');
+                let tbodyCounter = document.getElementById('history-table-body-counter');
+                
+                let counters = ['Counter 2', 'Counter 3', 'Counter 4', 'Counter 5', 'Counter 6', 'Counter 7', 'Counter 8'];
+                
+                // Kumpulkan data per counter berdasarkan kategori booking & non booking
+                let counterRecords = {};
+                counters.forEach(c => {
+                    counterRecords[c] = { booking: [], non: [] };
+                });
+
+                if (historyData) {
+                    Object.keys(historyData).forEach(counterName => {
+                        if (counterRecords[counterName]) {
+                            let items = historyData[counterName];
+                            Object.keys(items).forEach(itemKey => {
+                                let rec = items[itemKey];
+                                if (rec.jenis === 'Booking') {
+                                    counterRecords[counterName].booking.push(rec);
+                                } else {
+                                    counterRecords[counterName].non.push(rec);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Cari baris terpanjang untuk menyesuaikan jumlah baris tabel
+                let maxRows = 1;
+                counters.forEach(c => {
+                    let lenB = counterRecords[c].booking.length;
+                    let lenN = counterRecords[c].non.length;
+                    if (lenB > maxRows) maxRows = lenB;
+                    if (lenN > maxRows) maxRows = lenN;
+                });
+
+                let html = "";
+                if (!historyData) {
+                    html = `<tr><td colspan="14" style="color:#777; padding:10px;">Belum ada history panggilan.</td></tr>`;
+                } else {
+                    for (let i = 0; i < maxRows; i++) {
+                        html += "<tr>";
+                        counters.forEach(c => {
+                            let bItem = counterRecords[c].booking[i];
+                            let nItem = counterRecords[c].non[i];
+
+                            // Kolom Booking
+                            if (bItem) {
+                                html += `<td><button class="btn-hist-book" onclick="panggilUnitSelesai('${c}', 'Booking', ${bItem.nomor}, '${bItem.nopol}')">${bItem.nomor}<span class="hist-nopol">${bItem.nopol}</span></button></td>`;
+                            } else {
+                                html += `<td>-</td>`;
+                            }
+
+                            // Kolom Non Booking
+                            if (nItem) {
+                                html += `<td><button class="btn-hist-non" onclick="panggilUnitSelesai('${c}', 'Non Booking', ${nItem.nomor}, '${nItem.nopol}')">${nItem.nomor}<span class="hist-nopol">${nItem.nopol}</span></button></td>`;
+                            } else {
+                                html += `<td>-</td>`;
+                            }
+                        });
+                        html += "</tr>";
+                    }
+                }
+
+                if (tbodyValey) tbodyValey.innerHTML = html;
+                if (tbodyCounter) tbodyCounter.innerHTML = html;
+            });
         }
     </script>
 
