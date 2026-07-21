@@ -2265,27 +2265,28 @@ function simpanSemuaBooking() {
                 
                 updateTotalInfo();
                 
-                let hariIni = getTanggalHariIni(); // Format: YYYY-MM-DD
+                let hariIni = getTanggalHariIni(); // Format mesin: YYYY-MM-DD
                 
                 let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput && (!filterInput.value || filterInput.value === 'dd/mm/yyyy' || filterInput.value.includes('/'))) {
+                if (filterInput && (!filterInput.value || filterInput.value.includes('/'))) {
                     filterInput.value = hariIni;
                 }
                 
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
-                if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value === 'dd/mm/yyyy' || filterInputCounter.value.includes('/'))) {
+                if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value.includes('/'))) {
                     filterInputCounter.value = hariIni;
                 }
                 
                 let tanggalFilter = filterInput ? filterInput.value : hariIni;
                 
-                // Filter data berdasarkan tanggal
+                // Filter data dengan pengecekan fleksibel terhadap format tanggal
                 daftarBookingFiltered = daftarBooking.filter(b => {
-                    if (!b.tanggal) return true;
-                    return b.tanggal === tanggalFilter;
+                    if (!b.tanggal) return true; // Jika data lama tidak memiliki tanggal, tetap muat
+                    // Cocokan apakah tanggal sama persis atau mengandung string yang sama
+                    return b.tanggal === tanggalFilter || b.tanggal.includes(tanggalFilter) || tanggalFilter.includes(b.tanggal);
                 });
                 
-                // Jika hasil filter tanggal kosong tapi total data ada, tampilkan semua data agar tabel tidak kosong
+                // Pengaman: Jika hasil filter tanggal kosong tapi total data di database ada, tampilkan semua agar tidak kosong
                 if (daftarBookingFiltered.length === 0 && daftarBooking.length > 0) {
                     daftarBookingFiltered = daftarBooking;
                 }
@@ -2318,14 +2319,16 @@ function simpanSemuaBooking() {
                 }
                 
                 if (tanggal) {
-                    if (!b.tanggal || b.tanggal !== tanggal) match = false;
+                    if (b.tanggal && b.tanggal !== tanggal && !b.tanggal.includes(tanggal) && !tanggal.includes(b.tanggal)) {
+                        match = false;
+                    }
                 }
                 
                 return match;
             });
             
-            daftarBookingFiltered = filtered;
-            renderFilteredBooking(filtered, document.getElementById('booking-list'));
+            daftarBookingFiltered = filtered.length > 0 ? filtered : daftarBooking;
+            renderFilteredBooking(daftarBookingFiltered, document.getElementById('booking-list'));
         }
 
         function filterBookingCounter() {
@@ -2347,16 +2350,18 @@ function simpanSemuaBooking() {
                 }
                 
                 if (tanggal) {
-                    if (!b.tanggal || b.tanggal !== tanggal) match = false;
+                    if (b.tanggal && b.tanggal !== tanggal && !b.tanggal.includes(tanggal) && !tanggal.includes(b.tanggal)) {
+                        match = false;
+                    }
                 }
                 
                 return match;
             });
             
-            daftarBookingFiltered = filtered;
+            daftarBookingFiltered = filtered.length > 0 ? filtered : daftarBooking;
             let container = document.getElementById('booking-list-counter');
             if (container) {
-                renderFilteredBooking(filtered, container);
+                renderFilteredBooking(daftarBookingFiltered, container);
             }
         }
 
