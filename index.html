@@ -2250,6 +2250,11 @@ function simpanSemuaBooking() {
         // ============================================================
 
         function mulaiMendengarkanBooking() {
+            let containerValey = document.getElementById('booking-list');
+            if (containerValey && containerValey.innerHTML.includes('Memuat')) {
+                containerValey.innerHTML = `<div class="empty-booking">⏳ Menghubungkan ke database...</div>`;
+            }
+
             db.ref('booking').on('value', (snapshot) => {
                 daftarBooking = [];
                 snapshot.forEach((child) => {
@@ -2263,29 +2268,34 @@ function simpanSemuaBooking() {
                 let hariIni = getTanggalHariIni(); // Format: YYYY-MM-DD
                 
                 let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput && (!filterInput.value || filterInput.value.includes('/'))) {
+                if (filterInput && (!filterInput.value || filterInput.value === 'dd/mm/yyyy' || filterInput.value.includes('/'))) {
                     filterInput.value = hariIni;
                 }
+                
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
-                if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value.includes('/'))) {
+                if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value === 'dd/mm/yyyy' || filterInputCounter.value.includes('/'))) {
                     filterInputCounter.value = hariIni;
                 }
                 
-                // Untuk memastikan data langsung tampil, kita ambil semua data atau cocokkan secara longgar
                 let tanggalFilter = filterInput ? filterInput.value : hariIni;
                 
+                // Filter data berdasarkan tanggal
                 daftarBookingFiltered = daftarBooking.filter(b => {
-                    if (!b.tanggal) return true; // Jika data lama tidak ada tanggalnya, tetap tampilkan
-                    // Cocokkan apakah tanggal data mengandung hari yang sama
-                    return b.tanggal === tanggalFilter || b.tanggal.includes(tanggalFilter) || tanggalFilter.includes(b.tanggal);
+                    if (!b.tanggal) return true;
+                    return b.tanggal === tanggalFilter;
                 });
                 
-                // Jika hasil filter kosong tapi data total ada, tampilkan semua data hari ini sebagai cadangan agar tabel tidak kosong
+                // Jika hasil filter tanggal kosong tapi total data ada, tampilkan semua data agar tabel tidak kosong
                 if (daftarBookingFiltered.length === 0 && daftarBooking.length > 0) {
                     daftarBookingFiltered = daftarBooking;
                 }
                 
                 renderDaftarBooking();
+            }, (error) => {
+                console.error("Firebase error:", error);
+                if (containerValey) {
+                    containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data: ${error.message}</div>`;
+                }
             });
         }
 
