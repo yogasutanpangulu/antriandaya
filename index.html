@@ -2158,8 +2158,6 @@ function simpanSemuaBooking() {
         // ============================================================
 
         window.onload = function() {
-    // ... kode existing ...
-
     // Inisialisasi otomatis tanggal hari ini (TODAY) pada filter booking
     let hariIni = getTanggalHariIni();
     let filterInput = document.getElementById('filter-tanggal');
@@ -2174,7 +2172,8 @@ function simpanSemuaBooking() {
     cekAtauResetHariBaru();
     setInterval(cekAtauResetHariBaru, 60000);
     cekLoginSebelumnya();
-    mulaiTimerRealtime();
+    // mulaiTimerRealtime();  // KOMENTARI ATAU HAPUS BARIS INI
+    // atau panggil setelah login
     mulaiMendengarkanBooking();
 };
 
@@ -2223,9 +2222,8 @@ function simpanSemuaBooking() {
         setTimeout(hidePekerjaanColumn, 500);
     }
     
-    // --- TAMBAHKAN BARIS INI AGAR COUNTER JUGA MEMUAT DATA BOOKING ---
-    mulaiMendengarkanBooking(); 
-    
+    mulaiMendengarkanBooking();
+    mulaiTimerRealtime();  // <-- TAMBAHKAN BARIS INI DI SINI
     mulaiMendengarkanPanggilanAktif();
     mulaiMendengarkanDaftarTunggu();
     mulaiMendengarkanHistory();
@@ -3352,24 +3350,6 @@ function aktifkanSuaraCustomer() {
                 if (tbodyCounter) tbodyCounter.innerHTML = html;
             });
         }
-
-		// ============================================================
-// ================ TIMER REALTIME ============================
-// ============================================================
-function mulaiTimerRealtime() {
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-        let sekarang = Date.now();
-        daftarAntrianMenunggu.forEach((d) => {
-            let waktuAwal = d.waktuMasuk || d.timestamp || sekarang;
-            let durasiMs = sekarang - waktuAwal;
-            let el = document.getElementById('timer-' + d.key);
-            if (el) {
-                el.innerText = '⏱️ ' + formatWaktuLalu(durasiMs);
-            }
-        });
-    }, 1000);
-}
 
 		// ============================================================
 // ================ FUNGSI BANTUAN YANG HILANG ================
