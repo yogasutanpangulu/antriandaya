@@ -1658,128 +1658,127 @@
 // ============================================================
 
 function simpanSemuaBooking() {
-            let inputTanggalModal = document.getElementById('tanggal-simpan').value;
-            if (!inputTanggalModal) {
-                alert('⚠️ Harap pilih tanggal!');
-                return;
-            }
-            
-            // Pastikan format tanggal bersih menjadi YYYY-MM-DD
-            let tanggal = inputTanggalModal;
-            if (inputTanggalModal.includes('/')) {
-                let parts = inputTanggalModal.split('/');
-                if (parts.length === 3) {
-                    tanggal = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                }
-            }
-            
-            let container = document.getElementById('booking-list');
-            let table = container.querySelector('table');
-            if (!table) {
-                alert('⚠️ Tidak ada data untuk disimpan!');
-                return;
-            }
-            
-            let tbody = table.querySelector('tbody');
-            let rows = tbody.querySelectorAll('tr.edit-row');
-            
-            if (rows.length === 0) {
-                alert('⚠️ Tidak ada data baru untuk disimpan!');
-                return;
-            }
-            
-            let dataBooking = [];
-            let isValid = true;
-            let existingData = daftarBooking;
-            
-            rows.forEach(row => {
-                let nopol = row.querySelector('.edit-nopol').value.trim().toUpperCase();
-                let tipe = row.querySelector('.edit-tipe').value.trim();
-                let nama = row.querySelector('.edit-nama').value.trim();
-                let telp = row.querySelector('.edit-telp').value.trim();
-                let pekerjaan = row.querySelector('.edit-pekerjaan').value.trim();
-                let waktu = row.querySelector('.edit-waktu-text').value.trim();
-                let sa = row.querySelector('.edit-sa').value.trim();
-
-                if (!nopol || !nama) {
-                    isValid = false;
-                    return;
-                }
-
-                // Menggunakan variabel 'tanggal' yang sudah dibersihkan di atas
-                let dataBaru = {
-                    nopol: nopol,
-                    tipe: tipe || '',
-                    nama: nama,
-                    telp: telp || '',
-                    pekerjaan: pekerjaan || '-',
-                    waktu: waktu || '',
-                    tanggal: tanggal, 
-                    sa: sa || '',
-                    status: 'menunggu',
-                    source: 'manual'
-                };
-
-                let isDuplicate = existingData.some(b => 
-                    b.nopol === dataBaru.nopol && 
-                    b.nama === dataBaru.nama && 
-                    b.tanggal === dataBaru.tanggal
-                );
-
-                if (!isDuplicate) {
-                    dataBooking.push(dataBaru);
-                }
-            });
-
-            if (!isValid) {
-                alert('⚠️ Ada data yang tidak lengkap (Nopol dan Nama wajib diisi di setiap baris)!');
-                return;
-            }
-
-            if (dataBooking.length === 0) {
-                alert('⚠️ Semua data yang dimasukkan sudah ada (duplikat) di tanggal tersebut!');
-                return;
-            }
-
-            let konfirmasi = confirm(
-                `📅 Simpan ${dataBooking.length} data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}?`
-            );
-            if (!konfirmasi) return;
-
-            let btn = document.querySelector('.btn-save-all-modal');
-            if(btn) {
-                btn.textContent = '⏳ Menyimpan...';
-                btn.disabled = true;
-            }
-
-            let updates = {};
-            dataBooking.forEach((b) => {
-                let cleanKey = (b.nopol + '_' + b.nama + '_' + b.tanggal).replace(/[.#$\/\[\]\s]/g, '_');
-                updates['booking/' + cleanKey] = b;
-            });
-
-            db.ref().update(updates).then(() => {
-                alert(`✅ Berhasil menyimpan ${dataBooking.length} data booking!`);
-                tutupModalTanggal();
-                
-                // Menyamakan nilai filter utama dengan tanggal data yang baru disimpan
-                let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput) filterInput.value = tanggal;
-                let filterInputCounter = document.getElementById('filter-tanggal-counter');
-                if (filterInputCounter) filterInputCounter.value = tanggal;
-
-                let editRows = document.querySelectorAll('tr.edit-row');
-                editRows.forEach(r => r.remove());
-                filterBooking();
-            }).catch((err) => {
-                alert('❌ Gagal menyimpan ke database: ' + err.message);
-            }).finally(() => {
-                if(btn) {
-                    btn.textContent = '💾 Simpan Semua';
-                    btn.disabled = false;
-                }
-            });
+    let inputTanggalModal = document.getElementById('tanggal-simpan').value;
+    if (!inputTanggalModal) {
+        alert('⚠️ Harap pilih tanggal!');
+        return;
+    }
+    
+    // Pastikan format tanggal bersih menjadi YYYY-MM-DD
+    let tanggal = inputTanggalModal;
+    if (inputTanggalModal.includes('/')) {
+        let parts = inputTanggalModal.split('/');
+        if (parts.length === 3) {
+            tanggal = `${parts[2]}-${parts[1]}-${parts[0]}`;
         }
+    }
+    
+    let container = document.getElementById('booking-list');
+    let table = container.querySelector('table');
+    if (!table) {
+        alert('⚠️ Tidak ada data untuk disimpan!');
+        return;
+    }
+    
+    let tbody = table.querySelector('tbody');
+    let rows = tbody.querySelectorAll('tr.edit-row');
+    
+    if (rows.length === 0) {
+        alert('⚠️ Tidak ada data baru untuk disimpan!');
+        return;
+    }
+    
+    let dataBooking = [];
+    let isValid = true;
+    let existingData = daftarBooking;
+    
+    rows.forEach(row => {
+        let nopol = row.querySelector('.edit-nopol').value.trim().toUpperCase();
+        let tipe = row.querySelector('.edit-tipe').value.trim();
+        let nama = row.querySelector('.edit-nama').value.trim();
+        let telp = row.querySelector('.edit-telp').value.trim();
+        let pekerjaan = row.querySelector('.edit-pekerjaan').value.trim();
+        let waktu = row.querySelector('.edit-waktu-text').value.trim();
+        let sa = row.querySelector('.edit-sa').value.trim();
+
+        if (!nopol || !nama) {
+            isValid = false;
+            return;
+        }
+
+        let dataBaru = {
+            nopol: nopol,
+            tipe: tipe || '',
+            nama: nama,
+            telp: telp || '',
+            pekerjaan: pekerjaan || '-',
+            waktu: waktu || '',
+            tanggal: tanggal, 
+            sa: sa || '',
+            status: 'menunggu',
+            source: 'manual'
+        };
+
+        let isDuplicate = existingData.some(b => 
+            b.nopol === dataBaru.nopol && 
+            b.nama === dataBaru.nama && 
+            b.tanggal === dataBaru.tanggal
+        );
+
+        if (!isDuplicate) {
+            dataBooking.push(dataBaru);
+        }
+    });
+
+    if (!isValid) {
+        alert('⚠️ Ada data yang tidak lengkap (Nopol dan Nama wajib diisi di setiap baris)!');
+        return;
+    }
+
+    if (dataBooking.length === 0) {
+        alert('⚠️ Semua data yang dimasukkan sudah ada (duplikat) di tanggal tersebut!');
+        return;
+    }
+
+    let konfirmasi = confirm(
+        `📅 Simpan ${dataBooking.length} data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}?`
+    );
+    if (!konfirmasi) return;
+
+    let btn = document.querySelector('.btn-save-all-modal');
+    if(btn) {
+        btn.textContent = '⏳ Menyimpan...';
+        btn.disabled = true;
+    }
+
+    let updates = {};
+    dataBooking.forEach((b) => {
+        let cleanKey = (b.nopol + '_' + b.nama + '_' + b.tanggal).replace(/[.#$\/\[\]\s]/g, '_');
+        updates['booking/' + cleanKey] = b;
+    });
+
+    db.ref().update(updates).then(() => {
+        alert(`✅ Berhasil menyimpan ${dataBooking.length} data booking!`);
+        tutupModalTanggal();
+        
+        // Menyamakan nilai filter utama dengan tanggal data yang baru disimpan
+        let filterInput = document.getElementById('filter-tanggal');
+        if (filterInput) filterInput.value = tanggal;
+        let filterInputCounter = document.getElementById('filter-tanggal-counter');
+        if (filterInputCounter) filterInputCounter.value = tanggal;
+
+        let editRows = document.querySelectorAll('tr.edit-row');
+        editRows.forEach(r => r.remove());
+        filterBooking();
+    }).catch((err) => {
+        alert('❌ Gagal menyimpan ke database: ' + err.message);
+    }).finally(() => {
+        if(btn) {
+            btn.textContent = '💾 Simpan Semua';
+            btn.disabled = false;
+        }
+    });
+}
 		
         // ============================================================
         // ================ HAPUS BOOKING BERDASARKAN TANGGAL ==========
@@ -2250,122 +2249,120 @@ function simpanSemuaBooking() {
         // ============================================================
 
         function mulaiMendengarkanBooking() {
-            let containerValey = document.getElementById('booking-list');
-            if (containerValey) {
-                containerValey.innerHTML = `<div class="empty-booking">⏳ Memuat data dari server...</div>`;
-            }
+    let containerValey = document.getElementById('booking-list');
+    if (containerValey) {
+        containerValey.innerHTML = `<div class="empty-booking">⏳ Memuat data dari server...</div>`;
+    }
 
-            db.ref('booking').on('value', (snapshot) => {
-                daftarBooking = [];
-                snapshot.forEach((child) => {
-                    let data = child.val();
-                    data.key = child.key;
-                    daftarBooking.push(data);
-                });
-                
-                updateTotalInfo();
-                
-                let hariIni = getTanggalHariIni(); // Format: YYYY-MM-DD
-                
-                let filterInput = document.getElementById('filter-tanggal');
-                if (filterInput && (!filterInput.value || filterInput.value.includes('/'))) {
-                    filterInput.value = hariIni;
-                }
-                let filterInputCounter = document.getElementById('filter-tanggal-counter');
-                if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value.includes('/'))) {
-                    filterInputCounter.value = hariIni;
-                }
-                
-                let tanggalFilter = filterInput ? filterInput.value : hariIni;
-                
-                // PENGAMAN UTAMA: Tampilkan semua data yang ada di database jika totalnya ada, 
-                // atau cocokan secara longgar agar tidak pernah kosong
-                if (daftarBooking.length > 0) {
-                    // Jika ada filter tanggal, coba saring, tapi jika kosong/tidak cocok, paksa tampilkan semua data booking
-                    let filtered = daftarBooking.filter(b => {
-                        if (!b.tanggal) return true;
-                        return b.tanggal === tanggalFilter || b.tanggal.includes(tanggalFilter) || tanggalFilter.includes(b.tanggal);
-                    });
-                    
-                    daftarBookingFiltered = filtered.length > 0 ? filtered : daftarBooking;
-                } else {
-                    daftarBookingFiltered = [];
-                }
-                
-                renderDaftarBooking();
-            }, (error) => {
-                console.error("Firebase error:", error);
-                if (containerValey) {
-                    containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data: ${error.message}</div>`;
-                }
-            });
+    db.ref('booking').on('value', (snapshot) => {
+        daftarBooking = [];
+        snapshot.forEach((child) => {
+            let data = child.val();
+            data.key = child.key;
+            daftarBooking.push(data);
+        });
+        
+        updateTotalInfo();
+        
+        let hariIni = getTanggalHariIni(); 
+        
+        let filterInput = document.getElementById('filter-tanggal');
+        if (filterInput && (!filterInput.value || filterInput.value.includes('/'))) {
+            filterInput.value = hariIni;
         }
+        let filterInputCounter = document.getElementById('filter-tanggal-counter');
+        if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value.includes('/'))) {
+            filterInputCounter.value = hariIni;
+        }
+        
+        let tanggalFilter = filterInput ? filterInput.value : hariIni;
+        
+        if (daftarBooking.length > 0) {
+            let filtered = daftarBooking.filter(b => {
+                if (!b.tanggal) return true;
+                return b.tanggal === tanggalFilter || b.tanggal.includes(tanggalFilter) || tanggalFilter.includes(b.tanggal);
+            });
+            
+            daftarBookingFiltered = filtered.length > 0 ? filtered : daftarBooking;
+        } else {
+            daftarBookingFiltered = [];
+        }
+        
+        renderDaftarBooking();
+    }, (error) => {
+        console.error("Firebase error:", error);
+        if (containerValey) {
+            containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data: ${error.message}</div>`;
+        }
+    });
+}
+
+function renderDaftarBooking() {
+    let container = document.getElementById('booking-list');
+    if (!container) return;
+    renderFilteredBooking(daftarBookingFiltered, container);
+}
 		
         function filterBooking() {
-            let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
-            let filterInput = document.getElementById('filter-tanggal');
-            let tanggal = filterInput ? filterInput.value : getTanggalHariIni();
-            
-            if (!tanggal) {
-                tanggal = getTanggalHariIni();
-                if(filterInput) filterInput.value = tanggal;
-            }
-            
-            let filtered = daftarBooking.filter(b => {
-                let match = true;
-                
-                if (keyword) {
-                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
-                    if (!text.includes(keyword)) match = false;
-                }
-                
-                if (tanggal) {
-                    if (b.tanggal && b.tanggal !== tanggal && !b.tanggal.includes(tanggal) && !tanggal.includes(b.tanggal)) {
-                        match = false;
-                    }
-                }
-                
-                return match;
-            });
-            
-            daftarBookingFiltered = filtered.length > 0 ? filtered : daftarBooking;
-            renderFilteredBooking(daftarBookingFiltered, document.getElementById('booking-list'));
+    let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
+    let tanggal = document.getElementById('filter-tanggal').value;
+    
+    if (!tanggal) {
+        tanggal = getTanggalHariIni();
+        document.getElementById('filter-tanggal').value = tanggal;
+    }
+    
+    let filtered = daftarBooking.filter(b => {
+        let match = true;
+        
+        if (keyword) {
+            let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
+            if (!text.includes(keyword)) match = false;
         }
-
-        function filterBookingCounter() {
-            let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
-            let filterInput = document.getElementById('filter-tanggal-counter');
-            let tanggal = filterInput ? filterInput.value : getTanggalHariIni();
-            
-            if (!tanggal) {
-                tanggal = getTanggalHariIni();
-                if(filterInput) filterInput.value = tanggal;
-            }
-            
-            let filtered = daftarBooking.filter(b => {
-                let match = true;
-                
-                if (keyword) {
-                    let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
-                    if (!text.includes(keyword)) match = false;
-                }
-                
-                if (tanggal) {
-                    if (b.tanggal && b.tanggal !== tanggal && !b.tanggal.includes(tanggal) && !tanggal.includes(b.tanggal)) {
-                        match = false;
-                    }
-                }
-                
-                return match;
-            });
-            
-            daftarBookingFiltered = filtered.length > 0 ? filtered : daftarBooking;
-            let container = document.getElementById('booking-list-counter');
-            if (container) {
-                renderFilteredBooking(daftarBookingFiltered, container);
-            }
+        
+        if (tanggal) {
+            if (b.tanggal !== tanggal) match = false;
         }
+        
+        return match;
+    });
+    
+    daftarBookingFiltered = filtered;
+    renderFilteredBooking(filtered, document.getElementById('booking-list'));
+}
 
+function filterBookingCounter() {
+    let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
+    let tanggal = document.getElementById('filter-tanggal-counter').value;
+    
+    if (!tanggal) {
+        tanggal = getTanggalHariIni();
+        document.getElementById('filter-tanggal-counter').value = tanggal;
+    }
+    
+    let filtered = daftarBooking.filter(b => {
+        let match = true;
+        
+        if (keyword) {
+            let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
+            if (!text.includes(keyword)) match = false;
+        }
+        
+        if (tanggal) {
+            if (b.tanggal !== tanggal) match = false;
+        }
+        
+        return match;
+    });
+    
+    daftarBookingFiltered = filtered;
+    
+    let container = document.getElementById('booking-list-counter');
+    if (container) {
+        renderFilteredBooking(filtered, container);
+    }
+}
+		
         function renderRow(b, index, group) {
             let statusClass = 'status-belum-datang';
             let statusText = 'BELUM DATANG';
