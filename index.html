@@ -1743,7 +1743,6 @@
 
             let updates = {};
             dataBooking.forEach((b) => {
-                // Menggunakan key bersih yang konsisten berdasarkan nopol, nama, dan tanggal
                 let cleanKey = (b.nopol + '_' + b.nama + '_' + b.tanggal).replace(/[.#$\/\[\]\s]/g, '_');
                 updates['booking/' + cleanKey] = b;
             });
@@ -1752,14 +1751,14 @@
                 alert(`✅ Berhasil menyimpan ${dataBooking.length} data booking!`);
                 tutupModalTanggal();
                 
-                // Menyesuaikan filter tanggal agar langsung menampilkan data yang baru disimpan
+                // Set filter tanggal utama ke tanggal yang baru disimpan
                 let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput) filterInput.value = tanggal;
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
                 if (filterInputCounter) filterInputCounter.value = tanggal;
 
-                let editRows = document.querySelectorAll('tr.edit-row');
-                editRows.forEach(r => r.remove());
+                // Jangan hapus baris secara manual agar tidak bentrok, 
+                // biarkan listener Firebase yang memperbarui tabel secara otomatis
                 filterBooking();
             }).catch((err) => {
                 alert('❌ Gagal menyimpan ke database: ' + err.message);
