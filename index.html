@@ -3349,6 +3349,24 @@ function aktifkanSuaraCustomer() {
                 if (tbodyCounter) tbodyCounter.innerHTML = html;
             });
         }
+
+		// ============================================================
+// ================ TIMER REALTIME ============================
+// ============================================================
+function mulaiTimerRealtime() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        let sekarang = Date.now();
+        daftarAntrianMenunggu.forEach((d) => {
+            let waktuAwal = d.waktuMasuk || d.timestamp || sekarang;
+            let durasiMs = sekarang - waktuAwal;
+            let el = document.getElementById('timer-' + d.key);
+            if (el) {
+                el.innerText = '⏱️ ' + formatWaktuLalu(durasiMs);
+            }
+        });
+    }, 1000);
+}
     </script>
 
 <!-- ================ SCREEN SAVER QR CODE FULLSCREEN ================ -->
