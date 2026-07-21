@@ -2187,13 +2187,6 @@
             mulaiMendengarkanBooking();
         };
 
-            cekAtauResetHariBaru();
-            setInterval(cekAtauResetHariBaru, 60000);
-            cekLoginSebelumnya();
-            mulaiTimerRealtime();
-            mulaiMendengarkanBooking();
-        };
-
         function cekLoginSebelumnya() {
             let savedUser = localStorage.getItem("sesi_user_antriandaya");
             let savedDate = localStorage.getItem("tanggal_login_antriandaya");
@@ -2216,14 +2209,13 @@
 
             if (id === 'Monitor') {
                 document.getElementById('monitor-view').style.display = 'block';
-                mulaiSlideshowMonitor(); // <--- Menjalankan layar screen saver bergantian otomatis
+                mulaiSlideshowMonitor();
             } else if (id === 'Valey') {
                 document.getElementById('valey-view').style.display = 'block';
             } else {
                 document.getElementById('counter-view').style.display = 'block';
                 document.getElementById('counter-name-display').innerText = id;
                 
-                // Load mute status dari localStorage
                 let savedMute = localStorage.getItem('mute_counter_' + id);
                 if (savedMute === 'true') {
                     isMuted = true;
