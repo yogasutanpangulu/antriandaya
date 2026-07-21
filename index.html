@@ -1665,10 +1665,18 @@
             
             let container = document.getElementById('booking-list');
             let table = container.querySelector('table');
-            if (!table) return;
+            if (!table) {
+                alert('⚠️ Tidak ada tabel data untuk disimpan!');
+                return;
+            }
             
             let tbody = table.querySelector('tbody');
             let rows = tbody.querySelectorAll('tr.edit-row');
+            
+            if (rows.length === 0) {
+                alert('⚠️ Tidak ada baris data baru yang diisi!');
+                return;
+            }
             
             let dataBooking = [];
             let isValid = true;
@@ -1713,14 +1721,19 @@
             });
 
             if (!isValid) {
-                alert('⚠️ Ada data yang tidak lengkap (Nopol dan Nama wajib diisi)!');
+                alert('⚠️ Ada data yang tidak lengkap (Nopol dan Nama wajib diisi di setiap baris)!');
                 return;
             }
 
             if (dataBooking.length === 0) {
-                alert('⚠️ Semua data yang dimasukkan sudah ada (duplikat) di tanggal tersebut!');
+                alert('⚠️ Data yang Anda masukkan sudah ada di sistem (duplikat) atau kosong!');
                 return;
             }
+
+            let konfirmasi = confirm(
+                `📅 Simpan ${dataBooking.length} data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}?`
+            );
+            if (!konfirmasi) return;
 
             let btn = document.querySelector('.btn-save-all-modal');
             if(btn) {
@@ -1730,7 +1743,7 @@
 
             let updates = {};
             dataBooking.forEach((b) => {
-                // Key yang stabil mencegah data hilang/bentrok saat refresh
+                // Menggunakan key bersih yang konsisten berdasarkan nopol, nama, dan tanggal
                 let cleanKey = (b.nopol + '_' + b.nama + '_' + b.tanggal).replace(/[.#$\/\[\]\s]/g, '_');
                 updates['booking/' + cleanKey] = b;
             });
@@ -1739,7 +1752,7 @@
                 alert(`✅ Berhasil menyimpan ${dataBooking.length} data booking!`);
                 tutupModalTanggal();
                 
-                // Set filter tanggal utama ke tanggal yang baru disimpan
+                // Menyesuaikan filter tanggal agar langsung menampilkan data yang baru disimpan
                 let filterInput = document.getElementById('filter-tanggal');
                 if (filterInput) filterInput.value = tanggal;
                 let filterInputCounter = document.getElementById('filter-tanggal-counter');
@@ -1749,7 +1762,7 @@
                 editRows.forEach(r => r.remove());
                 filterBooking();
             }).catch((err) => {
-                alert('❌ Gagal menyimpan: ' + err.message);
+                alert('❌ Gagal menyimpan ke database: ' + err.message);
             }).finally(() => {
                 if(btn) {
                     btn.textContent = '💾 Simpan Semua';
