@@ -1898,11 +1898,6 @@
                 let waktuMasukAwal = dataAntrian.waktuMasuk || dataAntrian.timestamp;
                 let durasiTunggu = waktuPanggil - waktuMasukAwal;
 
-                if (dataAntrian.sa && dataAntrian.sa.trim() !== '' && sessionUser !== dataAntrian.sa) {
-                    alert(`Maaf, antrian ini hanya bisa dipanggil oleh SA: ${dataAntrian.sa}`);
-                    return;
-                }
-
                 let nopolDisplay = dataAntrian.nopol || "-";
                 if (nopolDisplay === "" || nopolDisplay === "-") nopolDisplay = "-";
 
