@@ -279,11 +279,52 @@
         .modal-edit-antrian .form-group { margin-bottom: 12px; text-align: left; }
         .modal-edit-antrian .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 3px; }
         .modal-edit-antrian .form-group input { width: 100%; padding: 8px 10px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; }
+
+/* CSS Tombol Kembali */
+        .top-bar-nav {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .btn-back-portal {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #ffffff;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+
+        .btn-back-portal:hover {
+            background-color: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+            transform: translateX(-3px);
+        }
     </style>
 </head>
 <body>
 
-    <!-- ================ LOGIN ================ -->
+    <!-- TARUH KODE INI TEPAT DI BAWAH BODY -->
+    <div class="top-bar-nav">
+        <a href="index.html" class="btn-back-portal">
+            ⬅️ Kembali ke Menu Utama
+        </a>
+    </div>
+
+    <!-- Kode HTML halaman antrian kamu selanjutnya... -->
+
+    <!-- ================ LOGIN ================ -->	
     <div id="login-section" class="login-card">
         <span class="role-icon">🚗</span>
         <h2>Sistem Antrian Service</h2>
