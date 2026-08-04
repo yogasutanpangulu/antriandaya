@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -22,8 +20,6 @@
         select, button, input[type="number"] { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px;}
         button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.2s;}
         button:hover { background-color: #0056b3; }
-        button.btn-simpan { background-color: #28a745; margin-left: 10px;}
-        button.btn-simpan:hover { background-color: #218838; }
         button:disabled { background-color: #6c757d !important; cursor: not-allowed; }
         
         .header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
@@ -62,25 +58,21 @@
         .sync-offline { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;}
         .sync-loading { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;}
         
+        .autosave-indicator { font-size: 12px; font-weight: bold; color: #666; font-style: italic; }
+
         .btn-back { position: absolute; top: 20px; left: 20px; background: #6c757d; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-size: 14px; font-weight: bold; }
         .btn-back:hover { background: #5a6268; }
     </style>
 </head>
 <body>
 
-    <!-- TARUH KODE INI TEPAT DI BAWAH BODY -->
-    <div class="top-bar-nav">
-        <a href="index.html" class="btn-back-portal">
-            ⬅️ Kembali ke Menu Utama
-        </a>
-    </div>
-
-    <!-- Kode HTML halaman antrian kamu selanjutnya... -->
-
     <a href="index.html" class="btn-back">⬅ Kembali ke Menu Utama</a>
 
     <h2>Sistem Rekap UE & Revenue Harian SA</h2>
-    <div class="subtitle">Database Firebase: <span id="sync-status" class="status-sync sync-loading">⏳ Menghubungkan ke Server...</span></div>
+    <div class="subtitle">
+        Database Firebase: <span id="sync-status" class="status-sync sync-loading">⏳ Menghubungkan ke Server...</span> 
+        <span id="autosave-status" class="autosave-indicator" style="margin-left: 15px;"></span>
+    </div>
 
     <div class="card">
         <div class="header-controls">
@@ -118,7 +110,7 @@
                 </div>
             </div>
             <div>
-                <button type="button" class="btn-simpan" id="btnSimpan" onclick="simpanKeFirebase()">💾 Simpan Perubahan Online</button>
+                <span style="font-size: 13px; color: #28a745; font-weight: bold;">⚡ Live Auto-Save Aktif</span>
             </div>
         </div>
 
@@ -127,8 +119,6 @@
             <tbody id="tbody-grid"></tbody>
         </table>
         
-        <div id="pesanNotif" class="alert">✅ Data berhasil disimpan ke Server Firebase Online!</div>
-
         <!-- BAGIAN LAPORAN WHATSAPP -->
         <div id="wa-control-group">
             <div>
@@ -149,7 +139,7 @@
             
             <textarea id="textWA"></textarea>
             
-            <button type="button" class="btn-simpan" style="margin-left: 0; margin-top: 10px;" onclick="salinLaporanWA()">📋 Salin Teks (Copy)</button>
+            <button type="button" class="btn-simpan" style="background-color: #28a745; margin-left: 0; margin-top: 10px;" onclick="salinLaporanWA()">📋 Salin Teks (Copy)</button>
             <span id="copyNotif" style="display:none; color: #28a745; font-weight: bold; margin-left: 10px;">Teks berhasil disalin!</span>
         </div>
     </div>
@@ -172,12 +162,15 @@
         const db = firebase.database();
         
         let isOnline = false;
+        let isRemoteUpdating = false; // Flag agar input dari database tidak memicu save ulang
+        let saveTimeout = null;
+
         db.ref(".info/connected").on("value", function(snap) {
             const statusEl = document.getElementById("sync-status");
             if (snap.val() === true) {
                 isOnline = true;
                 statusEl.className = "status-sync sync-online";
-                statusEl.innerText = "🟢 Terhubung (Online & Real-time)";
+                statusEl.innerText = "🟢 Terhubung (Online & Live)";
             } else {
                 isOnline = false;
                 statusEl.className = "status-sync sync-offline";
@@ -242,7 +235,7 @@
                     htmlBody += `<td class="text-left">${seg}</td>`;
                     
                     for (let i = 1; i <= 31; i++) {
-                        htmlBody += `<td><input type="number" class="cell-input" id="ue_${kat.type}_${seg}_${i}" oninput="hitungTotal()"></td>`;
+                        htmlBody += `<td><input type="number" class="cell-input" id="ue_${kat.type}_${seg}_${i}" oninput="handleCellInput()"></td>`;
                     }
                     htmlBody += `<td id="total_ue_${kat.type}_${seg}" class="bold">0</td></tr>`;
                 });
@@ -282,7 +275,7 @@
                 htmlBody += `<td colspan="2" class="text-left">${rev}</td>`;
                 
                 for (let i = 1; i <= 31; i++) {
-                    htmlBody += `<td><input type="number" class="cell-input cell-input-rev" id="rev_${rev}_${i}" oninput="hitungTotal()"></td>`;
+                    htmlBody += `<td><input type="number" class="cell-input cell-input-rev" id="rev_${rev}_${i}" oninput="handleCellInput()"></td>`;
                 }
                 htmlBody += `<td id="total_rev_${rev}" class="bold">Rp -</td></tr>`;
             });
@@ -363,17 +356,12 @@
             buatTabelGrid(isSummary);
             
             document.getElementById('wa-section').style.display = 'none';
-            const btnSimpan = document.getElementById('btnSimpan');
             const waControlGroup = document.getElementById('wa-control-group');
 
             if (isSummary) {
-                btnSimpan.disabled = true;
-                btnSimpan.innerText = "Mode Summary (Hanya Baca)";
                 waControlGroup.style.display = 'flex'; 
                 document.querySelectorAll('.cell-input').forEach(input => { input.disabled = true; });
             } else {
-                btnSimpan.disabled = false;
-                btnSimpan.innerText = "💾 Simpan Perubahan Online";
                 waControlGroup.style.display = 'none'; 
             }
             
@@ -385,6 +373,7 @@
                 db.ref('rekap_harian').off('value', currentFirebaseListener);
             }
 
+            isRemoteUpdating = true;
             document.querySelectorAll('.cell-input').forEach(input => {
                 input.value = '';
                 if(document.getElementById('filter_sa').value === "ALL") {
@@ -394,6 +383,7 @@
                 }
             });
             window.hitungTotal(); 
+            isRemoteUpdating = false;
 
             const sa = document.getElementById('filter_sa').value;
             const bulan = document.getElementById('filter_bulan').value;
@@ -401,6 +391,7 @@
             
             currentFirebaseListener = db.ref('rekap_harian').on('value', (snapshot) => {
                 const dataFirebase = snapshot.val() || {};
+                isRemoteUpdating = true; // Kunci agar tidak memicu auto-save saat menerima data dari server
                 
                 if (sa === "ALL") {
                     let dataGabungan = { ue: {}, rev: {} };
@@ -450,6 +441,7 @@
                     const dataSA = dataFirebase[docId] || {};
                     isiTabelDariData(dataSA);
                 }
+                isRemoteUpdating = false;
             });
         }
 
@@ -481,63 +473,70 @@
         }
 
         // ============================================================
-        // 5. FIREBASE: SIMPAN DATA
+        // 5. LIVE AUTO-SAVE KE FIREBASE
         // ============================================================
-        function simpanKeFirebase() {
+        window.handleCellInput = function() {
+            window.hitungTotal(); // Update kalkulasi total di layar secara instan
+
+            if (isRemoteUpdating) return; // Jika perubahan berasal dari sinkronisasi server, abaikan auto-save
+
             const sa = document.getElementById('filter_sa').value;
             if (sa === "ALL") return; 
 
             if (!isOnline) {
-                alert("⚠️ Sistem sedang Offline. Pastikan internet Anda terhubung sebelum menyimpan!");
+                document.getElementById('autosave-status').innerText = "⚠️ Offline (Perubahan lokal)";
                 return;
             }
 
-            const btn = document.getElementById('btnSimpan');
-            btn.innerText = "⏳ Menyimpan ke Server..."; 
-            btn.disabled = true;
+            const autoStatus = document.getElementById('autosave-status');
+            autoStatus.innerText = "💾 Menyimpan...";
 
-            const bulan = document.getElementById('filter_bulan').value;
-            const tahun = document.getElementById('filter_tahun').value;
-            const docId = `${sa}_${tahun}_${bulan}`;
+            // Debounce: Tunggu 500ms setelah user selesai mengetik sebelum kirim ke Firebase
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                const bulan = document.getElementById('filter_bulan').value;
+                const tahun = document.getElementById('filter_tahun').value;
+                const docId = `${sa}_${tahun}_${bulan}`;
 
-            let dataSimpan = { 
-                nama_sa: sa, 
-                bulan: bulan, 
-                tahun: tahun, 
-                terakhir_diupdate: firebase.database.ServerValue.TIMESTAMP,
-                ue: {}, 
-                rev: {} 
-            };
+                let dataSimpan = { 
+                    nama_sa: sa, 
+                    bulan: bulan, 
+                    tahun: tahun, 
+                    terakhir_diupdate: firebase.database.ServerValue.TIMESTAMP,
+                    ue: {}, 
+                    rev: {} 
+                };
 
-            catUE.forEach(kat => {
-                kat.segmen.forEach(seg => {
-                    const key = `${kat.type}_${seg}`;
-                    dataSimpan.ue[key] = {};
+                catUE.forEach(kat => {
+                    kat.segmen.forEach(seg => {
+                        const key = `${kat.type}_${seg}`;
+                        dataSimpan.ue[key] = {};
+                        for (let i = 1; i <= 31; i++) {
+                            let val = parseInt(document.getElementById(`ue_${key}_${i}`).value);
+                            if (val > 0) dataSimpan.ue[key][i] = val;
+                        }
+                    });
+                });
+
+                catRev.forEach(rev => {
+                    dataSimpan.rev[rev] = {};
                     for (let i = 1; i <= 31; i++) {
-                        let val = parseInt(document.getElementById(`ue_${key}_${i}`).value);
-                        if (val > 0) dataSimpan.ue[key][i] = val;
+                        let val = parseInt(document.getElementById(`rev_${rev}_${i}`).value);
+                        if (val > 0) dataSimpan.rev[rev][i] = val;
                     }
                 });
-            });
 
-            catRev.forEach(rev => {
-                dataSimpan.rev[rev] = {};
-                for (let i = 1; i <= 31; i++) {
-                    let val = parseInt(document.getElementById(`rev_${rev}_${i}`).value);
-                    if (val > 0) dataSimpan.rev[rev][i] = val;
-                }
-            });
-
-            db.ref('rekap_harian/' + docId).set(dataSimpan).then(() => {
-                const pesan = document.getElementById('pesanNotif');
-                pesan.style.display = 'block';
-                setTimeout(() => { pesan.style.display = 'none'; }, 3000);
-            }).catch((err) => {
-                alert("❌ Gagal menyimpan ke server: " + err.message);
-            }).finally(() => {
-                btn.innerText = "💾 Simpan Perubahan Online"; 
-                btn.disabled = false;
-            });
+                db.ref('rekap_harian/' + docId).set(dataSimpan).then(() => {
+                    autoStatus.innerText = "✅ Semua perubahan tersimpan";
+                    setTimeout(() => {
+                        if(autoStatus.innerText === "✅ Semua perubahan tersimpan") {
+                            autoStatus.innerText = "";
+                        }
+                    }, 2000);
+                }).catch((err) => {
+                    autoStatus.innerText = "❌ Gagal menyimpan";
+                });
+            }, 500);
         }
 
         // ============================================================
