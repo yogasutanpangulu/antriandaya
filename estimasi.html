@@ -38,6 +38,23 @@
             background-color: #f4f6f9;
             color: #000000;
         }
+
+        /* --- RULE HEADER COMPANY --- */
+        /* 1. Sembunyikan secara default di layar aplikasi */
+        .header-company-container {
+            display: none !important;
+        }
+
+        /* 2. Tampilkan HANYA saat dicetak / PDF */
+        @media print {
+            .header-company-container {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 8px;
+            }
+        }
+
         /* Style Tombol Kembali ke Portal */
         .top-bar-nav {
             max-width: 950px;
@@ -77,29 +94,91 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        .header-title {
-            text-align: center;
-            font-size: 16pt;
+
+        /* STYLES ISI HEADER BENGKEL */
+        .company-info {
+            font-size: 9.5pt;
+            line-height: 1.35;
+            color: #000;
+        }
+        .company-name {
+            font-size: 11pt;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
+        }
+        .company-sub {
+            font-size: 9pt;
+            margin-bottom: 2px;
+        }
+        .company-logo img {
+            max-height: 55px;
+            width: auto;
+            object-fit: contain;
+        }
+        .header-divider {
+            border: 0;
+            border-top: 2px solid #000;
+            margin: 10px 0 15px 0;
+        }
+        .document-title {
+            text-align: center;
+            font-size: 15pt;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
             text-transform: uppercase;
         }
-        
-        .nopol-container {
-            margin-bottom: 20px;
+
+        /* Form Details Kendaraan */
+        .info-grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+        .info-row {
+            display: flex;
+            align-items: center;
+            font-size: 9.5pt;
+        }
+        .info-label {
+            width: 180px;
+            font-weight: bold;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .info-colon {
+            width: 15px;
+            font-weight: bold;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .info-input-wrapper {
+            flex: 1;
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        .nopol-container label {
-            font-weight: bold;
-            font-size: 10pt;
-        }
-        .nopol-input {
-            width: 200px !important;
+        .info-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1px dotted #888 !important;
+            background: transparent;
+            font-size: 9.5pt;
             font-weight: bold;
             text-transform: uppercase;
+            padding: 2px 4px;
         }
+        .info-input:focus {
+            outline: none;
+            border-bottom: 1px solid #000 !important;
+        }
+        .info-input::placeholder {
+            font-weight: normal;
+            color: #888;
+            text-transform: none;
+        }
+        /* --------------------------------- */
 
         table {
             width: 100%;
@@ -258,7 +337,7 @@
         .btn-action { padding: 10px 20px; font-size: 10pt; border-radius: 6px; }
         .btn-save { background: #2196F3; color: white; border: none; }
         .btn-save:hover { background: #0b7dda; }
-        .btn-cloud-fetch { background: #7b1fa2; color: white; border: none; }
+        .btn-cloud-fetch { background: #7b1fa2; color: white; border: none; padding: 6px 14px; display: inline-flex; align-items: center; gap: 4px; }
         .btn-cloud-fetch:hover { background: #4a148c; }
         .btn-download { background: #4CAF50; color: white; border: none; }
         .btn-download:hover { background: #45a049; }
@@ -453,24 +532,13 @@
             transform: scale(1.1);
         }
 
-        .header-title-print { display: none; }
-
         @media print {
             .hide-on-print { display: none !important; }
             body { background: #fff; padding: 0; }
             .container { box-shadow: none; max-width: 100%; padding: 0; }
             .action-panel, .storage-panel, .master-panel, .btn, .btn-remove, .btn-copy, .scroll-top-btn, .top-bar-nav { display: none !important; }
             input[type="text"], input[type="number"], select { border-bottom: none !important; }
-            
-            .header-title-screen { display: none !important; }
-            .header-title-print { 
-                display: block !important; 
-                text-align: center;
-                font-size: 16pt;
-                font-weight: bold;
-                margin-bottom: 5px;
-                text-transform: uppercase;
-            }
+            .info-input { border-bottom: none !important; }
         }
     </style>
 </head>
@@ -553,13 +621,58 @@
 <div class="container" id="main-content">
     <div id="top-anchor"></div>
     
-    <div class="header-title header-title-screen">Estimasi Biaya Service Bengkel</div>
-    <div class="header-title-print">Estimasi Biaya Service</div>
+    <!-- HEADER DEALER DAYA TOYOTA BARU -->
+<!-- BUNGKUS DENGAN TAG INI DI AWAL -->
+    <div class="header-company-container">
+        <div class="company-info">
+            <div class="company-name">PT DAYA ADICIPTA SANDIKA</div>
+            <div class="company-sub">Authorized Toyota Dealer</div>
+            <div>Cabang: Cakung</div>
+            <div>Jalan Raya Bekasi Km. 26,5 RT.007/RW.05, Kelurahan Ujung Menteng - Kecamatan Cakung, Jakarta Timur 13960, DKI Jakarta</div>
+            <div>P: +62 21 8896 8800; F: +62 21 8896 8900</div>
+            <div>www.daya-toyota.com</div>
+        </div>
+        <div class="company-logo">
+            <img src="LOGO DAYA.webp" alt="Daya Toyota Logo">
+        </div>
+    </div>
+<!-- BUNGKUS DENGAN TAG INI DI AKHIR -->
 
-    <div class="nopol-container">
-        <label for="nopol">NOMOR POLISI :</label>
-        <input type="text" id="nopol" class="nopol-input" placeholder="B 1234 ABC">
-        <button class="btn btn-cloud-fetch" onclick="fetchFromCloudDatabase()">🔍 Tarik Cloud</button>
+    <hr class="header-divider">
+
+    <div class="document-title">ESTIMASI BIAYA SERVICE</div>
+
+    <!-- FIELD INFORMASI KENDARAAN TERBARU -->
+    <div class="info-grid-container">
+        <div class="info-row">
+            <span class="info-label">NO. POLISI / RANGKA</span>
+            <span class="info-colon">:</span>
+            <div class="info-input-wrapper">
+                <input type="text" id="nopol" class="info-input" placeholder="B 1234 ABC / NO RANGKA...">
+                <button class="btn btn-cloud-fetch hide-on-print" onclick="fetchFromCloudDatabase()">🔍 Tarik Cloud</button>
+            </div>
+        </div>
+        <div class="info-row">
+            <span class="info-label">NAMA PELANGGAN</span>
+            <span class="info-colon">:</span>
+            <div class="info-input-wrapper">
+                <input type="text" id="nama-pelanggan" class="info-input" placeholder="NAMA PELANGGAN...">
+            </div>
+        </div>
+        <div class="info-row">
+            <span class="info-label">TYPE KENDARAAN</span>
+            <span class="info-colon">:</span>
+            <div class="info-input-wrapper">
+                <input type="text" id="type-kendaraan" class="info-input" placeholder="CONTOH: AVANZA / INNOVA / RUSH...">
+            </div>
+        </div>
+        <div class="info-row">
+            <span class="info-label">TGL PEMBUATAN</span>
+            <span class="info-colon">:</span>
+            <div class="info-input-wrapper">
+                <input type="text" id="tgl-pembuatan" class="info-input" placeholder="OTOMATIS TERISI SAAT DISIMPAN..." readonly>
+            </div>
+        </div>
     </div>
 
     <div class="table-title" id="section-tabel-utama">
@@ -1363,8 +1476,14 @@
         const nopol = document.getElementById('nopol').value.trim().toUpperCase();
         if (!nopol) { if (!isSilent) alert('Isi Nomor Polisi!'); return; }
 
+        const currentDateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        document.getElementById('tgl-pembuatan').value = currentDateStr;
+
         const estimationData = {
-            nopol, date: new Date().toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+            nopol,
+            namaPelanggan: document.getElementById('nama-pelanggan').value.trim(),
+            typeKendaraan: document.getElementById('type-kendaraan').value.trim(),
+            date: currentDateStr,
             jasa: [], lain: [], part: []
         };
 
@@ -1415,7 +1534,11 @@
     }
 
     function injectDataToFormElements(est) {
-        document.getElementById('nopol').value = est.nopol;
+        document.getElementById('nopol').value = est.nopol || '';
+        document.getElementById('nama-pelanggan').value = est.namaPelanggan || '';
+        document.getElementById('type-kendaraan').value = est.typeKendaraan || '';
+        document.getElementById('tgl-pembuatan').value = est.date || '';
+
         const jasaBody = document.querySelector('#table-jasa tbody');
         jasaBody.querySelectorAll('tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
         if (est.jasa) {
@@ -1449,6 +1572,9 @@
     function resetFormToNew() {
         if (confirm('Kosongkan form dan buat baru?')) {
             document.getElementById('nopol').value = '';
+            document.getElementById('nama-pelanggan').value = '';
+            document.getElementById('type-kendaraan').value = '';
+            document.getElementById('tgl-pembuatan').value = '';
             document.querySelectorAll('#table-jasa tbody tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
             document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
             addRow('table-jasa');
