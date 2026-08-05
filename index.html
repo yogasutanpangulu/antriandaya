@@ -10,7 +10,7 @@
             margin: 0; 
             padding: 0; 
             background: linear-gradient(135deg, #f4f7f6 0%, #e2e8f0 100%);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -21,7 +21,7 @@
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             text-align: center;
-            max-width: 600px;
+            max-width: 850px;
             width: 90%;
         }
         .portal-header h1 {
@@ -35,9 +35,10 @@
             margin: 0 0 30px 0;
             font-size: 16px;
         }
+        /* Diubah menjadi 3 kolom grid */
         .menu-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
         }
         .menu-card {
@@ -80,7 +81,10 @@
         .card-laporan:hover { border-color: #28a745; box-shadow: 0 5px 15px rgba(40,167,69,0.15); }
         .card-laporan h3 { color: #28a745; }
 
-        @media (max-width: 600px) {
+        .card-estimasi:hover { border-color: #ffc107; box-shadow: 0 5px 15px rgba(255,193,7,0.15); }
+        .card-estimasi h3 { color: #e0a800; }
+
+        @media (max-width: 768px) {
             .menu-grid { grid-template-columns: 1fr; }
             .portal-container { padding: 30px 20px; }
         }
@@ -95,18 +99,25 @@
         </div>
 
         <div class="menu-grid">
-            <!-- Link menuju file antrian.html -->
+            <!-- 1. Sistem Antrian -->
             <a href="antrian.html" class="menu-card card-antrian">
                 <div class="icon">👥</div>
                 <h3>Sistem Antrian</h3>
                 <p>Input nomor antrian, panggilan counter, dan monitor pelanggan.</p>
             </a>
 
-            <!-- Link menuju file laporan.html -->
+            <!-- 2. Rekap Laporan -->
             <a href="laporan.html" class="menu-card card-laporan">
                 <div class="icon">📊</div>
                 <h3>Rekap Laporan</h3>
                 <p>Input Unit Entry, Revenue harian, dan generate laporan WhatsApp.</p>
+            </a>
+
+            <!-- 3. Estimasi Biaya (Menu Baru) -->
+            <a href="estimasi.html" class="menu-card card-estimasi">
+                <div class="icon">📝</div>
+                <h3>ESTIMASI</h3>
+                <p>Buat dan kelola estimasi biaya service, part, jasa, serta OCR gambar.</p>
             </a>
         </div>
         
