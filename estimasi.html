@@ -1474,16 +1474,14 @@
 
     function saveEstimation(isSilent = false) {
         const nopol = document.getElementById('nopol').value.trim().toUpperCase();
-        if (!nopol) { if (!isSilent) alert('Isi Nomor Polisi!'); return; }
-
-        const currentDateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        document.getElementById('tgl-pembuatan').value = currentDateStr;
+        if (!nopol) { 
+            if (!isSilent) alert('Harap isi NOMOR POLISI sebelum menyimpan!'); 
+            return; 
+        }
 
         const estimationData = {
-            nopol,
-            namaPelanggan: document.getElementById('nama-pelanggan').value.trim(),
-            typeKendaraan: document.getElementById('type-kendaraan').value.trim(),
-            date: currentDateStr,
+            nopol: nopol,
+            date: new Date().toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' }),
             jasa: [], lain: [], part: []
         };
 
@@ -1502,34 +1500,126 @@
             });
         });
         document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)').forEach(row => {
+            const partNoInput = row.querySelector('.item-part-no');
             estimationData.part.push({
                 qty: row.querySelector('.qty-input').value, price: row.querySelector('.price-input').value,
-                name: row.querySelector('.item-name').value, partNo: row.querySelector('.item-part-no') ? row.querySelector('.item-part-no').value : '',
+                name: row.querySelector('.item-name').value, partNo: partNoInput ? partNoInput.value : '',
                 disc: row.querySelector('.disc-input').value, discType: row.querySelector('.disc-type-select').value
             });
         });
 
+        let savedEstimations = JSON.parse(localStorage.getItem('bengkel_estimations')) || [];
+        savedEstimations = savedEstimations.filter(e => e.nopol !== nopol);
+        savedEstimations.push(estimationData);
+        localStorage.setItem('bengkel_estimations', JSON.stringify(savedEstimations));
+
         if (window.db && window.dbRef && window.dbSet) {
             const cleanKey = nopol.replace(/[\.\#\$\[\]]/g, "-");
-            window.dbSet(window.dbRef(window.db, 'estimasi_records_v2/' + cleanKey), estimationData)
-                .then(() => { if (!isSilent) showToast(`✅ Estimasi ${nopol} Tersimpan di Cloud!`); })
-                .catch(() => { if (!isSilent) showToast(`⚠️ Gagal simpan ke Cloud.`); });
+            const cloudRef = window.dbRef(window.db, 'estimasi_records_v2/' + cleanKey);
+            window.dbSet(cloudRef, estimationData)
+                .then(() => {
+                    if (!isSilent) showToast(`✅ Estimasi Mobil ${nopol} Sukses Tersimpan!`);
+                }).catch((error) => {
+                    if (!isSilent) showToast(`⚠️ Tersimpan di Lokal. Cloud Gagal Terhubung.`);
+                });
+        } else {
+            if (!isSilent) showToast(`✅ Estimasi Mobil ${nopol} Tersimpan di Lokal.`);
         }
+        if (!isSilent) loadStorageList();
     }
 
     function fetchFromCloudDatabase() {
         const nopol = document.getElementById('nopol').value.trim().toUpperCase();
-        if (!nopol) { alert('Masukkan Nomor Polisi!'); return; }
+        if (!nopol) { alert('Masukkan Nomor Polisi terlebih dahulu untuk melacak data cloud!'); return; }
+
         if (window.db && window.dbRef && window.dbOnValue) {
-            window.dbOnValue(window.dbRef(window.db, 'estimasi_records_v2/' + nopol.replace(/[\.\#\$\[\]]/g, "-")), (snapshot) => {
+            const cleanKey = nopol.replace(/[\.\#\$\[\]]/g, "-");
+            const cloudRef = window.dbRef(window.db, 'estimasi_records_v2/' + cleanKey);
+            
+            if (window.liveUnsubscribe) window.liveUnsubscribe();
+
+            showToast(`📡 Memulai Live Sync (Online) untuk ${nopol}...`);
+            
+            window.liveUnsubscribe = window.dbOnValue(cloudRef, (snapshot) => {
+                const est = snapshot.val();
+                if (est) {
+                    const isTyping = document.activeElement.tagName;
+                    if (isTyping === "INPUT" || isTyping === "SELECT") return; 
+                    injectDataToFormElements(est);
+                }
+            });
+        }
+    }
+
+    function loadStorageList() {
+        const list = document.getElementById('storage-list');
+        list.innerHTML = '<li style="padding:10px; color:#666;">Memuat riwayat dari Cloud...</li>';
+        
+        if (window.db && window.dbRef && window.dbOnValue) {
+            const recordsRef = window.dbRef(window.db, 'estimasi_records_v2');
+            window.dbOnValue(recordsRef, (snapshot) => {
+                list.innerHTML = '';
+                const data = snapshot.val();
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        const est = data[key];
+                        const li = document.createElement('li');
+                        li.className = 'storage-item';
+                        li.style.display = 'none';
+                        li.innerHTML = `
+                            <span><strong>${est.nopol}</strong> (${est.date || 'Cloud Data'})</span>
+                            <div style="display:flex; gap:6px;">
+                                <button class="btn btn-load" onclick="loadCloudEstimationDirect('${key}')">Buka</button>
+                            </div>
+                        `;
+                        list.appendChild(li);
+                    });
+                } else {
+                    list.innerHTML = '<li style="padding:10px; color:#999;">Belum ada estimasi di Cloud.</li>';
+                }
+            }, { onlyOnce: true });
+        }
+    }
+
+    function loadCloudEstimationDirect(cleanKey) {
+        if (window.db && window.dbRef && window.dbOnValue) {
+            const cloudRef = window.dbRef(window.db, 'estimasi_records_v2/' + cleanKey);
+            window.dbOnValue(cloudRef, (snapshot) => {
                 const est = snapshot.val();
                 if (est) {
                     injectDataToFormElements(est);
-                    showToast(`📂 Data ${est.nopol} dimuat dari Cloud!`);
-                } else {
-                    alert('Data tidak ditemukan di Cloud.');
+                    showToast(`📂 Berhasil memuat data ${est.nopol} dari Cloud!`);
                 }
             }, { onlyOnce: true });
+        }
+    }
+
+    function filterStorage() {
+        const filter = document.getElementById('search-input').value.trim().toUpperCase();
+        const items = document.querySelectorAll('#storage-list .storage-item');
+        
+        if (filter === "") {
+            items.forEach(item => item.style.display = "none");
+            return;
+        }
+
+        items.forEach(item => {
+            const txt = item.querySelector('span').innerText;
+            item.style.display = txt.toUpperCase().includes(filter) ? "" : "none";
+        });
+    }
+
+    function startLiveSync() {
+        if (window.db && window.dbRef && window.dbOnValue) {
+            const draftRef = window.dbRef(window.db, 'estimasi_live_draft');
+            window.dbOnValue(draftRef, (snapshot) => {
+                const est = snapshot.val();
+                if (est) {
+                    const isTyping = document.activeElement.tagName;
+                    if (isTyping === "INPUT" || isTyping === "SELECT") return; 
+                    injectDataToFormElements(est);
+                }
+            });
         }
     }
 
@@ -1809,10 +1899,12 @@
     }
 
     window.onload = function() {
+        loadStorageList(); // Ditambahkan agar daftar pencarian lokal/cloud termuat
         syncMasterDatabaseCloud(); 
         renderMasterTable();
         updateAllDropdowns();
         initDefaultLainTable(); 
+        startLiveSync(); // Ditambahkan untuk sinkronisasi live
     };
 </script>
 </body>
