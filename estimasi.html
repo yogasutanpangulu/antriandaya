@@ -544,12 +544,12 @@
 </head>
 <body>
 
-    <!-- Tombol Kembali ke Portal Menu Utama -->
-    <div class="top-bar-nav hide-on-print">
-        <a href="index.html" class="btn-back-portal">
-            ⬅️ Kembali ke Menu Utama
-        </a>
-    </div>
+    <!-- Tombol ke Portal CH FR di estimasiupload10.html -->
+<div class="top-bar-nav hide-on-print">
+    <a href="flatrateservice.html" class="btn-back-portal">
+        🚗 CH FR / Portal Work Rate
+    </a>
+</div>
 
 <div id="toast-container" class="toast-container"></div>
 <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
@@ -677,7 +677,10 @@
 
     <div class="table-title" id="section-tabel-utama">
         <span>KOLOM JASA</span>
-        <button class="btn btn-add" onclick="addRow('table-jasa')">+ Tambah Jasa</button>
+        <div style="display: flex; gap: 8px;">
+            <a href="flatrateservice.html" target="_blank" class="btn" style="background: #d32f2f; color: white; border-color: #b71c1c; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🚗 CH FR</a>
+            <button class="btn btn-add" onclick="addRow('table-jasa')">+ Tambah Jasa</button>
+        </div>
     </div>
     <table id="table-jasa">
         <thead>
@@ -1587,6 +1590,10 @@
             window.dbOnValue(cloudRef, (snapshot) => {
                 const est = snapshot.val();
                 if (est) {
+                    // RESET FORM TERLEBIH DAHULU SEBELUM MEMUAT DATA
+                    document.querySelectorAll('#table-jasa tbody tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
+                    document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
+                    
                     injectDataToFormElements(est);
                     showToast(`📂 Berhasil memuat data ${est.nopol} dari Cloud!`);
                 }
@@ -1625,37 +1632,111 @@
 
     function injectDataToFormElements(est) {
         document.getElementById('nopol').value = est.nopol || '';
-        document.getElementById('nama-pelanggan').value = est.namaPelanggan || '';
-        document.getElementById('type-kendaraan').value = est.typeKendaraan || '';
-        document.getElementById('tgl-pembuatan').value = est.date || '';
 
+        // 1. Bersihkan dan isi ulang tabel JASA
         const jasaBody = document.querySelector('#table-jasa tbody');
         jasaBody.querySelectorAll('tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
-        if (est.jasa) {
+        if (est.jasa && est.jasa.length > 0) {
             est.jasa.forEach(j => {
                 addRow('table-jasa');
                 const row = jasaBody.querySelector('tr:nth-last-child(3)');
-                row.querySelector('.qty-input').value = j.qty;
-                row.querySelector('.price-input').value = j.price;
-                row.querySelector('.item-name').value = j.name;
-                if(j.disc) row.querySelector('.disc-input').value = j.disc;
-                if(j.discType) row.querySelector('.disc-type-select').value = j.discType;
+                if (row) {
+                    row.querySelector('.qty-input').value = j.qty;
+                    row.querySelector('.price-input').value = j.price;
+                    row.querySelector('.item-name').value = j.name;
+                    if(j.disc) row.querySelector('.disc-input').value = j.disc;
+                    if(j.discType) row.querySelector('.disc-type-select').value = j.discType;
+                }
             });
+        } else {
+            addRow('table-jasa');
         }
+
+        // 2. Bersihkan dan isi ulang tabel PART / BAHAN
         const partBody = document.querySelector('#table-part tbody');
         partBody.querySelectorAll('tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
-        if (est.part) {
+        if (est.part && est.part.length > 0) {
             est.part.forEach(p => {
                 addRow('table-part');
                 const row = partBody.querySelector('tr:nth-last-child(3)');
-                row.querySelector('.qty-input').value = p.qty;
-                row.querySelector('.price-input').value = p.price;
-                row.querySelector('.item-name').value = p.name;
-                if(row.querySelector('.item-part-no') && p.partNo) row.querySelector('.item-part-no').value = p.partNo;
-                if(p.disc) row.querySelector('.disc-input').value = p.disc;
-                if(p.discType) row.querySelector('.disc-type-select').value = p.discType;
+                if (row) {
+                    row.querySelector('.qty-input').value = p.qty;
+                    row.querySelector('.price-input').value = p.price;
+                    row.querySelector('.item-name').value = p.name;
+                    const partNoInput = row.querySelector('.item-part-no');
+                    if(partNoInput && p.partNo) partNoInput.value = p.partNo;
+                    if(p.disc) row.querySelector('.disc-input').value = p.disc;
+                    if(p.discType) row.querySelector('.disc-type-select').value = p.discType;
+                }
+            });
+        } else {
+            addRow('table-part');
+        }
+
+        // 3. Bersihkan dan isi ulang tabel LAIN / OPL
+        const tableLain = document.getElementById('table-lain');
+        let lainBody = tableLain.getElementsByTagName('tbody')[0];
+        if (!lainBody) {
+            lainBody = document.createElement('tbody');
+            tableLain.appendChild(lainBody);
+        }
+        lainBody.innerHTML = ''; 
+
+        if (est.lain && est.lain.length > 0) {
+            est.lain.forEach(l => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-center"><input type="number" class="qty-input" value="${l.qty || 1}" oninput="calculateAll()"></td>
+                    <td>
+                        <div class="currency-box">
+                            <button class="btn-copy" onclick="copyValue(this)" title="Salin harga">📋</button>
+                            <div class="price-wrapper">
+                                <span>Rp</span>
+                                <input type="number" class="price-input" value="${l.price || 0}" oninput="calculateAll()">
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-with-copy">
+                            <button class="btn-copy" onclick="copyValue(this)" title="Salin tulisan">📋</button>
+                            <select class="item-select" data-type="opl" onchange="autoFillPrice(this)"></select>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="currency-box">
+                            <input type="number" class="disc-input" value="${l.disc || 0}" oninput="calculateAll()">
+                            <select class="disc-type-select" onchange="calculateAll()">
+                                <option value="%" ${l.discType === '%' ? 'selected' : ''}>%</option>
+                                <option value="Rp" ${l.discType === 'Rp' ? 'selected' : ''}>Rp</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td><div class="currency-box"><span>Rp</span><span class="row-total-val">0</span></div></td>
+                    <td class="text-center"><button class="btn-remove" onclick="removeRow(this)">X</button></td>
+                `;
+                lainBody.appendChild(tr);
+                
+                const selectEl = tr.querySelector('.item-select');
+                let optionsHtml = '<option value="" data-price="0">-- Pilih Konten OPL --</option>';
+                optionsHtml += '<option value="CUSTOM" data-price="0">[Tulis Kustom Sendiri / Manual]</option>';
+                masterDatabase.filter(d => d.type === 'opl').forEach(d => {
+                    optionsHtml += `<option value="${d.name}" data-price="${d.price}">${d.name}</option>`;
+                });
+                selectEl.innerHTML = optionsHtml;
+                selectEl.value = l.name;
             });
         }
+
+        const totalTr = document.createElement('tr');
+        totalTr.className = 'row-total';
+        totalTr.innerHTML = `<td colspan="4" class="row-total-label">JUMLAH</td><td class="row-total-value"><div class="currency-box"><span>Rp</span><span id="subtotal-lain">0</span></div></td><td></td>`;
+        lainBody.appendChild(totalTr);
+
+        const discTr = document.createElement('tr');
+        discTr.className = 'row-discount';
+        discTr.innerHTML = `<td colspan="4" class="row-total-label" style="color: #d32f2f;">POTONGAN DISCOUNT (-)</td><td class="row-total-value row-discount-value"><div class="currency-box"><span>Rp</span><span id="discount-total-lain">0</span></div></td><td></td>`;
+        lainBody.appendChild(discTr);
+
         calculateAll();
     }
 
@@ -1898,14 +1979,164 @@
         }
     }
 
+    // --- LISTENER INTEGRASI FLAT RATE SERVICE ---
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'selected_fr_job') {
+            const jobData = JSON.parse(e.newValue);
+            if (jobData) {
+                insertJobToJasaTable(jobData.pekerjaan, jobData.flat_rate);
+                localStorage.removeItem('selected_fr_job');
+            }
+        }
+    });
+
+    window.addEventListener('focus', function() {
+        const savedJob = localStorage.getItem('selected_fr_job');
+        if (savedJob) {
+            const jobData = JSON.parse(savedJob);
+            if (jobData) {
+                insertJobToJasaTable(jobData.pekerjaan, jobData.flat_rate);
+                localStorage.removeItem('selected_fr_job');
+            }
+        }
+    });
+
+    function insertJobToJasaTable(pekerjaanName, calculatedTotalPrice) {
+        const table = document.getElementById('table-jasa');
+        const tbody = table.getElementsByTagName('tbody')[0];
+        const rows = tbody.querySelectorAll('tr:not(.row-total):not(.row-discount)');
+        let targetRow = null;
+
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i].querySelector('.item-name').value.trim() === '') {
+                targetRow = rows[i];
+                break;
+            }
+        }
+
+        if (!targetRow) {
+            addRow('table-jasa');
+            const updatedRows = tbody.querySelectorAll('tr:not(.row-total):not(.row-discount)');
+            targetRow = updatedRows[updatedRows.length - 1];
+        }
+
+        targetRow.querySelector('.item-name').value = pekerjaanName;
+        targetRow.querySelector('.price-input').value = calculatedTotalPrice; // Otomatis terisi total harga (Flat Rate * Harga per Jam)
+        
+        showToast(`✅ Jasa Flat Rate Masuk ke Kolom Jasa: ${pekerjaanName}`);
+        calculateAll();
+    }
+
+    function startFlatRateListener() {
+        if (window.db && window.dbRef && window.dbOnValue) {
+            const draftRef = window.dbRef(window.db, 'selected_fr_job_draft');
+            window.dbOnValue(draftRef, (snapshot) => {
+                const jobData = snapshot.val();
+                if (jobData && jobData.timestamp && (Date.now() - jobData.timestamp < 10000)) {
+                    insertJobToJasaTable(jobData.pekerjaan, jobData.flat_rate);
+                }
+            });
+        }
+    }
+
     window.onload = function() {
-        loadStorageList(); // Ditambahkan agar daftar pencarian lokal/cloud termuat
+        loadStorageList(); 
         syncMasterDatabaseCloud(); 
         renderMasterTable();
         updateAllDropdowns();
         initDefaultLainTable(); 
-        startLiveSync(); // Ditambahkan untuk sinkronisasi live
+        startLiveSync();
+        startFlatRateListener(); // <--- Pastikan baris ini ditambahkan di sini
     };
+
+// =========================================================
+// SCRIPT PENERIMA DATA DARI FLAT-RATE-SERVICE.HTML
+// =========================================================
+
+function checkSelectedJobFromPortal() {
+    const rawData = localStorage.getItem('selected_fr_job');
+    if (rawData) {
+        try {
+            const jobData = JSON.parse(rawData);
+            
+            // Tambahkan pekerjaan ke tabel Jasa
+            addJobFromPortalToTable(jobData.pekerjaan, jobData.flat_rate);
+            
+            // Hapus data temporary agar tidak terinput ganda
+            localStorage.removeItem('selected_fr_job');
+            
+            if (typeof showToast === 'function') {
+                showToast(`✅ Berhasil menambahkan jasa: ${jobData.pekerjaan}`);
+            } else {
+                alert(`✅ Jasa berhasil ditambahkan: ${jobData.pekerjaan}`);
+            }
+        } catch (e) {
+            console.error("Gagal memproses data jasa dari portal", e);
+        }
+    }
+}
+
+function addJobFromPortalToTable(jobName, totalPrice) {
+    const table = document.getElementById('table-jasa');
+    if (!table) return;
+
+    const rows = table.querySelectorAll('tbody tr:not(.row-total):not(.row-discount)');
+    let targetRow = null;
+
+    // Cari baris input jasa yang masih kosong
+    for (let i = 0; i < rows.length; i++) {
+        const inputName = rows[i].querySelector('.item-name');
+        if (inputName && inputName.value.trim() === '') {
+            targetRow = rows[i];
+            break;
+        }
+    }
+
+    // Jika semua baris penuh, buat baris baru
+    if (!targetRow) {
+        if (typeof addRow === 'function') {
+            addRow('table-jasa');
+            const updatedRows = table.querySelectorAll('tbody tr:not(.row-total):not(.row-discount)');
+            targetRow = updatedRows[updatedRows.length - 1];
+        }
+    }
+
+    // Masukkan data ke baris tabel
+    if (targetRow) {
+        const nameInput = targetRow.querySelector('.item-name');
+        const priceInput = targetRow.querySelector('.price-input');
+        const qtyInput = targetRow.querySelector('.qty-input');
+
+        if (nameInput) nameInput.value = jobName;
+        if (priceInput) priceInput.value = totalPrice;
+        if (qtyInput && (!qtyInput.value || qtyInput.value == 0)) qtyInput.value = 1;
+
+        // Hitung ulang total biaya
+        if (typeof calculateAll === 'function') {
+            calculateAll();
+        }
+    }
+}
+
+// Jalankan pengecekan saat halaman dibuka atau saat tab kembali aktif
+window.addEventListener('load', checkSelectedJobFromPortal);
+window.addEventListener('focus', checkSelectedJobFromPortal);
+
+// Firebase Realtime Listener (jika terhubung dengan Firebase)
+if (window.db && window.dbRef && window.dbOnValue) {
+    const portalDraftRef = window.dbRef(window.db, 'selected_fr_job_draft');
+    window.dbOnValue(portalDraftRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.timestamp) {
+            if (Date.now() - data.timestamp < 10000) {
+                addJobFromPortalToTable(data.pekerjaan, data.flat_rate);
+                if (window.dbSet) {
+                    window.dbSet(portalDraftRef, null);
+                }
+            }
+        }
+    });
+}
 </script>
 </body>
 </html>
