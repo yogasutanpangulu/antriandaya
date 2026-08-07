@@ -1617,18 +1617,8 @@
     }
 
     function startLiveSync() {
-        if (window.db && window.dbRef && window.dbOnValue) {
-            const draftRef = window.dbRef(window.db, 'estimasi_live_draft');
-            window.dbOnValue(draftRef, (snapshot) => {
-                const est = snapshot.val();
-                if (est) {
-                    const isTyping = document.activeElement.tagName;
-                    if (isTyping === "INPUT" || isTyping === "SELECT") return; 
-                    injectDataToFormElements(est);
-                }
-            });
-        }
-    }
+    return; // Nonaktifkan live draft sync global
+}
 
     function injectDataToFormElements(est) {
         document.getElementById('nopol').value = est.nopol || '';
@@ -2028,16 +2018,8 @@
     }
 
     function startFlatRateListener() {
-        if (window.db && window.dbRef && window.dbOnValue) {
-            const draftRef = window.dbRef(window.db, 'selected_fr_job_draft');
-            window.dbOnValue(draftRef, (snapshot) => {
-                const jobData = snapshot.val();
-                if (jobData && jobData.timestamp && (Date.now() - jobData.timestamp < 10000)) {
-                    insertJobToJasaTable(jobData.pekerjaan, jobData.flat_rate);
-                }
-            });
-        }
-    }
+    return; // Nonaktifkan listener draft flat rate
+}
 
     window.onload = function() {
         loadStorageList(); 
@@ -2122,7 +2104,11 @@ function addJobFromPortalToTable(jobName, totalPrice) {
 window.addEventListener('load', checkSelectedJobFromPortal);
 window.addEventListener('focus', checkSelectedJobFromPortal);
 
-// Firebase Realtime Listener (jika terhubung dengan Firebase)
+// =========================================================
+// BAGIAN INI DI-NONAKTIFKAN / DIHAPUS
+// Supaya data Flat Rate dari komputer lain tidak ikut masuk
+// =========================================================
+/*
 if (window.db && window.dbRef && window.dbOnValue) {
     const portalDraftRef = window.dbRef(window.db, 'selected_fr_job_draft');
     window.dbOnValue(portalDraftRef, (snapshot) => {
@@ -2137,6 +2123,7 @@ if (window.db && window.dbRef && window.dbOnValue) {
         }
     });
 }
+*/
 </script>
 </body>
 </html>
