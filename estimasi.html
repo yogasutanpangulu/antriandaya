@@ -1629,7 +1629,7 @@
     }
 
     function startLiveSync() {
-    return; // Nonaktifkan live draft sync global
+    return; // Nonaktifkan live draft sync global agar tidak me-refresh form/modal tiba-tiba
 }
 
     function injectDataToFormElements(est) {
@@ -1824,219 +1824,229 @@
     window.print();
 }
 
-    function handleImageUpload(event) {
-        let file = event.target.files[0];
-        if (file) openOcrModal(file);
-        event.target.value = ''; 
-    }
+    // ==========================================
+// OCR HANDLERS (Disamakan dengan Estimasi 19)
+// ==========================================
+let ocrImageFile = null, currentOcrMode = null, isDrawing = false, startX = 0, startY = 0;
+let ocrRects = {
+    'partNo': { left: 0, top: 0, width: 0, height: 0, active: false },
+    'partName': { left: 0, top: 0, width: 0, height: 0, active: false },
+    'price': { left: 0, top: 0, width: 0, height: 0, active: false }
+};
 
-    function openOcrModal(file) {
-        ocrImageFile = file;
-        const imgUrl = URL.createObjectURL(file);
-        document.getElementById('ocrImage').src = imgUrl;
-        document.getElementById('ocrModal').style.display = 'flex';
-        resetCropBoxes();
-        showToast("🖼️ Gambar berhasil dimuat. Silakan kotakkan areanya!", "info");
-    }
+function handleImageUpload(event) {
+    let file = event.target.files[0];
+    if (file) openOcrModal(file);
+    event.target.value = ''; 
+}
 
-    function closeOcrModal() {
-        document.getElementById('ocrModal').style.display = 'none';
-        currentOcrMode = null;
-    }
+function openOcrModal(file) {
+    ocrImageFile = file;
+    const imgUrl = URL.createObjectURL(file);
+    document.getElementById('ocrImage').src = imgUrl;
+    document.getElementById('ocrModal').style.display = 'flex';
+    resetCropBoxes();
+    showToast("🖼️ Gambar berhasil dimuat. Silakan kotakkan areanya!", "info");
+}
 
-    function setOcrMode(mode, btnElement) {
-        currentOcrMode = mode;
-        document.querySelectorAll('.ocr-tool-btn').forEach(b => b.classList.remove('active-mode'));
-        btnElement.classList.add('active-mode');
-    }
+function closeOcrModal() {
+    document.getElementById('ocrModal').style.display = 'none';
+    currentOcrMode = null;
+}
 
-    function resetCropBoxes() {
-        ['partNo', 'partName', 'price'].forEach(m => {
-            ocrRects[m].active = false;
-            let box = document.getElementById(`box-${m}`);
-            if (box) box.style.display = 'none';
-        });
-        currentOcrMode = null;
-        document.querySelectorAll('.ocr-tool-btn').forEach(b => b.classList.remove('active-mode'));
-    }
+function setOcrMode(mode, btnElement) {
+    currentOcrMode = mode;
+    document.querySelectorAll('.ocr-tool-btn').forEach(b => b.classList.remove('active-mode'));
+    btnElement.classList.add('active-mode');
+}
 
-    const cropContainer = document.getElementById('cropContainer');
-    if (cropContainer) {
-        cropContainer.addEventListener('mousedown', (e) => {
-            if (!currentOcrMode) { alert("Pilih tombol mode area di atas terlebih dahulu!"); return; }
-            isDrawing = true;
-            const rect = cropContainer.getBoundingClientRect();
-            startX = e.clientX - rect.left;
-            startY = e.clientY - rect.top;
+function resetCropBoxes() {
+    ['partNo', 'partName', 'price'].forEach(m => {
+        ocrRects[m].active = false;
+        let box = document.getElementById(`box-${m}`);
+        if (box) box.style.display = 'none';
+    });
+    currentOcrMode = null;
+    document.querySelectorAll('.ocr-tool-btn').forEach(b => b.classList.remove('active-mode'));
+}
 
-            ocrRects[currentOcrMode].left = startX;
-            ocrRects[currentOcrMode].top = startY;
-            ocrRects[currentOcrMode].width = 0;
-            ocrRects[currentOcrMode].height = 0;
-            ocrRects[currentOcrMode].active = true;
-            renderBoxes();
-        });
+const cropContainer = document.getElementById('cropContainer');
+if (cropContainer) {
+    cropContainer.addEventListener('mousedown', (e) => {
+        if (!currentOcrMode) { alert("Pilih tombol mode area di atas terlebih dahulu!"); return; }
+        isDrawing = true;
+        const rect = cropContainer.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
 
-        cropContainer.addEventListener('mousemove', (e) => {
-            if (!isDrawing || !currentOcrMode) return;
-            const rect = cropContainer.getBoundingClientRect();
-            let currentX = e.clientX - rect.left;
-            let currentY = e.clientY - rect.top;
+        ocrRects[currentOcrMode].left = startX;
+        ocrRects[currentOcrMode].top = startY;
+        ocrRects[currentOcrMode].width = 0;
+        ocrRects[currentOcrMode].height = 0;
+        ocrRects[currentOcrMode].active = true;
+        renderBoxes();
+    });
 
-            ocrRects[currentOcrMode].left = Math.min(startX, currentX);
-            ocrRects[currentOcrMode].top = Math.min(startY, currentY);
-            ocrRects[currentOcrMode].width = Math.abs(currentX - startX);
-            ocrRects[currentOcrMode].height = Math.abs(currentY - startY);
-            renderBoxes();
-        });
+    cropContainer.addEventListener('mousemove', (e) => {
+        if (!isDrawing || !currentOcrMode) return;
+        const rect = cropContainer.getBoundingClientRect();
+        let currentX = e.clientX - rect.left;
+        let currentY = e.clientY - rect.top;
 
-        cropContainer.addEventListener('mouseup', () => { isDrawing = false; });
-        cropContainer.addEventListener('mouseleave', () => { isDrawing = false; });
-    }
+        ocrRects[currentOcrMode].left = Math.min(startX, currentX);
+        ocrRects[currentOcrMode].top = Math.min(startY, currentY);
+        ocrRects[currentOcrMode].width = Math.abs(currentX - startX);
+        ocrRects[currentOcrMode].height = Math.abs(currentY - startY);
+        renderBoxes();
+    });
 
-    function renderBoxes() {
-        ['partNo', 'partName', 'price'].forEach(m => {
-            let box = document.getElementById(`box-${m}`);
-            let d = ocrRects[m];
-            if (box) {
-                if (d.active && d.width > 5) {
-                    box.style.display = 'block';
-                    box.style.left = d.left + 'px';
-                    box.style.top = d.top + 'px';
-                    box.style.width = d.width + 'px';
-                    box.style.height = d.height + 'px';
-                } else {
-                    box.style.display = 'none';
-                }
+    cropContainer.addEventListener('mouseup', () => { isDrawing = false; });
+    cropContainer.addEventListener('mouseleave', () => { isDrawing = false; });
+}
+
+function renderBoxes() {
+    ['partNo', 'partName', 'price'].forEach(m => {
+        let box = document.getElementById(`box-${m}`);
+        let d = ocrRects[m];
+        if (box) {
+            if (d.active && d.width > 5) {
+                box.style.display = 'block';
+                box.style.left = d.left + 'px';
+                box.style.top = d.top + 'px';
+                box.style.width = d.width + 'px';
+                box.style.height = d.height + 'px';
+            } else {
+                box.style.display = 'none';
             }
-        });
-    }
-
-    function preprocessImageForOCR(imgElement, rectConfig) {
-        const scale = 2;
-        const canvas = document.createElement('canvas');
-        canvas.width = rectConfig.width * scale;
-        canvas.height = rectConfig.height * scale;
-        const ctx = canvas.getContext('2d');
-        
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(imgElement, rectConfig.left, rectConfig.top, rectConfig.width, rectConfig.height, 0, 0, canvas.width, canvas.height);
-        
-        return canvas.toDataURL("image/png");
-    }
-
-    async function executeOcrExtraction() {
-        if (!ocrRects.partNo.active && !ocrRects.partName.active && !ocrRects.price.active) {
-            return alert("Gambarkan minimal 1 kotak area (Part No / Nama / Harga) terlebih dahulu!");
         }
+    });
+}
 
-        const img = document.getElementById('ocrImage');
-        const scaleX = img.naturalWidth / img.width;
-        const scaleY = img.naturalHeight / img.height;
+function preprocessImageForOCR(imgElement, rectConfig) {
+    const scale = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = rectConfig.width * scale;
+    canvas.height = rectConfig.height * scale;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(imgElement, rectConfig.left, rectConfig.top, rectConfig.width, rectConfig.height, 0, 0, canvas.width, canvas.height);
+    
+    return canvas.toDataURL("image/png");
+}
 
-        showToast("⏳ Membaca data dengan AI... Mohon tunggu!", "loading");
+async function executeOcrExtraction() {
+    if (!ocrRects.partNo.active && !ocrRects.partName.active && !ocrRects.price.active) {
+        return alert("Gambarkan minimal 1 kotak area (Part No / Nama / Harga) terlebih dahulu!");
+    }
 
-        let activeConfigs = [];
-        ['partNo', 'partName', 'price'].forEach(m => {
-            if (ocrRects[m].active) {
-                activeConfigs.push({
-                    mode: m,
-                    rect: {
-                        left: Math.max(0, ocrRects[m].left * scaleX),
-                        top: Math.max(0, ocrRects[m].top * scaleY),
-                        width: ocrRects[m].width * scaleX,
-                        height: ocrRects[m].height * scaleY
+    const img = document.getElementById('ocrImage');
+    const scaleX = img.naturalWidth / img.width;
+    const scaleY = img.naturalHeight / img.height;
+
+    showToast("⏳ Membaca data dengan AI... Mohon tunggu!", "loading");
+
+    let activeConfigs = [];
+    ['partNo', 'partName', 'price'].forEach(m => {
+        if (ocrRects[m].active) {
+            activeConfigs.push({
+                mode: m,
+                rect: {
+                    left: Math.max(0, ocrRects[m].left * scaleX),
+                    top: Math.max(0, ocrRects[m].top * scaleY),
+                    width: ocrRects[m].width * scaleX,
+                    height: ocrRects[m].height * scaleY
+                }
+            });
+        }
+    });
+
+    let extractedData = { partNo: [], partName: [], price: [] };
+
+    try {
+        const worker = await Tesseract.createWorker('eng');
+        
+        for (let config of activeConfigs) {
+            let processedImageUrl = preprocessImageForOCR(img, config.rect);
+            
+            let params = {
+                tessedit_pageseg_mode: '6',
+            };
+
+            if (config.mode === 'price') {
+                params.tessedit_char_whitelist = '0123456789., ';
+            } else if (config.mode === 'partNo') {
+                params.tessedit_char_whitelist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-';
+            } else {
+                params.tessedit_char_whitelist = '';
+            }
+            
+            await worker.setParameters(params);
+
+            const { data } = await worker.recognize(processedImageUrl);
+            let lines = data.text.split(/\r?\n/).filter(l => l.trim() !== '');
+
+            // LOGIKA UTAMA: Mencegah angka harga berlebih/nambah
+            if (config.mode === 'price') {
+                lines = lines.map(l => {
+                    let p = l.replace(/[^0-9]/g, '');
+                    if (p.length > 2) {
+                        p = p.substring(0, p.length - 2); 
                     }
+                    return p;
                 });
+            } else if (config.mode === 'partNo') {
+                lines = lines.map(l => l.replace(/[^A-Za-z0-9-]/g, '').trim());
+            } else {
+                lines = lines.map(l => l.trim());
             }
-        });
-
-        let extractedData = { partNo: [], partName: [], price: [] };
-
-        try {
-            const worker = await Tesseract.createWorker('eng');
             
-            for (let config of activeConfigs) {
-                let processedImageUrl = preprocessImageForOCR(img, config.rect);
-                
-                let params = {
-                    tessedit_pageseg_mode: '6',
-                };
-
-                if (config.mode === 'price') {
-                    params.tessedit_char_whitelist = '0123456789., ';
-                } else if (config.mode === 'partNo') {
-                    params.tessedit_char_whitelist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-';
-                } else {
-                    params.tessedit_char_whitelist = '';
-                }
-                
-                await worker.setParameters(params);
-
-                const { data } = await worker.recognize(processedImageUrl);
-                let lines = data.text.split(/\r?\n/).filter(l => l.trim() !== '');
-
-                // LOGIKA UTAMA YANG DISAMAKAN: Mencegah angka harga berlebih/nambah
-                if (config.mode === 'price') {
-                    lines = lines.map(l => {
-                        let p = l.replace(/[^0-9]/g, '');
-                        if (p.length > 2) {
-                            p = p.substring(0, p.length - 2); // Menyesuaikan penambahan digit desimal/nol dari OCR
-                        }
-                        return p;
-                    });
-                } else if (config.mode === 'partNo') {
-                    lines = lines.map(l => l.replace(/[^A-Za-z0-9-]/g, '').trim());
-                } else {
-                    lines = lines.map(l => l.trim());
-                }
-                
-                extractedData[config.mode] = lines;
-            }
-            await worker.terminate();
-
-            let maxRows = Math.max(extractedData.partNo.length, extractedData.partName.length, extractedData.price.length);
-            
-            if (maxRows === 0) {
-                showToast("❌ Tidak ada teks yang ditemukan di area kotak tersebut.");
-                return;
-            }
-
-            closeOcrModal();
-            showToast(`✅ Selesai! Berhasil membaca ${maxRows} baris data ke tabel.`);
-
-            const tbody = document.querySelector('#table-part tbody');
-            let rows = Array.from(tbody.querySelectorAll('tr:not(.row-total):not(.row-discount)'));
-            let startIndex = rows.length; 
-            for(let i=0; i<rows.length; i++){
-                if(!rows[i].querySelector('.item-name').value) { startIndex = i; break; }
-            }
-
-            for (let i = 0; i < maxRows; i++) {
-                let rIdx = startIndex + i;
-                if (rIdx >= rows.length) { 
-                    addRow('table-part'); 
-                    rows = Array.from(tbody.querySelectorAll('tr:not(.row-total):not(.row-discount)')); 
-                }
-
-                let pInp = rows[rIdx].querySelector('.price-input');
-                let nInp = rows[rIdx].querySelector('.item-name');
-                let noInp = rows[rIdx].querySelector('.item-part-no');
-
-                if (pInp && extractedData.price[i]) pInp.value = extractedData.price[i];
-                if (nInp && extractedData.partName[i]) nInp.value = extractedData.partName[i];
-                if (noInp && extractedData.partNo[i]) noInp.value = extractedData.partNo[i];
-            }
-
-            calculateAll();
-
-        } catch (error) {
-            console.error(error);
-            showToast("❌ Gagal membaca gambar. Pastikan internet Anda lancar!");
+            extractedData[config.mode] = lines;
         }
+        await worker.terminate();
+
+        let maxRows = Math.max(extractedData.partNo.length, extractedData.partName.length, extractedData.price.length);
+        
+        if (maxRows === 0) {
+            showToast("❌ Tidak ada teks yang ditemukan di area kotak tersebut.");
+            return;
+        }
+
+        closeOcrModal();
+        showToast(`✅ Selesai! Berhasil membaca ${maxRows} baris data ke tabel.`);
+
+        const tbody = document.querySelector('#table-part tbody');
+        let rows = Array.from(tbody.querySelectorAll('tr:not(.row-total):not(.row-discount)'));
+        let startIndex = rows.length; 
+        for(let i=0; i<rows.length; i++){
+            if(!rows[i].querySelector('.item-name').value) { startIndex = i; break; }
+        }
+
+        for (let i = 0; i < maxRows; i++) {
+            let rIdx = startIndex + i;
+            if (rIdx >= rows.length) { 
+                addRow('table-part'); 
+                rows = Array.from(tbody.querySelectorAll('tr:not(.row-total):not(.row-discount)')); 
+            }
+
+            let pInp = rows[rIdx].querySelector('.price-input');
+            let nInp = rows[rIdx].querySelector('.item-name');
+            let noInp = rows[rIdx].querySelector('.item-part-no');
+
+            if (pInp && extractedData.price[i]) pInp.value = extractedData.price[i];
+            if (nInp && extractedData.partName[i]) nInp.value = extractedData.partName[i];
+            if (noInp && extractedData.partNo[i]) noInp.value = extractedData.partNo[i];
+        }
+
+        calculateAll();
+
+    } catch (error) {
+        console.error(error);
+        showToast("❌ Gagal membaca gambar. Pastikan internet Anda lancar!");
     }
+}
 
     // --- LISTENER INTEGRASI FLAT RATE SERVICE ---
     window.addEventListener('storage', function(e) {
