@@ -37,11 +37,14 @@
 </head>
 <body class="bg-gray-100 text-gray-900 min-h-screen flex flex-col">
 
-    <!-- Tombol Kembali di flat-rate-service.html -->
-    <div class="px-6 pt-4">
+    <!-- Tombol Navigasi Atas -->
+    <div class="px-6 pt-4 flex justify-between items-center max-w-7xl mx-auto w-full">
         <a href="estimasi.html" class="inline-flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm hover:bg-gray-50 transition-all">
             ⬅️ Kembali ke Estimasi Biaya
         </a>
+        <button onclick="toggleMasterModal(true)" class="inline-flex items-center gap-2 bg-zinc-900 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow hover:bg-zinc-800 transition-all">
+            ⚙️ Master Harga 29 Mobil per Jam
+        </button>
     </div>
 
     <!-- Toyota Brand Header / Red Ribbon Banner -->
@@ -59,7 +62,6 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="text-xs font-medium text-gray-300" id="fileInfoText">Database Aktif</span>
                 </div>
-                <!-- Tombol Reset/Ganti File Excel -->
                 <button onclick="resetCloudDatabase()" class="text-xs bg-red-900/40 hover:bg-red-900 text-red-200 px-3 py-2 rounded-xl border border-red-700 transition-colors hidden" id="btnGantiFile">
                     Ganti File Excel
                 </button>
@@ -93,7 +95,6 @@
         <div id="appSection" class="hidden space-y-6">
             
             <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-200 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                <!-- Filter Tipe Mobil -->
                 <div class="lg:col-span-5">
                     <label for="carFilter" class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Filter Tipe Mobil (Kolom G)</label>
                     <div class="relative">
@@ -106,7 +107,6 @@
                     </div>
                 </div>
 
-                <!-- Search Pekerjaan -->
                 <div class="lg:col-span-7">
                     <label for="searchInput" class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Pencarian Pekerjaan (Kolom E)</label>
                     <div class="relative">
@@ -134,14 +134,15 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-zinc-900 text-gray-200 uppercase text-xs tracking-wider">
-                                <th class="py-4 px-6 font-semibold w-1/5">Tipe Mobil (Kolom G)</th>
+                                <th class="py-4 px-6 font-semibold w-1/6">Tipe Mobil (Kolom G)</th>
                                 <th class="py-4 px-6 font-semibold w-2/5">Pekerjaan (Kolom E)</th>
                                 <th class="py-4 px-6 font-semibold text-center w-1/6">Flat Rate (MH)</th>
-                                <th class="py-4 px-6 font-semibold text-right w-1/4">Total Harga (Rp)</th>
+                                <th class="py-4 px-6 font-semibold text-right w-1/5">Total Harga (Rp)</th>
+                                <th class="py-4 px-6 font-semibold text-center w-28">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="dataTable" class="divide-y divide-gray-100 text-sm font-normal">
-                            <tr><td colspan="4" class="text-center py-10 text-gray-400">Silakan ketik nama pekerjaan di kolom pencarian atau pilih tipe mobil untuk menampilkan data.</td></tr>
+                            <tr><td colspan="5" class="text-center py-10 text-gray-400">Silakan ketik nama pekerjaan di kolom pencarian atau pilih tipe mobil untuk menampilkan data.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -150,6 +151,37 @@
         </div>
 
     </main>
+
+    <!-- Modal Master Harga per Jam (29 Mobil) -->
+    <div id="masterModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
+            <div class="bg-zinc-900 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-lg">Master Harga per Jam (29 Tipe Kendaraan)[cite: 1]</h3>
+                    <p class="text-xs text-gray-400">Ubah tarif per jam secara manual dan klik Simpan untuk memperbarui database.</p>
+                </div>
+                <button onclick="toggleMasterModal(false)" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-grow">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 uppercase text-xs tracking-wider text-gray-600">
+                            <th class="py-3 px-4 font-semibold w-16 text-center">No</th>
+                            <th class="py-3 px-4 font-semibold">Tipe Kendaraan</th>
+                            <th class="py-3 px-4 font-semibold text-right">Harga / Hour (Rp)</th>
+                            <th class="py-3 px-4 font-semibold text-center w-28">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="masterTableBody" class="divide-y divide-gray-100 text-sm">
+                        <!-- Data terisi otomatis -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="toggleMasterModal(false)" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold text-sm rounded-xl transition-all">Tutup</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 mt-12 py-6 text-center text-xs text-gray-500">
@@ -170,8 +202,8 @@
         const searchInput = document.getElementById('searchInput');
         const dataTable = document.getElementById('dataTable');
         const resultCount = document.getElementById('resultCount');
+        const masterTableBody = document.getElementById('masterTableBody');
 
-        // Auto-load data dari Firebase saat halaman pertama kali dibuka
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 if (window.db && window.dbRef && window.dbOnValue) {
@@ -194,6 +226,7 @@
                             btnGantiFile.classList.add('inline-block');
 
                             initDropdown();
+                            renderMasterTable();
                             renderEmptyState("Silakan ketik nama pekerjaan di kolom pencarian atau pilih tipe mobil untuk menampilkan data.");
                         } else {
                             statusBadge.classList.add('hidden');
@@ -217,15 +250,14 @@
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
                 
-                // 1. Baca Sheet 2 untuk Harga per Jam (Kolom B = Tipe, Kolom C = Harga)
                 pricePerHourMap = {};
                 if (workbook.SheetNames.length > 1) {
                     const sheet2Name = workbook.SheetNames[1];
                     const sheet2Rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheet2Name], {header: 1});
                     for (let i = 1; i < sheet2Rows.length; i++) {
                         const row = sheet2Rows[i];
-                        const tipe = row[1]; // Kolom B (index 1)
-                        const harga = row[2]; // Kolom C (index 2)
+                        const tipe = row[1]; 
+                        const harga = row[2]; 
                         if (tipe) {
                             const cleanTipe = String(tipe).trim().toUpperCase();
                             const cleanHarga = Number(harga) || 0;
@@ -234,7 +266,6 @@
                     }
                 }
 
-                // 2. Baca Sheet 1 untuk Work Rate
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 const jsonRows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
@@ -247,9 +278,9 @@
                 database = [];
                 for (let i = 1; i < jsonRows.length; i++) {
                     const row = jsonRows[i];
-                    const pekerjaan = row[4]; // Kolom E
-                    const tipe_mobil = row[6]; // Kolom G
-                    const flat_rate = row[8]; // Kolom I
+                    const pekerjaan = row[4]; 
+                    const tipe_mobil = row[6]; 
+                    const flat_rate = row[8]; 
 
                     if (pekerjaan && tipe_mobil) {
                         const carTypeClean = String(tipe_mobil).trim().toUpperCase();
@@ -267,19 +298,7 @@
                     }
                 }
 
-                // Simpan otomatis ke Firebase Realtime Database
-                if (window.db && window.dbRef && window.dbSet) {
-                    const dbStorageRef = window.dbRef(window.db, 'excel_master_database');
-                    window.dbSet(dbStorageRef, {
-                        fileName: file.name,
-                        data: database,
-                        priceMap: pricePerHourMap
-                    }).then(() => {
-                        console.log("Database berhasil disimpan ke Firebase!");
-                    }).catch(error => {
-                        console.error("Gagal menyimpan ke Firebase:", error);
-                    });
-                }
+                saveToFirebase(file.name);
 
                 uploadSection.classList.add('hidden');
                 appSection.classList.remove('hidden');
@@ -288,10 +307,114 @@
                 btnGantiFile.classList.add('inline-block');
 
                 initDropdown();
+                renderMasterTable();
                 renderEmptyState("Silakan ketik nama pekerjaan di kolom pencarian atau pilih tipe mobil untuk menampilkan data.");
             };
             reader.readAsArrayBuffer(file);
         });
+
+        function saveToFirebase(fileName = "Cloud Database") {
+            if (window.db && window.dbRef && window.dbSet) {
+                const dbStorageRef = window.dbRef(window.db, 'excel_master_database');
+                window.dbSet(dbStorageRef, {
+                    fileName: fileName,
+                    data: database,
+                    priceMap: pricePerHourMap
+                }).then(() => {
+                    console.log("Database berhasil disimpan ke Firebase!");
+                }).catch(error => {
+                    console.error("Gagal menyimpan ke Firebase:", error);
+                });
+            }
+        }
+
+        function toggleMasterModal(show) {
+            const modal = document.getElementById('masterModal');
+            if (show) {
+                renderMasterTable();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderMasterTable() {
+            const cars = [...new Set([...Object.keys(pricePerHourMap), ...database.map(item => item.tipe_mobil)])].sort();
+            
+            if (cars.length === 0) {
+                masterTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">Belum ada data master harga.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            cars.forEach((car, index) => {
+                const currentPrice = pricePerHourMap[car] || 0;
+                html += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-4 text-center font-medium text-gray-500">${index + 1}</td>
+                        <td class="py-3 px-4 font-semibold text-zinc-900">${car}</td>
+                        <td class="py-3 px-4 text-right">
+                            <span id="price-text-${index}" class="font-bold text-red-600">Rp ${currentPrice.toLocaleString('id-ID')}</span>
+                            <input type="number" id="price-input-${index}" value="${currentPrice}" class="hidden w-full text-right bg-white border border-gray-300 rounded-lg px-2 py-1 text-sm font-semibold focus:ring-2 focus:ring-red-600 focus:outline-none">
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <button id="btn-edit-${index}" onclick="enableEditMaster(${index})" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-lg border border-gray-300 transition-all">Edit</button>
+                            <button id="btn-save-${index}" onclick="saveMasterPrice('${car}', ${index})" class="hidden px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-lg transition-all shadow-xs">Simpan</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            masterTableBody.innerHTML = html;
+        }
+
+        function enableEditMaster(index) {
+            document.getElementById(`price-text-${index}`).classList.add('hidden');
+            document.getElementById(`price-input-${index}`).classList.remove('hidden');
+            document.getElementById(`btn-edit-${index}`).classList.add('hidden');
+            document.getElementById(`btn-save-${index}`).classList.remove('hidden');
+        }
+
+        function saveMasterPrice(carName, index) {
+            const inputVal = Number(document.getElementById(`price-input-${index}`).value) || 0;
+            
+            pricePerHourMap[carName] = inputVal;
+
+            database.forEach(item => {
+                if (item.tipe_mobil.toUpperCase() === carName.toUpperCase()) {
+                    item.price_per_hour = inputVal;
+                    item.total_price = item.flat_rate * inputVal;
+                }
+            });
+
+            saveToFirebase();
+            renderMasterTable();
+            filterData();
+
+            alert(`Harga per jam untuk "${carName}" berhasil diperbarui menjadi Rp ${inputVal.toLocaleString('id-ID')} dan total harga pekerjaan terkait telah dikalkulasi ulang.`);
+        }
+
+        function enableJobEdit(index) {
+            document.getElementById(`fr-text-${index}`).classList.add('hidden');
+            document.getElementById(`fr-input-${index}`).classList.remove('hidden');
+            document.getElementById(`btn-job-edit-${index}`).classList.add('hidden');
+            document.getElementById(`btn-job-save-${index}`).classList.remove('hidden');
+        }
+
+        function saveJobFlatRate(index, jobName, carType) {
+            const newFlatRate = parseFloat(document.getElementById(`fr-input-${index}`).value) || 0;
+            
+            const dbIndex = database.findIndex(item => item.pekerjaan === jobName && item.tipe_mobil === carType);
+            
+            if (dbIndex !== -1) {
+                database[dbIndex].flat_rate = newFlatRate;
+                database[dbIndex].total_price = newFlatRate * (database[dbIndex].price_per_hour || 0);
+                
+                saveToFirebase();
+                filterData(); 
+                
+                alert(`Flat Rate untuk "${jobName}" berhasil diupdate.`);
+            }
+        }
 
         function resetCloudDatabase() {
             if (confirm("Apakah Anda ingin mengganti file Excel database dengan yang baru?")) {
@@ -316,7 +439,7 @@
         }
 
         function renderEmptyState(message) {
-            dataTable.innerHTML = `<tr><td colspan="4" class="text-center py-12 text-gray-400 font-medium">${message}</td></tr>`;
+            dataTable.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-gray-400 font-medium">${message}</td></tr>`;
             resultCount.textContent = 'Menunggu pencarian atau filter...';
         }
 
@@ -338,7 +461,7 @@
 
         function renderTable(data) {
             if (data.length === 0) {
-                dataTable.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-gray-400 font-medium">Tidak ada data pekerjaan yang sesuai dengan kriteria pencarian.</td></tr>`;
+                dataTable.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-400 font-medium">Tidak ada data pekerjaan yang sesuai dengan kriteria pencarian.</td></tr>`;
                 resultCount.textContent = 'Menampilkan 0 hasil';
                 return;
             }
@@ -354,13 +477,20 @@
                         <td class="py-3.5 px-6 text-gray-700 font-medium">
                             <div class="flex items-center space-x-3">
                                 <button onclick="selectJobForEstimation('${safeJobName}', ${item.total_price})" class="shrink-0 inline-flex items-center space-x-1 px-2.5 py-1 text-xs font-semibold text-white bg-red-600 border border-red-600 rounded-lg hover:bg-red-700 transition-all shadow-xs" title="Masukkan ke Kolom Jasa Estimasi">
-                                    <span>+ Pilih ke Jasa</span>
+                                    <span>+ Pilih</span>
                                 </button>
                                 <span>${item.pekerjaan}</span>
                             </div>
                         </td>
-                        <td class="py-3.5 px-6 text-center font-semibold text-zinc-700">${Number(item.flat_rate).toFixed(1)} MH</td>
+                        <td class="py-3.5 px-6 text-center">
+                            <span id="fr-text-${index}" class="font-semibold text-zinc-700">${Number(item.flat_rate).toFixed(1)} MH</span>
+                            <input type="number" id="fr-input-${index}" value="${item.flat_rate}" step="0.1" class="hidden w-20 text-center border border-gray-300 rounded-lg py-1 text-sm font-semibold">
+                        </td>
                         <td class="py-3.5 px-6 text-right font-bold text-red-600">Rp ${Number(item.total_price).toLocaleString('id-ID')}</td>
+                        <td class="py-3.5 px-6 text-center">
+                            <button id="btn-job-edit-${index}" onclick="enableJobEdit(${index})" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-lg border border-gray-300 transition-all">Edit</button>
+                            <button id="btn-job-save-${index}" onclick="saveJobFlatRate(${index}, '${safeJobName}', '${item.tipe_mobil}')" class="hidden px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-lg transition-all shadow-xs">Simpan</button>
+                        </td>
                     </tr>
                 `;
             });
