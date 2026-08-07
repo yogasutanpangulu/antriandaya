@@ -28,6 +28,12 @@
     </script>
 
     <style>
+@media print {
+    /* Sembunyikan tabel secara keseluruhan jika memiliki class d-none-print */
+    table.d-none-print { display: none !important; }
+    .table-title.d-none-print { display: none !important; }
+}
+
         *, *::before, *::after {
             box-sizing: border-box;
         }
@@ -736,7 +742,7 @@
         </tbody>
     </table>
 
-    <div class="table-title">
+    <div class="table-title" id="section-tabel-lain">
         <span></span>
         <button class="btn btn-add" onclick="addRow('table-lain')">+ Tambah Kolom</button>
     </div>
@@ -1476,60 +1482,66 @@
     }
 
     function saveEstimation(isSilent = false) {
-        const nopol = document.getElementById('nopol').value.trim().toUpperCase();
-        if (!nopol) { 
-            if (!isSilent) alert('Harap isi NOMOR POLISI sebelum menyimpan!'); 
-            return; 
-        }
-
-        const estimationData = {
-            nopol: nopol,
-            date: new Date().toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-            jasa: [], lain: [], part: []
-        };
-
-        document.querySelectorAll('#table-jasa tbody tr:not(.row-total):not(.row-discount)').forEach(row => {
-            estimationData.jasa.push({
-                qty: row.querySelector('.qty-input').value, price: row.querySelector('.price-input').value,
-                name: row.querySelector('.item-name').value, disc: row.querySelector('.disc-input').value,
-                discType: row.querySelector('.disc-type-select').value
-            });
-        });
-        document.querySelectorAll('#table-lain tbody tr:not(.row-total):not(.row-discount)').forEach(row => {
-            estimationData.lain.push({
-                qty: row.querySelector('.qty-input').value, price: row.querySelector('.price-input').value,
-                name: row.querySelector('.item-select').value, disc: row.querySelector('.disc-input').value,
-                discType: row.querySelector('.disc-type-select').value
-            });
-        });
-        document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)').forEach(row => {
-            const partNoInput = row.querySelector('.item-part-no');
-            estimationData.part.push({
-                qty: row.querySelector('.qty-input').value, price: row.querySelector('.price-input').value,
-                name: row.querySelector('.item-name').value, partNo: partNoInput ? partNoInput.value : '',
-                disc: row.querySelector('.disc-input').value, discType: row.querySelector('.disc-type-select').value
-            });
-        });
-
-        let savedEstimations = JSON.parse(localStorage.getItem('bengkel_estimations')) || [];
-        savedEstimations = savedEstimations.filter(e => e.nopol !== nopol);
-        savedEstimations.push(estimationData);
-        localStorage.setItem('bengkel_estimations', JSON.stringify(savedEstimations));
-
-        if (window.db && window.dbRef && window.dbSet) {
-            const cleanKey = nopol.replace(/[\.\#\$\[\]]/g, "-");
-            const cloudRef = window.dbRef(window.db, 'estimasi_records_v2/' + cleanKey);
-            window.dbSet(cloudRef, estimationData)
-                .then(() => {
-                    if (!isSilent) showToast(`✅ Estimasi Mobil ${nopol} Sukses Tersimpan!`);
-                }).catch((error) => {
-                    if (!isSilent) showToast(`⚠️ Tersimpan di Lokal. Cloud Gagal Terhubung.`);
-                });
-        } else {
-            if (!isSilent) showToast(`✅ Estimasi Mobil ${nopol} Tersimpan di Lokal.`);
-        }
-        if (!isSilent) loadStorageList();
+    const nopol = document.getElementById('nopol').value.trim().toUpperCase();
+    if (!nopol) { 
+        if (!isSilent) alert('Harap isi NOMOR POLISI sebelum menyimpan!'); 
+        return; 
     }
+
+    // --- TAMBAHKAN NAMA PELANGGAN, TYPE KENDARAAN, DAN TANGGAL PEMBUATAN OTOMATIS ---
+    const currentDateStr = new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+    document.getElementById('tgl-pembuatan').value = currentDateStr;
+
+    const estimationData = {
+        nopol: nopol,
+        namaPelanggan: document.getElementById('nama-pelanggan').value.trim(),
+        typeKendaraan: document.getElementById('type-kendaraan').value.trim(),
+        date: currentDateStr,
+        jasa: [], lain: [], part: []
+    };
+
+    document.querySelectorAll('#table-jasa tbody tr:not(.row-total):not(.row-discount)').forEach(row => {
+        estimationData.jasa.push({
+            qty: row.querySelector('.qty-input').value, price: row.querySelector('.price-input').value,
+            name: row.querySelector('.item-name').value, disc: row.querySelector('.disc-input').value,
+            discType: row.querySelector('.disc-type-select').value
+        });
+    });
+    document.querySelectorAll('#table-lain tbody tr:not(.row-total):not(.row-discount)').forEach(row => {
+        estimationData.lain.push({
+            qty: row.querySelector('.qty-input').value, price: row.querySelector('.price-input').value,
+            name: row.querySelector('.item-select').value, disc: row.querySelector('.disc-input').value,
+            discType: row.querySelector('.disc-type-select').value
+        });
+    });
+    document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)').forEach(row => {
+        const partNoInput = row.querySelector('.item-part-no');
+        estimationData.part.push({
+            qty: row.querySelector('.qty-input').value, price: row.querySelector('.price-input').value,
+            name: row.querySelector('.item-name').value, partNo: partNoInput ? partNoInput.value : '',
+            disc: row.querySelector('.disc-input').value, discType: row.querySelector('.disc-type-select').value
+        });
+    });
+
+    let savedEstimations = JSON.parse(localStorage.getItem('bengkel_estimations')) || [];
+    savedEstimations = savedEstimations.filter(e => e.nopol !== nopol);
+    savedEstimations.push(estimationData);
+    localStorage.setItem('bengkel_estimations', JSON.stringify(savedEstimations));
+
+    if (window.db && window.dbRef && window.dbSet) {
+        const cleanKey = nopol.replace(/[\.\#\$\[\]]/g, "-");
+        const cloudRef = window.dbRef(window.db, 'estimasi_records_v2/' + cleanKey);
+        window.dbSet(cloudRef, estimationData)
+            .then(() => {
+                if (!isSilent) showToast(`✅ Estimasi Mobil ${nopol} Sukses Tersimpan!`);
+            }).catch((error) => {
+                if (!isSilent) showToast(`⚠️ Tersimpan di Lokal. Cloud Gagal Terhubung.`);
+            });
+    } else {
+        if (!isSilent) showToast(`✅ Estimasi Mobil ${nopol} Tersimpan di Lokal.`);
+    }
+    if (!isSilent) loadStorageList();
+}
 
     function fetchFromCloudDatabase() {
         const nopol = document.getElementById('nopol').value.trim().toUpperCase();
@@ -1622,6 +1634,11 @@
 
     function injectDataToFormElements(est) {
         document.getElementById('nopol').value = est.nopol || '';
+	document.getElementById('nama-pelanggan').value = est.namaPelanggan || '';
+    	document.getElementById('type-kendaraan').value = est.typeKendaraan || '';
+   	 document.getElementById('tgl-pembuatan').value = est.date || '';
+
+    // ... (lanjutan kode isi ulang tabel jasa, part, dll yang sudah ada di bawahnya)
 
         // 1. Bersihkan dan isi ulang tabel JASA
         const jasaBody = document.querySelector('#table-jasa tbody');
@@ -1745,15 +1762,67 @@
         }
     }
 
-    function downloadPDF() { window.print(); }
+    function downloadPDF() {
+    // 1. Cek Tabel Jasa
+    const jasaRows = document.querySelectorAll('#table-jasa tbody tr:not(.row-total):not(.row-discount)');
+    const tableJasa = document.getElementById('table-jasa');
+    const titleJasa = document.getElementById('section-tabel-utama');
+    
+    let isJasaEmpty = true;
+    jasaRows.forEach(r => {
+        const nameVal = r.querySelector('.item-name');
+        if (nameVal && nameVal.value.trim() !== "") isJasaEmpty = false;
+    });
 
-    // OCR Handlers
-    let ocrImageFile = null, currentOcrMode = null, isDrawing = false, startX = 0, startY = 0;
-    let ocrRects = {
-        'partNo': { left: 0, top: 0, width: 0, height: 0, active: false },
-        'partName': { left: 0, top: 0, width: 0, height: 0, active: false },
-        'price': { left: 0, top: 0, width: 0, height: 0, active: false }
-    };
+    if (isJasaEmpty) {
+        if (tableJasa) tableJasa.classList.add('d-none-print');
+        if (titleJasa) titleJasa.classList.add('d-none-print');
+    } else {
+        if (tableJasa) tableJasa.classList.remove('d-none-print');
+        if (titleJasa) titleJasa.classList.remove('d-none-print');
+    }
+
+    // 2. Cek Tabel Kolom Kedua / OPL (#table-lain)
+    const lainRows = document.querySelectorAll('#table-lain tbody tr:not(.row-total):not(.row-discount)');
+    const tableLain = document.getElementById('table-lain');
+    const titleLain = document.getElementById('section-tabel-lain');
+    
+    let isLainEmpty = true;
+    lainRows.forEach(r => {
+        const selectVal = r.querySelector('.item-select');
+        const priceVal = r.querySelector('.price-input');
+        if ((selectVal && selectVal.value.trim() !== "") || (priceVal && parseFloat(priceVal.value) > 0)) {
+            isLainEmpty = false;
+        }
+    });
+
+    if (isLainEmpty) {
+        if (tableLain) tableLain.classList.add('d-none-print');
+        if (titleLain) titleLain.classList.add('d-none-print');
+    } else {
+        if (tableLain) tableLain.classList.remove('d-none-print');
+        if (titleLain) titleLain.classList.remove('d-none-print');
+    }
+
+    // 3. Cek Tabel Part / Bahan
+    const partRows = document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)');
+    const tablePart = document.getElementById('table-part');
+    
+    let isPartEmpty = true;
+    partRows.forEach(r => {
+        const nameVal = r.querySelector('.item-name');
+        if (nameVal && nameVal.value.trim() !== "") isPartEmpty = false;
+    });
+
+    if (isPartEmpty) {
+        if (tablePart) tablePart.classList.add('d-none-print');
+    } else {
+        if (tablePart) tablePart.classList.remove('d-none-print');
+    }
+
+    // 4. Jalankan perintah cetak browser
+    window.print();
+}
 
     function handleImageUpload(event) {
         let file = event.target.files[0];
