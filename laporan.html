@@ -8,6 +8,9 @@
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <!-- SHEETJS UNTUK BACA EXCEL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 20px; }
@@ -17,13 +20,15 @@
         .subtitle span { color: #28a745; }
         
         label { font-weight: bold; font-size: 14px; margin-right: 5px;}
-        select, button, input[type="number"] { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px;}
+        select, button, input[type="number"], input[type="file"] { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px;}
         button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.2s;}
         button:hover { background-color: #0056b3; }
         button:disabled { background-color: #6c757d !important; cursor: not-allowed; }
         
-        .header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
-        .filter-group { display: flex; gap: 15px; align-items: center; background: #e9ecef; padding: 10px 15px; border-radius: 8px; border: 1px solid #ced4da;}
+        .header-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        .filter-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
+        .filter-group { display: flex; gap: 15px; align-items: center; background: #e9ecef; padding: 10px 15px; border-radius: 8px; border: 1px solid #ced4da; flex-wrap: wrap;}
+        .upload-group { background: #e2f0d9; border: 1px solid #c6e0b4; }
         
         table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; white-space: nowrap; }
         th, td { border: 2px solid #333; padding: 2px; }
@@ -76,42 +81,59 @@
 
     <div class="card">
         <div class="header-controls">
-            <div class="filter-group">
-                <div>
-                    <label>Pilih Tampilan:</label>
-                    <select id="filter_sa" onchange="gantiModeTampilan()">
-                        <option value="" selected disabled hidden>-- PILIH NAMA SA --</option>
-                        <option value="ALL">📊 --- SUMMARY SEMUA SA ---</option>
-                        <option value="YOGA">👤 YOGA</option>
-                        <option value="SARIPUDIN">👤 SARIPUDIN</option>
-                        <option value="DODDY">👤 DODDY</option>
-                        <option value="I PUTU">👤 I PUTU</option>
-                        <option value="RIDUAN">👤 RIDUAN</option>
-                        <option value="SLAMET">👤 SLAMET</option>
-                        <option value="RONALDO">👤 RONALDO</option>
-                        <option value="IMRON">👤 IMRON</option>
-                    </select>
+            <!-- Filter Tampilan -->
+            <div class="filter-row">
+                <div class="filter-group">
+                    <div>
+                        <label>Pilih Tampilan:</label>
+                        <select id="filter_sa" onchange="gantiModeTampilan()">
+                            <option value="" selected disabled hidden>-- PILIH NAMA SA --</option>
+                            <option value="ALL">📊 --- SUMMARY SEMUA SA ---</option>
+                            <option value="YOGA">👤 YOGA</option>
+                            <option value="SARIPUDIN">👤 SARIPUDIN</option>
+                            <option value="DODDY">👤 DODDY</option>
+                            <option value="I PUTU">👤 I PUTU</option>
+                            <option value="RIDUAN">👤 RIDUAN</option>
+                            <option value="SLAMET">👤 SLAMET</option>
+                            <option value="RONALDO">👤 RONALDO</option>
+                            <option value="IMRON">👤 IMRON</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Bulan:</label>
+                        <select id="filter_bulan" onchange="tarikDataDariFirebase()">
+                            <option value="08">Agustus</option>
+                            <option value="09">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Tahun:</label>
+                        <select id="filter_tahun" onchange="tarikDataDariFirebase()">
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
-                    <label>Bulan:</label>
-                    <select id="filter_bulan" onchange="tarikDataDariFirebase()">
-                        <option value="08">Agustus</option>
-                        <option value="09">September</option>
-                        <option value="10">Oktober</option>
-                        <option value="11">November</option>
-                        <option value="12">Desember</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Tahun:</label>
-                    <select id="filter_tahun" onchange="tarikDataDariFirebase()">
-                        <option value="2026">2026</option>
-                        <option value="2027">2027</option>
-                    </select>
+                    <span style="font-size: 13px; color: #28a745; font-weight: bold;">⚡ Live Auto-Save Aktif</span>
                 </div>
             </div>
-            <div>
-                <span style="font-size: 13px; color: #28a745; font-weight: bold;">⚡ Live Auto-Save Aktif</span>
+
+            <!-- Upload Excel Section -->
+            <div class="filter-group upload-group">
+                <div>
+                    <label>Upload Data Revenue (.xls):</label>
+                    <input type="file" id="fileExcel" accept=".xls,.xlsx" style="font-size: 13px; width: 220px;" title="Upload file AS_Revenue_GRCAB">
+                </div>
+                <div>
+                    <label>Tgl Tujuan:</label>
+                    <input type="number" id="tglUpload" min="1" max="31" style="width: 55px;" placeholder="Tgl">
+                </div>
+                <button type="button" style="background-color: #198754;" onclick="prosesExcelUpload()">📥 Tarik Data ke Sistem</button>
+                <span id="upload-status" style="font-size: 13px; font-weight: bold; margin-left: 10px;"></span>
             </div>
         </div>
 
@@ -351,7 +373,7 @@
         // ============================================================
         // 4. FIREBASE: LOAD & LISTEN DATA REAL-TIME
         // ============================================================
-        function gantiModeTampilan() {
+        window.gantiModeTampilan = function() {
             const sa = document.getElementById('filter_sa').value;
             
             // JIKA SA KOSONG (Belum memilih nama)
@@ -377,9 +399,9 @@
             }
             
             tarikDataDariFirebase();
-        }
+        };
 
-        function tarikDataDariFirebase() {
+        window.tarikDataDariFirebase = function() {
             if (currentFirebaseListener) {
                 db.ref('rekap_harian').off('value', currentFirebaseListener);
             }
@@ -400,6 +422,8 @@
             const bulan = document.getElementById('filter_bulan').value;
             const tahun = document.getElementById('filter_tahun').value;
             
+            if(!sa) return;
+
             currentFirebaseListener = db.ref('rekap_harian').on('value', (snapshot) => {
                 const dataFirebase = snapshot.val() || {};
                 isRemoteUpdating = true; 
@@ -454,7 +478,7 @@
                 }
                 isRemoteUpdating = false;
             });
-        }
+        };
 
         function isiTabelDariData(data) {
             document.querySelectorAll('.cell-input').forEach(input => input.value = '');
@@ -492,7 +516,7 @@
             if (isRemoteUpdating) return; 
 
             const sa = document.getElementById('filter_sa').value;
-            if (sa === "ALL") return; 
+            if (!sa || sa === "ALL") return; 
 
             if (!isOnline) {
                 document.getElementById('autosave-status').innerText = "⚠️ Offline (Perubahan lokal)";
@@ -550,7 +574,150 @@
         }
 
         // ============================================================
-        // 6. GENERATE LAPORAN WHATSAPP 
+        // 6. PROSES UPLOAD EXCEL REVENUE (VERSI UPDATE LEBIH PINTAR)
+        // ============================================================
+        window.prosesExcelUpload = function() {
+            const fileInput = document.getElementById('fileExcel');
+            const tglInput = parseInt(document.getElementById('tglUpload').value);
+            const uploadStatus = document.getElementById('upload-status');
+
+            if (!fileInput.files.length) {
+                alert("Harap pilih file Excel (Revenue GRCAB) terlebih dahulu!");
+                return;
+            }
+            if (!tglInput || tglInput < 1 || tglInput > 31) {
+                alert("Masukkan tanggal Target (1-31) yang valid!");
+                return;
+            }
+
+            const bulan = document.getElementById('filter_bulan').value;
+            const tahun = document.getElementById('filter_tahun').value;
+            
+            uploadStatus.innerText = "⏳ Membaca file...";
+            uploadStatus.style.color = "#856404";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                // Baca Data dengan SheetJS
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Set Header A agar kita bisa memanggil by huruf Kolom
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: "A", defval: 0});
+                
+                let rekapUpload = {};
+                // Daftar SA yang valid di database
+                const saNames = ["YOGA", "SARIPUDIN", "DODDY", "I PUTU", "RIDUAN", "SLAMET", "RONALDO", "IMRON"];
+                
+                jsonData.forEach(row => {
+                    let saMatch = null;
+                    
+                    // UPDATE: Cek kolom A, B, C, D (Antisipasi Merge Cell pada Excel)
+                    ['A', 'B', 'C', 'D'].forEach(col => {
+                        const cellVal = row[col];
+                        if (typeof cellVal === 'string' && !saMatch) {
+                            const saCellUpper = cellVal.toUpperCase();
+                            for (let sa of saNames) {
+                                if (saCellUpper.includes(sa)) {
+                                    saMatch = sa;
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (saMatch) {
+                        if (!rekapUpload[saMatch]) {
+                            rekapUpload[saMatch] = { JASA: 0, PART: 0, OPB: 0, OPL: 0 };
+                        }
+                        
+                        // Fungsi bersihkan angka (karena kadang format rupiah terbaca sbg teks)
+                        const parseVal = (val) => {
+                            if (typeof val === 'number') return val;
+                            if (typeof val === 'string') return parseFloat(val.replace(/[^\d.-]/g, '')) || 0;
+                            return 0;
+                        };
+
+                        // Menarik nominal Excel dari kolom V, W, X, Y, Z
+                        const valJasa  = parseVal(row['V']);
+                        const valParts = parseVal(row['W']);
+                        const valBahan = parseVal(row['X']);
+                        const valOPL   = parseVal(row['Y']);
+                        const valOPB   = parseVal(row['Z']);
+
+                        // Logika: Bahan dan OPB digabung masuk ke OPB Sistem
+                        rekapUpload[saMatch].JASA += valJasa;
+                        rekapUpload[saMatch].PART += valParts;
+                        rekapUpload[saMatch].OPB  += (valBahan + valOPB);
+                        rekapUpload[saMatch].OPL  += valOPL;
+                    }
+                });
+
+                if (Object.keys(rekapUpload).length === 0) {
+                    uploadStatus.innerText = "❌ Gagal: Tidak ada Nama SA yang ditemukan di Excel.";
+                    uploadStatus.style.color = "#721c24";
+                    return;
+                }
+
+                uploadStatus.innerText = "💾 Menyimpan ke database...";
+                
+                let promises = [];
+                
+                // Mulai update ke Firebase untuk semua SA yg terdeteksi
+                for (let sa in rekapUpload) {
+                    const docId = `${sa}_${tahun}_${bulan}`;
+                    
+                    // Kita gunakan 'once' agar tidak menimpa data Unit Entry (UE) yang sudah ada
+                    const promise = db.ref('rekap_harian/' + docId).once('value').then(snapshot => {
+                        let existingData = snapshot.val() || {
+                            nama_sa: sa,
+                            bulan: bulan,
+                            tahun: tahun,
+                            ue: {},
+                            rev: {}
+                        };
+                        
+                        if (!existingData.rev) existingData.rev = {};
+                        
+                        // Update Revenue spesifik untuk kolom tanggal yang dipilih
+                        ["JASA", "PART", "OPB", "OPL"].forEach(revType => {
+                            if (!existingData.rev[revType]) existingData.rev[revType] = {};
+                            
+                            // LOGIKA BARU: Dibagi 1000 agar nilai jutaan menjadi ribuan sesuai permintaan
+                            existingData.rev[revType][tglInput] = Math.round(rekapUpload[sa][revType] / 1000);
+                        });
+                        
+                        existingData.terakhir_diupdate = firebase.database.ServerValue.TIMESTAMP;
+                        return db.ref('rekap_harian/' + docId).set(existingData);
+                    });
+                    
+                    promises.push(promise);
+                }
+
+                Promise.all(promises).then(() => {
+                    uploadStatus.innerText = `✅ Data Revenue Tgl ${tglInput} Berhasil Masuk!`;
+                    uploadStatus.style.color = "#155724";
+                    fileInput.value = ''; // Reset input file
+                    
+                    // Panggil tarik data jika online untuk merefresh tabel langsung
+                    tarikDataDariFirebase();
+                    
+                    setTimeout(() => { uploadStatus.innerText = ""; }, 6000);
+                }).catch(err => {
+                    console.error("Gagal simpan Firebase:", err);
+                    uploadStatus.innerText = "❌ Terjadi kesalahan saat memproses!";
+                    uploadStatus.style.color = "#721c24";
+                });
+            };
+            
+            // Baca File yang di-upload
+            reader.readAsArrayBuffer(fileInput.files[0]);
+        };
+
+        // ============================================================
+        // 7. GENERATE LAPORAN WHATSAPP 
         // ============================================================
         window.generateLaporanWA = function() {
             const tglHariIni = parseInt(document.getElementById('inputTglLaporan').value) || new Date().getDate();
@@ -700,7 +867,11 @@ Rev.       : 2.616 M`;
             }
             
             document.getElementById('filter_sa').value = ""; 
-            document.getElementById('inputTglLaporan').value = new Date().getDate();
+            
+            // Set input tgl hari ini
+            const hariIni = new Date().getDate();
+            document.getElementById('inputTglLaporan').value = hariIni;
+            document.getElementById('tglUpload').value = hariIni;
             
             gantiModeTampilan();
         });
