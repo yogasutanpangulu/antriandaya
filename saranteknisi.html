@@ -1013,6 +1013,28 @@
     window.onload = function() {
         initListeners();
     };
+
+// ==========================================
+    // FITUR PASTE GAMBAR LANGSUNG (AUTO-OCR)
+    // ==========================================
+    document.addEventListener('paste', function(e) {
+        // Cek apakah data yang di-paste mengandung file gambar
+        if (e.clipboardData && e.clipboardData.items) {
+            let items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") !== -1) {
+                    let file = items[i].getAsFile();
+                    
+                    // Langsung buka pop-up OCR dengan gambar tersebut
+                    openOcrModal(file);
+                    
+                    // Mencegah browser melakukan aksi paste bawaan
+                    e.preventDefault(); 
+                    break;
+                }
+            }
+        }
+    });
 </script>
 </body>
 </html>
