@@ -364,14 +364,16 @@
     }
 
     function exportTeknisiExcel() {
-        let csv = "NO POLISI,NAMA TEKNISI,NAMA SA,WAKTU,STATUS,SARAN TEMUAN\n";
+        // Menggunakan titik koma (;) sebagai pemisah kolom untuk Excel Indonesia
+        let csv = "NO POLISI;NAMA TEKNISI;NAMA SA;WAKTU;STATUS;SARAN TEMUAN\n";
         const todayStr = new Date().toDateString();
         
         Object.keys(allMergedJobs).forEach(key => {
             const job = allMergedJobs[key];
             if (new Date(job.timestamp || 0).toDateString() === todayStr) {
                 let statusTxt = job.dbSource === 'siap' ? 'Selesai (Terkirim SA)' : (job.status === 'ON_PROCESS_PART' ? 'Sedang Dicek Partman' : 'Menunggu Partman');
-                csv += `${escapeCSV(job.nopol)},${escapeCSV(job.teknisi)},${escapeCSV(job.namaSA)},${escapeCSV(job.timestampStr)},${escapeCSV(statusTxt)},${escapeCSV(job.saranText)}\n`;
+                // Gabungkan dengan titik koma (;)
+                csv += `${escapeCSV(job.nopol)};${escapeCSV(job.teknisi)};${escapeCSV(job.namaSA)};${escapeCSV(job.timestampStr)};${escapeCSV(statusTxt)};${escapeCSV(job.saranText)}\n`;
             }
         });
         
@@ -380,7 +382,8 @@
     }
 
     function exportPartmanExcel() {
-        let csv = "NO POLISI,TEKNISI,SA,WAKTU,STATUS,SARAN TEMUAN,NAMA S.CADANG,NO PART,QTY,HARGA SATUAN,TOTAL BERSIH (NET)\n";
+        // Menggunakan titik koma (;) sebagai pemisah kolom
+        let csv = "NO POLISI;TEKNISI;SA;WAKTU;STATUS;SARAN TEMUAN;NAMA S.CADANG;NO PART;QTY;HARGA SATUAN;TOTAL BERSIH (NET)\n";
         const todayStr = new Date().toDateString();
 
         Object.keys(allMergedJobs).forEach(key => {
@@ -394,10 +397,12 @@
                     job.parts.forEach(p => {
                         let rowDiscount = p.discType === 'Rp' ? Number(p.disc) : (Number(p.disc)/100 * p.qty * p.price);
                         let total = Math.max(0, (p.qty * p.price) - rowDiscount);
-                        csv += `${escapeCSV(job.nopol)},${escapeCSV(job.teknisi)},${escapeCSV(job.namaSA)},${escapeCSV(job.timestampStr)},${escapeCSV(statusTxt)},${escapeCSV(job.saranText)},${escapeCSV(p.partName)},${escapeCSV(p.partNo)},${p.qty},${p.price},${total}\n`;
+                        // Gabungkan dengan titik koma (;)
+                        csv += `${escapeCSV(job.nopol)};${escapeCSV(job.teknisi)};${escapeCSV(job.namaSA)};${escapeCSV(job.timestampStr)};${escapeCSV(statusTxt)};${escapeCSV(job.saranText)};${escapeCSV(p.partName)};${escapeCSV(p.partNo)};${p.qty};${p.price};${total}\n`;
                     });
                 } else {
-                    csv += `${escapeCSV(job.nopol)},${escapeCSV(job.teknisi)},${escapeCSV(job.namaSA)},${escapeCSV(job.timestampStr)},${escapeCSV(statusTxt)},${escapeCSV(job.saranText)},"","","","",""\n`;
+                    // Gabungkan dengan titik koma (;)
+                    csv += `${escapeCSV(job.nopol)};${escapeCSV(job.teknisi)};${escapeCSV(job.namaSA)};${escapeCSV(job.timestampStr)};${escapeCSV(statusTxt)};${escapeCSV(job.saranText)};"";"";"";"";""\n`;
                 }
             }
         });
