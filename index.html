@@ -35,10 +35,10 @@
             margin: 0 0 30px 0;
             font-size: 16px;
         }
-        /* Diubah menjadi 3 kolom grid */
+        /* Diubah menjadi 2 kolom grid agar rapi untuk 4 menu */
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
         }
         .menu-card {
@@ -83,6 +83,10 @@
 
         .card-estimasi:hover { border-color: #ffc107; box-shadow: 0 5px 15px rgba(255,193,7,0.15); }
         .card-estimasi h3 { color: #e0a800; }
+        
+        /* Warna untuk Saran Teknisi */
+        .card-saran:hover { border-color: #17a2b8; box-shadow: 0 5px 15px rgba(23,162,184,0.15); }
+        .card-saran h3 { color: #17a2b8; }
 
         @media (max-width: 768px) {
             .menu-grid { grid-template-columns: 1fr; }
@@ -113,11 +117,18 @@
                 <p>Input Unit Entry, Revenue harian, dan generate laporan WhatsApp.</p>
             </a>
 
-            <!-- 3. Estimasi Biaya (Menu Baru) -->
+            <!-- 3. Estimasi Biaya -->
             <a href="estimasi.html" class="menu-card card-estimasi">
                 <div class="icon">📝</div>
                 <h3>ESTIMASI</h3>
                 <p>Buat dan kelola estimasi biaya service, part, jasa, serta OCR gambar.</p>
+            </a>
+            
+            <!-- 4. Saran Teknisi & Partman (Menu Baru) -->
+            <a href="saran_teknisi.html" class="menu-card card-saran">
+                <div class="icon">🔧</div>
+                <h3>Saran Teknisi & Partman</h3>
+                <p>Input temuan teknisi dan proses pengecekan harga oleh partman.</p>
             </a>
         </div>
         
