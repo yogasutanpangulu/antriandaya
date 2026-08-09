@@ -80,6 +80,7 @@
                 <div>
                     <label>Pilih Tampilan:</label>
                     <select id="filter_sa" onchange="gantiModeTampilan()">
+                        <option value="" selected disabled hidden>-- PILIH NAMA SA --</option>
                         <option value="ALL">📊 --- SUMMARY SEMUA SA ---</option>
                         <option value="YOGA">👤 YOGA</option>
                         <option value="SARIPUDIN">👤 SARIPUDIN</option>
@@ -162,7 +163,7 @@
         const db = firebase.database();
         
         let isOnline = false;
-        let isRemoteUpdating = false; // Flag agar input dari database tidak memicu save ulang
+        let isRemoteUpdating = false; 
         let saveTimeout = null;
 
         db.ref(".info/connected").on("value", function(snap) {
@@ -352,6 +353,16 @@
         // ============================================================
         function gantiModeTampilan() {
             const sa = document.getElementById('filter_sa').value;
+            
+            // JIKA SA KOSONG (Belum memilih nama)
+            if (!sa) {
+                buatTabelGrid(false);
+                document.querySelectorAll('.cell-input').forEach(input => { input.disabled = true; });
+                document.getElementById('wa-control-group').style.display = 'none';
+                document.getElementById('wa-section').style.display = 'none';
+                return; 
+            }
+
             const isSummary = (sa === "ALL");
             buatTabelGrid(isSummary);
             
@@ -391,7 +402,7 @@
             
             currentFirebaseListener = db.ref('rekap_harian').on('value', (snapshot) => {
                 const dataFirebase = snapshot.val() || {};
-                isRemoteUpdating = true; // Kunci agar tidak memicu auto-save saat menerima data dari server
+                isRemoteUpdating = true; 
                 
                 if (sa === "ALL") {
                     let dataGabungan = { ue: {}, rev: {} };
@@ -476,9 +487,9 @@
         // 5. LIVE AUTO-SAVE KE FIREBASE
         // ============================================================
         window.handleCellInput = function() {
-            window.hitungTotal(); // Update kalkulasi total di layar secara instan
+            window.hitungTotal(); 
 
-            if (isRemoteUpdating) return; // Jika perubahan berasal dari sinkronisasi server, abaikan auto-save
+            if (isRemoteUpdating) return; 
 
             const sa = document.getElementById('filter_sa').value;
             if (sa === "ALL") return; 
@@ -491,7 +502,6 @@
             const autoStatus = document.getElementById('autosave-status');
             autoStatus.innerText = "💾 Menyimpan...";
 
-            // Debounce: Tunggu 500ms setelah user selesai mengetik sebelum kirim ke Firebase
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(() => {
                 const bulan = document.getElementById('filter_bulan').value;
@@ -688,7 +698,8 @@ Rev.       : 2.616 M`;
             if (document.querySelector(`#filter_bulan option[value="${fmtBulan}"]`)) {
                 document.getElementById('filter_bulan').value = fmtBulan;
             }
-            document.getElementById('filter_sa').value = "YOGA"; 
+            
+            document.getElementById('filter_sa').value = ""; 
             document.getElementById('inputTglLaporan').value = new Date().getDate();
             
             gantiModeTampilan();
