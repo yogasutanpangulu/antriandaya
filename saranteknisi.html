@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Portal Saran Teknisi & Partman</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHLuzqXq_T6BGACGbDdheC7w8ZEQcsqCM",
+            authDomain: "penerimaan-service.firebaseapp.com",
+            databaseURL: "https://penerimaan-service-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "penerimaan-service",
+            storageBucket: "penerimaan-service.firebasestorage.app",
+            messagingSenderId: "238520546109",
+            appId: "1:238520546109:web:1e1b6c31288fd431290b54"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        window.db = db; window.dbRef = ref; window.dbSet = set; window.dbOnValue = onValue; window.dbRemove = remove; window.dbUpdate = update;
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color:#000; }
+        .container { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; cursor: pointer; border: none; background: #eee; font-weight: bold; border-radius: 4px; font-size: 11pt;}
+        .tab-btn.active { background: #2196F3; color: white; }
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .tech-form-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .tech-form-table td { padding: 10px; border: 1px solid #ccc; vertical-align: middle; }
+        .tech-label { width: 25%; font-weight: bold; background: #f9f9f9; text-transform: uppercase; }
+        .tech-colon { width: 2%; font-weight: bold; text-align: center; }
+        .tech-input { width: 73%; }
+        .tech-input input, .tech-input select { width: 100%; padding: 8px; border: none; border-bottom: 1px solid #000; font-size: 11pt; font-weight:bold; text-transform:uppercase; outline: none; background: transparent;}
+        
+        .textarea-wrapper { position: relative; width: 100%; height: 200px; }
+        .textarea-wrapper textarea { width: 100%; height: 100%; padding: 10px; border: none; resize: none; font-size: 11pt; outline: none; }
+        .btn-salin { position: absolute; bottom: 10px; right: 10px; background: #e0e0e0; border: 1px solid #999; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 9pt; }
+        .btn-salin:hover { background: #ccc; }
+
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10pt; transition: 0.2s;}
+        .btn-add { background: #fff; color: green; border: 1px solid green; }
+        .btn-add:hover { background: #e8f5e9; }
+        .btn-ocr { background: #673ab7; color: white; margin-left: 10px; }
+        .btn-ocr:hover { background: #512da8; }
+        .btn-remove { background: transparent; color: #f44336; border: none; font-weight:bold; font-size:12pt; cursor:pointer;}
+        .btn-send { background: #2196F3; color: white; width: 100%; padding: 15px; font-size: 12pt; margin-top: 15px; }
+        .btn-send:hover { background: #0b7dda; }
+
+        .job-list-container { max-height: 250px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 20px; background: #fafafa; }
+        .pm-list-item { padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; background: #fff;}
+        .pm-list-item:hover { background: #f1f8e9; }
+        .pm-list-item.selected { background: #e3f2fd; border-left: 4px solid #2196F3; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 8.5pt; font-weight: bold; color: #fff; }
+        .badge-wait { background: #ff9800; }
+        .badge-process { background: #2196F3; }
+        .badge-done { background: #4caf50; }
+        .job-workspace { display: none; animation: fadeIn 0.3s; margin-bottom: 30px; }
+        
+        .search-bar { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 10pt; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+        .header-action-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;}
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .table-title { font-weight: bold; font-size: 11pt; margin-top: 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px;}
+        .part-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .part-table th { font-size: 9pt; font-weight: bold; text-transform: uppercase; padding: 6px; border-top: 3px double #000; border-bottom: 3px double #000; text-align: left; }
+        .part-table td { padding: 4px 6px; font-size: 9.5pt; vertical-align: middle; border-bottom: 1px dashed #eee;}
+        
+        .currency-box { display: flex; align-items: center; gap: 4px; width: 100%; justify-content: flex-end;}
+        .input-with-copy { display: flex; align-items: center; width: 100%; gap: 6px; }
+        
+        input[type="text"].tbl-input, input[type="number"].tbl-input { width: 100%; border: none; border-bottom: 1px dashed #ccc; background: transparent; font-size: inherit; padding: 2px; }
+        input[type="text"].tbl-input:focus, input[type="number"].tbl-input:focus { outline: none; border-bottom: 1px solid #000; }
+        .qty-input { text-align: center; width: 45px; }
+        .price-input { text-align: right; width: 90px; }
+        .disc-input { text-align: right; width: 55px; color: #d32f2f; }
+        .disc-type-select { width: 45px; border: none; background: transparent; cursor: pointer; font-size: 8.5pt; color: #d32f2f; }
+        .btn-copy-tbl { background: transparent; border: none; cursor: pointer; font-size: 9.5pt; color: #bbb; }
+        
+        .row-total-label { font-weight: bold; text-transform: uppercase; text-align: right; padding-right: 15px; }
+        .row-total-value { border-top: 2px solid #000; font-weight: bold; }
+
+        .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items:center; justify-content:center; }
+        .modal-content { background: #fff; padding: 20px; border-radius: 8px; max-width: 95%; max-height: 95vh; display:flex; flex-direction: column; width: 900px;}
+        .modal-header { font-size: 14pt; font-weight: bold; margin-bottom: 15px; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .ocr-toolbar { display: flex; gap: 15px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap; }
+        .ocr-tool-btn { padding: 10px 15px; border: 2px solid #ddd; background: #fafafa; cursor: pointer; border-radius:6px; font-weight: bold; font-size: 10pt; transition: 0.2s; }
+        .btn-mode-no.active-mode { border-color: #f44336; background: #ffebee; color: #d32f2f; }
+        .btn-mode-name.active-mode { border-color: #4caf50; background: #e8f5e9; color: #2e7d32; }
+        .btn-mode-price.active-mode { border-color: #2196F3; background: #e3f2fd; color: #1565c0; }
+        .image-wrapper { overflow: auto; max-height: 55vh; border: 1px solid #ccc; background: #e0e0e0; text-align: center; position: relative;}
+        #cropContainer { display: inline-block; position: relative; cursor: crosshair; user-select: none; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
+        #ocrImage { display: block; max-width: 100%; height: auto; pointer-events: none; }
+        .crop-box { position: absolute; border: 2px dashed #000; pointer-events: none; display: none; box-sizing: border-box; }
+        #box-partNo { border-color: #f44336; background: rgba(244, 67, 54, 0.25); }
+        #box-partName { border-color: #4caf50; background: rgba(76, 175, 80, 0.25); }
+        #box-price { border-color: #2196F3; background: rgba(33, 150, 243, 0.25); }
+        .modal-footer { margin-top: 15px; display: flex; justify-content: space-between; border-top: 1px solid #eee; padding-top: 15px;}
+        
+        .toast { position: fixed; top: 20px; right: 20px; background: #333; color: #fff; padding: 12px 20px; border-radius: 4px; display: none; z-index: 10001; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight:bold;}
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; }
+            .tabs, .job-list-container, .header-action-row, .search-bar, .modal-overlay, 
+            .btn, .btn-remove, .btn-copy-tbl, .toast, .nav-utama { display: none !important; }
+            input[type="text"].tbl-input, input[type="number"].tbl-input, select { border: none !important; }
+            #partman-riwayat-section { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="toast" id="toast">Notifikasi</div>
+<input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+
+<!-- MODAL CROPPER OCR -->
+<div class="modal-overlay" id="ocrModal">
+    <div class="modal-content">
+        <div class="modal-header">Pilih Area Kolom Untuk Diekstrak</div>
+        <div style="text-align: center; font-size: 9.5pt; color: #555; margin-bottom: 10px;">
+            <b>Cara Penggunaan:</b> Klik tombol mode di bawah, lalu seret (drag) kotak pada gambar.
+        </div>
+        <div class="ocr-toolbar">
+            <button class="ocr-tool-btn btn-mode-no" onclick="setOcrMode('partNo', this)">1. Kotakkan NO PART</button>
+            <button class="ocr-tool-btn btn-mode-name" onclick="setOcrMode('partName', this)">2. Kotakkan NAMA PART</button>
+            <button class="ocr-tool-btn btn-mode-price" onclick="setOcrMode('price', this)">3. Kotakkan HARGA</button>
+            <button class="btn" style="background:#f44336; color:#fff; border:none; padding:10px;" onclick="resetCropBoxes()">🔄 Ulangi Kotak</button>
+        </div>
+        <div class="image-wrapper" id="imageWrapper">
+            <div id="cropContainer">
+                <img id="ocrImage" src="">
+                <div id="box-partNo" class="crop-box"></div>
+                <div id="box-partName" class="crop-box"></div>
+                <div id="box-price" class="crop-box"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" style="background: #9e9e9e; color: #fff;" onclick="closeOcrModal()">Batal</button>
+            <button class="btn" style="background: #4caf50; color: #fff;" onclick="executeOcrExtraction()">Mulai Ekstrak Data!</button>
+        </div>
+    </div>
+</div>
+
+<div class="nav-utama" style="max-width: 1000px; margin: 0 auto 15px auto;">
+    <a href="index.html" style="text-decoration:none; color:#333; font-weight:bold; background:#fff; padding:8px 12px; border-radius:4px; border:1px solid #ddd;">🏠 Ke Portal Utama</a>
+</div>
+
+<div class="container">
+    <h2 class="nav-utama" style="text-align: center; margin-top:0; border-bottom:2px solid #eee; padding-bottom:15px;">Sistem Pemeriksaan & Suku Cadang</h2>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('teknisi', this)">🔧 1. Form Teknisi</button>
+        <button class="tab-btn" onclick="switchTab('partman', this)">📦 2. Pengecekan Partman</button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODE TEKNISI -->
+    <!-- ============================================== -->
+    <div id="teknisi" class="section active">
+        <table class="tech-form-table">
+            <tr>
+                <td class="tech-label">SARAN TEKNISI</td>
+                <td class="tech-colon"></td>
+                <td class="tech-input" style="background: #e3f2fd;"></td>
+            </tr>
+            <tr>
+                <td class="tech-label">NO POLISI</td>
+                <td class="tech-colon">:</td>
+                <td class="tech-input"><input type="text" id="tek-nopol" placeholder="..."></td>
+            </tr>
+            <tr>
+                <td class="tech-label">NAMA TEKNISI</td>
+                <td class="tech-colon">:</td>
+                <td class="tech-input"><input type="text" id="tek-nama" placeholder="..."></td>
+            </tr>
+            <tr>
+                <td class="tech-label" style="color: #d32f2f;">NAMA SA (WAJIB)</td>
+                <td class="tech-colon">:</td>
+                <td class="tech-input">
+                    <select id="tek-sa" required>
+                        <option value="">-- PILIH NAMA SA --</option>
+                        <option value="YPE">YPE</option>
+                        <option value="SRP">SRP</option>
+                        <option value="DDY">DDY</option>
+                        <option value="IPT">IPT</option>
+                        <option value="RDW">RDW</option>
+                        <option value="SLM">SLM</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="tech-label" style="vertical-align: top;">SARAN TEMUAN</td>
+                <td class="tech-colon" style="vertical-align: top;">:</td>
+                <td class="tech-input" style="padding: 0;">
+                    <div class="textarea-wrapper">
+                        <textarea id="tek-saran" placeholder="Tuliskan keluhan atau saran temuan/penggantian part di sini secara bebas..."></textarea>
+                        <button class="btn-salin" onclick="salinSaranTeknisi('tek-saran')">📋 Salin</button>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        
+        <button class="btn btn-send" onclick="kirimSaranTeknisi()">KIRIM / UPDATE SARAN KE PARTMAN</button>
+
+        <!-- RIWAYAT HARI INI (TEKNISI) -->
+        <div style="margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 15px;">
+            <div class="header-action-row">
+                <h4 style="margin: 0; color: #555;">Riwayat Kendaraan Hari Ini (<span id="tek-count">0</span> Kendaraan)</h4>
+                <button class="btn" style="background: #4CAF50; color: white;" onclick="exportTeknisiExcel()">📥 Download Excel</button>
+            </div>
+            
+            <input type="text" id="search-tek" class="search-bar" placeholder="🔍 Cari Nomor Polisi atau Nama Teknisi..." oninput="renderTeknisiHistory()">
+
+            <ul id="tek-history-list" style="list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto;">
+                <li style="padding: 10px; color: #999;">Memuat data riwayat...</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODE PARTMAN -->
+    <!-- ============================================== -->
+    <div id="partman" class="section">
+        <!-- WORKSPACE ATAS (Tabel Part) -->
+        <div id="pm-workspace" class="job-workspace">
+            <div style="background: #fff9c4; border-left: 4px solid #ff9800; padding: 15px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 5px 0;">Mobil: <span id="lbl-nopol" style="color:#d32f2f;"></span> (Teknisi: <span id="lbl-teknisi"></span> | SA: <span id="lbl-sa"></span>)</h4>
+                <div style="position: relative; margin-top:10px;">
+                    <textarea id="lbl-saran" rows="3" style="width:100%; padding:10px; border:1px solid #ccc; font-weight:bold; background:#fff;" readonly></textarea>
+                    <button class="btn-salin" onclick="salinSaranTeknisi('lbl-saran')">📋 Salin</button>
+                </div>
+            </div>
+
+            <div class="table-title">
+                <span>KOLOM PART / BAHAN</span>
+                <div>
+                    <button class="btn btn-add" onclick="addRowPart()">+ Tambah Part</button>
+                    <button class="btn btn-ocr" onclick="document.getElementById('imageUpload').click()">📷 Upload Gambar (OCR)</button>
+                </div>
+            </div>
+
+            <table id="table-part" class="part-table">
+                <thead>
+                    <tr>
+                        <th style="width: 8%; text-align:center;">QTY</th>
+                        <th style="width: 22%;">HARGA / PCS</th>
+                        <th style="width: 35%;">PART / BAHAN</th>
+                        <th style="width: 15%; color:#d32f2f; text-align:right;">DISCOUNT</th>
+                        <th style="width: 15%; text-align:right;">TOTAL</th>
+                        <th style="width: 5%; text-align:center;" class="btn-remove">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Baris akan dirender via JS -->
+                </tbody>
+            </table>
+
+            <!-- BAGIAN TOMBOL AKSI DIBAGI 2 -->
+            <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;" class="nav-utama">
+                <button class="btn btn-send" style="background:#ff9800; flex: 1; margin-top: 0;" onclick="simpanDraftPartman()">💾 Simpan Draft (Belum Selesai)</button>
+                <button id="btn-send-sa" class="btn btn-send" style="background:#4caf50; flex: 1; margin-top: 0;" onclick="kirimKeServiceAdvisor()">✅ Kirim ke SA</button>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top:10px;">
+                <button class="btn nav-utama" style="background:#607d8b; color:white; padding: 10px 20px;" onclick="window.print()">🖨️ Cetak / PDF Suku Cadang</button>
+            </div>
+        </div>
+
+        <!-- LIST RIWAYAT BAWAH -->
+        <div id="partman-riwayat-section" style="border-top: 2px dashed #ccc; padding-top: 20px;">
+            <div class="header-action-row">
+                <h4 style="margin: 0;">Daftar Antrian & Riwayat Suku Cadang:</h4>
+                <button class="btn" style="background: #4CAF50; color: white;" onclick="exportPartmanExcel()">📥 Download Excel (Detail Part)</button>
+            </div>
+
+            <input type="text" id="search-pm" class="search-bar" placeholder="🔍 Cari Nomor Polisi atau Nama Teknisi..." oninput="renderPartmanList()">
+
+            <div id="pm-job-list" class="job-list-container">
+                <!-- List Antrian masuk ke sini -->
+                <div style="padding:15px; color:#999; text-align:center;">Memuat data...</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // UTILITAS & TAB NAVIGASI & DATA MERGING
+    // ==========================================
+    let currentActiveJobKey = "";
+    let antrianData = {};
+    let siapData = {};
+    let allMergedJobs = {};
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3500);
+    }
+
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function salinSaranTeknisi(elementId) {
+        const text = document.getElementById(elementId).value;
+        if(text.trim() === '') return showToast("⚠️ Teks masih kosong!");
+        navigator.clipboard.writeText(text).then(() => showToast("📋 Teks berhasil disalin!"));
+    }
+
+    function initListeners() {
+        if (window.db && window.dbRef && window.dbOnValue) {
+            window.dbOnValue(window.dbRef(window.db, 'antrian_temuan'), (snap) => {
+                antrianData = snap.val() || {};
+                mergeAndRenderData();
+            });
+            window.dbOnValue(window.dbRef(window.db, 'saran_siap_sa'), (snap) => {
+                siapData = snap.val() || {};
+                mergeAndRenderData();
+            });
+        }
+    }
+
+    function mergeAndRenderData() {
+        allMergedJobs = {};
+        Object.keys(antrianData).forEach(k => { allMergedJobs[k] = { ...antrianData[k], dbSource: 'antrian' }; });
+        Object.keys(siapData).forEach(k => { allMergedJobs[k] = { ...siapData[k], dbSource: 'siap' }; });
+
+        renderTeknisiHistory();
+        renderPartmanList();
+    }
+
+    // ==========================================
+    // EXPORT TO EXCEL (CSV Format)
+    // ==========================================
+    function downloadCSV(csvContent, filename) {
+        const blob = new Blob(["\ufeff", csvContent], { type: 'text/csv;charset=utf-8;' }); 
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    function escapeCSV(str) {
+        if (str == null) return '""';
+        const s = String(str).replace(/"/g, '""');
+        return `"${s}"`;
+    }
+
+    function exportTeknisiExcel() {
+        let csv = "NO POLISI,NAMA TEKNISI,NAMA SA,WAKTU,STATUS,SARAN TEMUAN\n";
+        const todayStr = new Date().toDateString();
+        
+        Object.keys(allMergedJobs).forEach(key => {
+            const job = allMergedJobs[key];
+            if (new Date(job.timestamp || 0).toDateString() === todayStr) {
+                let statusTxt = job.dbSource === 'siap' ? 'Selesai (Terkirim SA)' : (job.status === 'ON_PROCESS_PART' ? 'Sedang Dicek Partman' : 'Menunggu Partman');
+                csv += `${escapeCSV(job.nopol)},${escapeCSV(job.teknisi)},${escapeCSV(job.namaSA)},${escapeCSV(job.timestampStr)},${escapeCSV(statusTxt)},${escapeCSV(job.saranText)}\n`;
+            }
+        });
+        
+        const dateStr = new Date().toLocaleDateString('id-ID').replace(/[\/\s:]/g, '_');
+        downloadCSV(csv, `Riwayat_Saran_Teknisi_${dateStr}.csv`);
+    }
+
+    function exportPartmanExcel() {
+        let csv = "NO POLISI,TEKNISI,SA,WAKTU,STATUS,SARAN TEMUAN,NAMA S.CADANG,NO PART,QTY,HARGA SATUAN,TOTAL BERSIH (NET)\n";
+        const todayStr = new Date().toDateString();
+
+        Object.keys(allMergedJobs).forEach(key => {
+            const job = allMergedJobs[key];
+            const jobDateStr = new Date(job.timestamp || 0).toDateString();
+            
+            if (job.dbSource === 'antrian' || (job.dbSource === 'siap' && jobDateStr === todayStr)) {
+                let statusTxt = job.dbSource === 'siap' ? 'Selesai' : (job.status === 'ON_PROCESS_PART' ? 'Diproses' : 'Menunggu');
+                
+                if (job.parts && job.parts.length > 0) {
+                    job.parts.forEach(p => {
+                        let rowDiscount = p.discType === 'Rp' ? Number(p.disc) : (Number(p.disc)/100 * p.qty * p.price);
+                        let total = Math.max(0, (p.qty * p.price) - rowDiscount);
+                        csv += `${escapeCSV(job.nopol)},${escapeCSV(job.teknisi)},${escapeCSV(job.namaSA)},${escapeCSV(job.timestampStr)},${escapeCSV(statusTxt)},${escapeCSV(job.saranText)},${escapeCSV(p.partName)},${escapeCSV(p.partNo)},${p.qty},${p.price},${total}\n`;
+                    });
+                } else {
+                    csv += `${escapeCSV(job.nopol)},${escapeCSV(job.teknisi)},${escapeCSV(job.namaSA)},${escapeCSV(job.timestampStr)},${escapeCSV(statusTxt)},${escapeCSV(job.saranText)},"","","","",""\n`;
+                }
+            }
+        });
+
+        const dateStr = new Date().toLocaleDateString('id-ID').replace(/[\/\s:]/g, '_');
+        downloadCSV(csv, `Detail_Partman_${dateStr}.csv`);
+    }
+
+    // ==========================================
+    // LOGIKA TEKNISI
+    // ==========================================
+    function kirimSaranTeknisi() {
+        const nopol = document.getElementById('tek-nopol').value.trim().toUpperCase();
+        const nama = document.getElementById('tek-nama').value.trim().toUpperCase();
+        const namaSA = document.getElementById('tek-sa').value;
+        const saranText = document.getElementById('tek-saran').value.trim();
+        
+        if(!nopol) return alert('Nomor Polisi wajib diisi!');
+        if(!namaSA) return alert('Nama SA wajib dipilih!');
+        if(!saranText) return alert('Saran Temuan wajib diisi!');
+
+        const cleanKey = nopol.replace(/[\.\#\$\[\]]/g, "-");
+        const ts = new Date().getTime(); 
+        
+        const dataToSave = {
+            nopol: nopol,
+            teknisi: nama,
+            namaSA: namaSA,
+            saranText: saranText,
+            timestampStr: new Date(ts).toLocaleString('id-ID'),
+            timestamp: ts,
+            status: "WAITING_PART"
+        };
+
+        if (window.db && window.dbRef && window.dbSet) {
+            const dbRef = window.dbRef(window.db, 'antrian_temuan/' + cleanKey);
+            window.dbSet(dbRef, dataToSave).then(() => {
+                showToast("✅ Data berhasil dikirim / diperbarui ke Petugas Part!");
+                document.getElementById('tek-nopol').value = '';
+                document.getElementById('tek-saran').value = '';
+                // Biarkan SA & Teknisi untuk next input
+            }).catch(e => {
+                alert("Gagal koneksi ke server.");
+            });
+        }
+    }
+
+    function editSaranTeknisi(key) {
+        const job = allMergedJobs[key];
+        if (!job) return;
+        
+        if (job.status !== "WAITING_PART") {
+            return alert("Tidak dapat diedit! Data ini sudah mulai diproses atau diselesaikan oleh tim Part.");
+        }
+
+        document.getElementById('tek-nopol').value = job.nopol;
+        document.getElementById('tek-nama').value = job.teknisi || '';
+        document.getElementById('tek-sa').value = job.namaSA || '';
+        document.getElementById('tek-saran').value = job.saranText || '';
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showToast("✏️ Silakan edit lalu tekan tombol Kirim Update.");
+    }
+
+    function renderTeknisiHistory() {
+        const list = document.getElementById('tek-history-list');
+        const searchQ = document.getElementById('search-tek').value.trim().toUpperCase();
+        list.innerHTML = '';
+        const todayStr = new Date().toDateString();
+        let count = 0;
+
+        const sortedKeys = Object.keys(allMergedJobs).sort((a,b) => (allMergedJobs[b].timestamp || 0) - (allMergedJobs[a].timestamp || 0));
+
+        sortedKeys.forEach(key => {
+            const job = allMergedJobs[key];
+            const jobDateStr = new Date(job.timestamp || 0).toDateString();
+            
+            if (jobDateStr === todayStr) {
+                if (searchQ && !job.nopol.toUpperCase().includes(searchQ) && !(job.teknisi || '').toUpperCase().includes(searchQ)) {
+                    return; 
+                }
+
+                count++;
+                let statusHtml = '';
+                let btnEditHtml = '';
+
+                if (job.dbSource === 'siap') {
+                    statusHtml = `<span style="color:#4caf50; font-weight:bold;">✅ Selesai (Terkirim SA)</span>`;
+                } else if (job.status === 'ON_PROCESS_PART') {
+                    statusHtml = `<span style="color:#2196F3; font-weight:bold;">🛠️ Sedang Dicek Partman</span>`;
+                } else {
+                    statusHtml = `<span style="color:#ff9800; font-weight:bold;">⏳ Menunggu Partman</span>`;
+                    btnEditHtml = `<button onclick="editSaranTeknisi('${key}')" style="margin-left:10px; background:#ff9800; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:8.5pt; font-weight:bold;">✏️ Edit</button>`;
+                }
+                
+                const li = document.createElement('li');
+                li.style.cssText = "padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items:center;";
+                li.innerHTML = `<span>🚘 <strong>${job.nopol}</strong> (SA: ${job.namaSA || '-'}) - ${job.timestampStr || ''}</span> <div>${statusHtml} ${btnEditHtml}</div>`;
+                list.appendChild(li);
+            }
+        });
+
+        document.getElementById('tek-count').innerText = count;
+        if (count === 0) list.innerHTML = '<li style="padding: 10px; color: #999;">Tidak ada data yang cocok dengan pencarian / hari ini.</li>';
+    }
+
+    // ==========================================
+    // LOGIKA PARTMAN (LIST & WORKSPACE)
+    // ==========================================
+    function renderPartmanList() {
+        const listContainer = document.getElementById('pm-job-list');
+        const searchQ = document.getElementById('search-pm').value.trim().toUpperCase();
+        listContainer.innerHTML = '';
+        const todayStr = new Date().toDateString();
+        let hasData = false;
+
+        const sortedKeys = Object.keys(allMergedJobs).sort((a,b) => (allMergedJobs[b].timestamp || 0) - (allMergedJobs[a].timestamp || 0));
+
+        sortedKeys.forEach(key => {
+            const job = allMergedJobs[key];
+            const jobDateStr = new Date(job.timestamp || 0).toDateString();
+
+            if (job.dbSource === 'antrian' || (job.dbSource === 'siap' && jobDateStr === todayStr)) {
+                
+                if (searchQ && !job.nopol.toUpperCase().includes(searchQ) && !(job.teknisi || '').toUpperCase().includes(searchQ)) {
+                    return; 
+                }
+
+                hasData = true;
+                const isDone = job.dbSource === 'siap';
+                let badgeClass = 'badge-wait';
+                let badgeText = '! Menunggu';
+                
+                if (isDone) {
+                    badgeClass = 'badge-done';
+                    badgeText = '✓ Selesai';
+                } else if (job.status === 'ON_PROCESS_PART') {
+                    badgeClass = 'badge-process';
+                    badgeText = '🛠️ Diproses';
+                }
+                
+                const div = document.createElement('div');
+                div.className = `pm-list-item ${currentActiveJobKey === key ? 'selected' : ''}`;
+                div.id = `pm-item-${key}`;
+                div.onclick = () => loadJobWorkspace(key);
+                div.innerHTML = `
+                    <div>
+                        <div style="font-size: 11pt; font-weight: bold;">🚘 ${job.nopol}</div>
+                        <div style="font-size: 9pt; color: #666;">Teknisi: ${job.teknisi || '-'} | SA: ${job.namaSA || '-'} | ${job.timestampStr || ''}</div>
+                    </div>
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                `;
+                listContainer.appendChild(div);
+            }
+        });
+
+        if (!hasData) listContainer.innerHTML = '<div style="padding:15px; color:#999; text-align:center;">Tidak ada antrian saat ini 👍</div>';
+        
+        if (currentActiveJobKey && !allMergedJobs[currentActiveJobKey]) {
+            document.getElementById('pm-workspace').style.display = 'none';
+            currentActiveJobKey = "";
+        }
+    }
+
+    function loadJobWorkspace(key) {
+        const job = allMergedJobs[key];
+        if (!job) return;
+
+        currentActiveJobKey = key;
+        
+        if (job.status === "WAITING_PART" && job.dbSource === 'antrian') {
+            if (window.db && window.dbRef && window.dbUpdate) {
+                window.dbUpdate(window.dbRef(window.db, 'antrian_temuan/' + key), { status: "ON_PROCESS_PART" });
+            }
+        }
+        
+        document.querySelectorAll('.pm-list-item').forEach(el => el.classList.remove('selected'));
+        const activeItem = document.getElementById('pm-item-' + key);
+        if(activeItem) activeItem.classList.add('selected');
+
+        document.getElementById('lbl-nopol').innerText = job.nopol;
+        document.getElementById('lbl-teknisi').innerText = job.teknisi || '-';
+        document.getElementById('lbl-sa').innerText = job.namaSA || '-';
+        document.getElementById('lbl-saran').value = job.saranText || '';
+
+        const tbody = document.querySelector('#table-part tbody');
+        tbody.innerHTML = '';
+        
+        if (job.parts && job.parts.length > 0) {
+            job.parts.forEach(p => {
+                addRowPart();
+                const rows = tbody.querySelectorAll('tr:not(.row-total)');
+                const lastRow = rows[rows.length - 1];
+                
+                lastRow.querySelector('.qty-input').value = p.qty || 1;
+                lastRow.querySelector('.price-input').value = p.price || 0;
+                lastRow.querySelector('.item-name').value = p.partName || '';
+                lastRow.querySelector('.item-part-no').value = p.partNo || '';
+                lastRow.querySelector('.disc-input').value = p.disc || 0;
+                lastRow.querySelector('.disc-type-select').value = p.discType || '%';
+            });
+            document.getElementById('btn-send-sa').innerText = job.dbSource === 'siap' ? "🔄 Update / Kirim Ulang ke SA" : "✅ Kirim ke SA";
+        } else {
+            addRowPart(); 
+            document.getElementById('btn-send-sa').innerText = "✅ Kirim ke SA";
+        }
+        
+        calculateAllTable();
+        document.getElementById('pm-workspace').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ==========================================
+    // LOGIKA TABEL PART & SIMPAN DRAFT
+    // ==========================================
+    function calculateAllTable() {
+        let subtotalPart = 0;
+        document.querySelectorAll('#table-part tbody tr:not(.row-total)').forEach(row => {
+            const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+            const price = parseFloat(row.querySelector('.price-input').value) || 0;
+            const grossTotal = qty * price;
+            const discValue = parseFloat(row.querySelector('.disc-input').value) || 0;
+            const discType = row.querySelector('.disc-type-select').value;
+            
+            let rowDiscount = discType === 'Rp' ? discValue : (discValue / 100) * grossTotal;
+            const netTotal = Math.max(0, grossTotal - rowDiscount);
+            
+            row.querySelector('.row-total-val').innerText = netTotal.toLocaleString('id-ID');
+            subtotalPart += netTotal;
+        });
+
+        const totalLabel = document.getElementById('subtotal-part-akhir');
+        if(totalLabel) totalLabel.innerText = subtotalPart.toLocaleString('id-ID');
+    }
+
+    function copyVal(btn) {
+        const input = btn.nextElementSibling;
+        if (input && input.value) {
+            navigator.clipboard.writeText(input.value).then(() => showToast(`📋 Disalin: ${input.value}`));
+        }
+    }
+
+    function addRowPart() {
+        const tbody = document.querySelector('#table-part tbody');
+        const totalRow = tbody.querySelector('.row-total');
+        const tr = document.createElement('tr');
+        
+        tr.innerHTML = `
+            <td style="text-align:center;"><input type="number" class="tbl-input qty-input" value="1" oninput="calculateAllTable()"></td>
+            <td>
+                <div class="currency-box">
+                    <button class="btn-copy-tbl" onclick="copyVal(this)" title="Salin">📋</button>
+                    <input type="number" class="tbl-input price-input" placeholder="0" oninput="calculateAllTable()">
+                </div>
+            </td>
+            <td>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <div class="input-with-copy">
+                        <button class="btn-copy-tbl" onclick="copyVal(this)" title="Salin">📋</button>
+                        <input type="text" class="tbl-input item-name" placeholder="Nama Part..." style="font-weight:bold;">
+                    </div>
+                    <input type="text" class="tbl-input item-part-no" placeholder="Part No..." style="font-size:8.5pt; color:#555;">
+                </div>
+            </td>
+            <td>
+                <div class="currency-box" style="justify-content: flex-end;">
+                    <input type="number" class="tbl-input disc-input" value="0" oninput="calculateAllTable()">
+                    <select class="disc-type-select" onchange="calculateAllTable()">
+                        <option value="%">%</option>
+                        <option value="Rp">Rp</option>
+                    </select>
+                </div>
+            </td>
+            <td>
+                <div class="currency-box"><span>Rp</span><span class="row-total-val">0</span></div>
+            </td>
+            <td style="text-align:center;" class="btn-remove"><button class="btn-remove" onclick="this.closest('tr').remove(); calculateAllTable();">X</button></td>
+        `;
+        
+        if (totalRow) tbody.insertBefore(tr, totalRow);
+        else tbody.appendChild(tr);
+        
+        ensureTotalRow();
+    }
+
+    function ensureTotalRow() {
+        const tbody = document.querySelector('#table-part tbody');
+        let totalRow = tbody.querySelector('.row-total');
+        if (!totalRow) {
+            totalRow = document.createElement('tr');
+            totalRow.className = 'row-total';
+            totalRow.innerHTML = `
+                <td colspan="4" class="row-total-label">JUMLAH PART</td>
+                <td colspan="2" class="row-total-value">
+                    <div style="display:flex; gap:4px;"><span>Rp</span><span id="subtotal-part-akhir">0</span></div>
+                </td>
+            `;
+            tbody.appendChild(totalRow);
+        } else {
+            tbody.appendChild(totalRow); 
+        }
+    }
+
+    // ==========================================
+    // TOMBOL SIMPAN DRAFT
+    // ==========================================
+    function simpanDraftPartman() {
+        if (!currentActiveJobKey) return;
+        const jobInfo = allMergedJobs[currentActiveJobKey];
+        if (!jobInfo) return;
+
+        if (jobInfo.dbSource === 'siap') {
+            return alert("Data ini sudah terkirim ke SA. Gunakan tombol 'Update / Kirim Ulang ke SA' jika ada perubahan.");
+        }
+        
+        let finalItems = [];
+        document.querySelectorAll('#table-part tbody tr:not(.row-total)').forEach(row => {
+            const name = row.querySelector('.item-name').value.trim().toUpperCase();
+            if (name !== '') {
+                finalItems.push({
+                    qty: row.querySelector('.qty-input').value || 1,
+                    price: row.querySelector('.price-input').value || 0,
+                    partName: name,
+                    partNo: row.querySelector('.item-part-no').value.trim().toUpperCase(),
+                    disc: row.querySelector('.disc-input').value || 0,
+                    discType: row.querySelector('.disc-type-select').value
+                });
+            }
+        });
+
+        if (window.db && window.dbRef && window.dbUpdate) {
+            const draftRef = window.dbRef(window.db, 'antrian_temuan/' + currentActiveJobKey);
+            window.dbUpdate(draftRef, {
+                parts: finalItems,
+                status: "ON_PROCESS_PART"
+            }).then(() => {
+                showToast("💾 Draft Part berhasil disimpan sementara!");
+                document.getElementById('pm-workspace').style.display = 'none';
+                currentActiveJobKey = "";
+                document.querySelectorAll('.pm-list-item').forEach(el => el.classList.remove('selected'));
+            });
+        }
+    }
+
+    // ==========================================
+    // PENGIRIMAN KE SERVICE ADVISOR
+    // ==========================================
+    function kirimKeServiceAdvisor() {
+        if (!currentActiveJobKey) return;
+        const jobInfo = allMergedJobs[currentActiveJobKey];
+        if (!jobInfo) return;
+        
+        let finalItems = [];
+        document.querySelectorAll('#table-part tbody tr:not(.row-total)').forEach(row => {
+            const name = row.querySelector('.item-name').value.trim().toUpperCase();
+            if (name !== '') {
+                finalItems.push({
+                    qty: row.querySelector('.qty-input').value || 1,
+                    price: row.querySelector('.price-input').value || 0,
+                    partName: name,
+                    partNo: row.querySelector('.item-part-no').value.trim().toUpperCase(),
+                    disc: row.querySelector('.disc-input').value || 0,
+                    discType: row.querySelector('.disc-type-select').value
+                });
+            }
+        });
+
+        if (finalItems.length === 0) {
+            return alert("Isi minimal 1 baris part beserta harganya!");
+        }
+
+        if (window.db && window.dbRef && window.dbSet && window.dbRemove) {
+            const readyRef = window.dbRef(window.db, 'saran_siap_sa/' + currentActiveJobKey);
+            
+            // Set status default kosong untuk modal SA
+            window.dbSet(readyRef, {
+                nopol: jobInfo.nopol,
+                teknisi: jobInfo.teknisi,
+                namaSA: jobInfo.namaSA,
+                saranText: jobInfo.saranText,
+                timestamp: jobInfo.timestamp || new Date().getTime(),
+                timestampStr: jobInfo.timestampStr || new Date().toLocaleString('id-ID'),
+                parts: finalItems,
+                status: "READY_FOR_SA",
+                status_tindakan_sa: "",
+                status_jasa_sa: ""
+            }).then(() => {
+                if (jobInfo.dbSource === 'antrian') {
+                    const oldRef = window.dbRef(window.db, 'antrian_temuan/' + currentActiveJobKey);
+                    window.dbRemove(oldRef);
+                }
+                
+                showToast("✅ Data Harga Part Berhasil Dikirim ke Service Advisor!");
+                document.getElementById('pm-workspace').style.display = 'none';
+                currentActiveJobKey = "";
+            });
+        }
+    }
+
+    // ==========================================
+    // MODUL OCR CROPPER
+    // ==========================================
+    let ocrImageFile = null, currentOcrMode = null, isDrawing = false, startX = 0, startY = 0;
+    let ocrRects = {
+        'partNo': { left: 0, top: 0, width: 0, height: 0, active: false },
+        'partName': { left: 0, top: 0, width: 0, height: 0, active: false },
+        'price': { left: 0, top: 0, width: 0, height: 0, active: false }
+    };
+
+    function handleImageUpload(event) {
+        let file = event.target.files[0];
+        if (file) openOcrModal(file);
+        event.target.value = ''; 
+    }
+
+    function openOcrModal(file) {
+        ocrImageFile = file;
+        const imgUrl = URL.createObjectURL(file);
+        document.getElementById('ocrImage').src = imgUrl;
+        document.getElementById('ocrModal').style.display = 'flex';
+        resetCropBoxes();
+        showToast("🖼️ Gambar berhasil dimuat. Silakan kotakkan area!");
+    }
+
+    function closeOcrModal() {
+        document.getElementById('ocrModal').style.display = 'none';
+        currentOcrMode = null;
+    }
+
+    function setOcrMode(mode, btnElement) {
+        currentOcrMode = mode;
+        document.querySelectorAll('.ocr-tool-btn').forEach(b => b.classList.remove('active-mode'));
+        btnElement.classList.add('active-mode');
+    }
+
+    function resetCropBoxes() {
+        ['partNo', 'partName', 'price'].forEach(m => {
+            ocrRects[m].active = false;
+            let box = document.getElementById(`box-${m}`);
+            if (box) box.style.display = 'none';
+        });
+        currentOcrMode = null;
+        document.querySelectorAll('.ocr-tool-btn').forEach(b => b.classList.remove('active-mode'));
+    }
+
+    const cropContainer = document.getElementById('cropContainer');
+    if (cropContainer) {
+        cropContainer.addEventListener('mousedown', (e) => {
+            if (!currentOcrMode) return alert("Pilih tombol mode area di atas terlebih dahulu!");
+            isDrawing = true;
+            const rect = cropContainer.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            ocrRects[currentOcrMode].left = startX;
+            ocrRects[currentOcrMode].top = startY;
+            ocrRects[currentOcrMode].width = 0;
+            ocrRects[currentOcrMode].height = 0;
+            ocrRects[currentOcrMode].active = true;
+            renderBoxes();
+        });
+
+        cropContainer.addEventListener('mousemove', (e) => {
+            if (!isDrawing || !currentOcrMode) return;
+            const rect = cropContainer.getBoundingClientRect();
+            let currentX = e.clientX - rect.left;
+            let currentY = e.clientY - rect.top;
+            ocrRects[currentOcrMode].left = Math.min(startX, currentX);
+            ocrRects[currentOcrMode].top = Math.min(startY, currentY);
+            ocrRects[currentOcrMode].width = Math.abs(currentX - startX);
+            ocrRects[currentOcrMode].height = Math.abs(currentY - startY);
+            renderBoxes();
+        });
+
+        cropContainer.addEventListener('mouseup', () => { isDrawing = false; });
+        cropContainer.addEventListener('mouseleave', () => { isDrawing = false; });
+    }
+
+    function renderBoxes() {
+        ['partNo', 'partName', 'price'].forEach(m => {
+            let box = document.getElementById(`box-${m}`);
+            let d = ocrRects[m];
+            if (box) {
+                if (d.active && d.width > 5) {
+                    box.style.display = 'block';
+                    box.style.left = d.left + 'px';
+                    box.style.top = d.top + 'px';
+                    box.style.width = d.width + 'px';
+                    box.style.height = d.height + 'px';
+                } else {
+                    box.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    function preprocessImageForOCR(imgElement, rectConfig) {
+        const scale = 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = rectConfig.width * scale;
+        canvas.height = rectConfig.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(imgElement, rectConfig.left, rectConfig.top, rectConfig.width, rectConfig.height, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/png");
+    }
+
+    async function executeOcrExtraction() {
+        if (!ocrRects.partNo.active && !ocrRects.partName.active && !ocrRects.price.active) {
+            return alert("Gambarkan minimal 1 kotak area terlebih dahulu!");
+        }
+
+        const img = document.getElementById('ocrImage');
+        const scaleX = img.naturalWidth / img.width;
+        const scaleY = img.naturalHeight / img.height;
+
+        showToast("⏳ AI sedang membaca tulisan... Mohon tunggu!");
+
+        let activeConfigs = [];
+        ['partNo', 'partName', 'price'].forEach(m => {
+            if (ocrRects[m].active) {
+                activeConfigs.push({
+                    mode: m,
+                    rect: {
+                        left: Math.max(0, ocrRects[m].left * scaleX),
+                        top: Math.max(0, ocrRects[m].top * scaleY),
+                        width: ocrRects[m].width * scaleX,
+                        height: ocrRects[m].height * scaleY
+                    }
+                });
+            }
+        });
+
+        let extractedData = { partNo: [], partName: [], price: [] };
+
+        try {
+            const worker = await Tesseract.createWorker('eng');
+            
+            for (let config of activeConfigs) {
+                let processedImageUrl = preprocessImageForOCR(img, config.rect);
+                let params = { tessedit_pageseg_mode: '6' };
+
+                if (config.mode === 'price') params.tessedit_char_whitelist = '0123456789., ';
+                else if (config.mode === 'partNo') params.tessedit_char_whitelist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-';
+                else params.tessedit_char_whitelist = '';
+                
+                await worker.setParameters(params);
+
+                const { data } = await worker.recognize(processedImageUrl);
+                let lines = data.text.split(/\r?\n/).filter(l => l.trim() !== '');
+
+                if (config.mode === 'price') {
+                    lines = lines.map(l => {
+                        let p = l.replace(/[^0-9]/g, '');
+                        if (p.length > 2) p = p.substring(0, p.length - 2); 
+                        return p;
+                    });
+                } else if (config.mode === 'partNo') {
+                    lines = lines.map(l => l.replace(/[^A-Za-z0-9-]/g, '').trim());
+                } else {
+                    lines = lines.map(l => l.trim());
+                }
+                extractedData[config.mode] = lines;
+            }
+            await worker.terminate();
+
+            let maxRows = Math.max(extractedData.partNo.length, extractedData.partName.length, extractedData.price.length);
+            
+            if (maxRows === 0) {
+                return showToast("❌ Tidak ada teks yang ditemukan di area kotak tersebut.");
+            }
+
+            closeOcrModal();
+            showToast(`✅ Berhasil menyalin ${maxRows} baris komponen ke tabel.`);
+
+            const tbody = document.querySelector('#table-part tbody');
+            let rows = Array.from(tbody.querySelectorAll('tr:not(.row-total)'));
+            let startIndex = rows.length; 
+            for(let i=0; i<rows.length; i++){
+                if(!rows[i].querySelector('.item-name').value) { startIndex = i; break; }
+            }
+
+            for (let i = 0; i < maxRows; i++) {
+                let rIdx = startIndex + i;
+                if (rIdx >= rows.length) { 
+                    addRowPart(); 
+                    rows = Array.from(tbody.querySelectorAll('tr:not(.row-total)')); 
+                }
+
+                let pInp = rows[rIdx].querySelector('.price-input');
+                let nInp = rows[rIdx].querySelector('.item-name');
+                let noInp = rows[rIdx].querySelector('.item-part-no');
+
+                if (pInp && extractedData.price[i]) pInp.value = extractedData.price[i];
+                if (nInp && extractedData.partName[i]) nInp.value = extractedData.partName[i];
+                if (noInp && extractedData.partNo[i]) noInp.value = extractedData.partNo[i];
+            }
+
+            calculateAllTable();
+
+        } catch (error) {
+            console.error(error);
+            showToast("❌ Gagal membaca gambar OCR. Pastikan internet lancar!");
+        }
+    }
+
+    window.onload = function() {
+        initListeners();
+    };
+</script>
+</body>
+</html>
