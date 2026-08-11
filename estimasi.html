@@ -555,6 +555,18 @@
         @media print {
             .main-wrapper { display: block; }
             .sidebar-left { display: none !important; }
+            
+            /* Menyembunyikan elemen UI agar cetakan bersih */
+            .hide-on-print { display: none !important; }
+            body { background: #fff; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; }
+            
+            /* Ini baris krusial yang menyembunyikan panel database, riwayat, dan tombol */
+            .action-panel, .storage-panel, .master-panel, .btn, .btn-remove, .btn-copy, .scroll-top-btn, .top-bar-nav { display: none !important; }
+            
+            /* Merapikan tampilan input agar garis bawah putus-putus hilang saat dicetak */
+            input[type="text"], input[type="number"], select { border-bottom: none !important; }
+            .info-input { border-bottom: none !important; }
         }
     </style>
 </head>
@@ -795,9 +807,9 @@
         </table>
 
         <div class="table-title" id="section-tabel-lain">
-            <span></span>
-            <button class="btn btn-add" onclick="addRow('table-lain')">+ Tambah Kolom</button>
-        </div>
+    <span></span>
+    <button class="btn btn-add" onclick="addRow('table-lain')">+ Tambah Kolom</button>
+</div>
         <table id="table-lain">
             <thead>
                 <tr>
@@ -2040,62 +2052,62 @@
     }
 
     function downloadPDF() {
-        const jasaRows = document.querySelectorAll('#table-jasa tbody tr:not(.row-total):not(.row-discount)');
-        const tableJasa = document.getElementById('table-jasa');
-        const titleJasa = document.getElementById('section-tabel-utama');
-        
-        let isJasaEmpty = true;
-        jasaRows.forEach(r => {
-            const nameVal = r.querySelector('.item-name');
-            if (nameVal && nameVal.value.trim() !== "") isJasaEmpty = false;
-        });
+    const jasaRows = document.querySelectorAll('#table-jasa tbody tr:not(.row-total):not(.row-discount)');
+    const tableJasa = document.getElementById('table-jasa');
+    const titleJasa = document.getElementById('section-tabel-utama');
+    
+    let isJasaEmpty = true;
+    jasaRows.forEach(r => {
+        const nameVal = r.querySelector('.item-name');
+        if (nameVal && nameVal.value.trim() !== "") isJasaEmpty = false;
+    });
 
-        if (isJasaEmpty) {
-            if (tableJasa) tableJasa.classList.add('d-none-print');
-            if (titleJasa) titleJasa.classList.add('d-none-print');
-        } else {
-            if (tableJasa) tableJasa.classList.remove('d-none-print');
-            if (titleJasa) titleJasa.classList.remove('d-none-print');
-        }
-
-        const lainRows = document.querySelectorAll('#table-lain tbody tr:not(.row-total):not(.row-discount)');
-        const tableLain = document.getElementById('table-lain');
-        const titleLain = document.getElementById('section-tabel-lain');
-        
-        let isLainEmpty = true;
-        lainRows.forEach(r => {
-            const selectVal = r.querySelector('.item-select');
-            const priceVal = r.querySelector('.price-input');
-            if ((selectVal && selectVal.value.trim() !== "") || (priceVal && parseFloat(priceVal.value) > 0)) {
-                isLainEmpty = false;
-            }
-        });
-
-        if (isLainEmpty) {
-            if (tableLain) tableLain.classList.add('d-none-print');
-            if (titleLain) titleLain.classList.add('d-none-print');
-        } else {
-            if (tableLain) tableLain.classList.remove('d-none-print');
-            if (titleLain) titleLain.classList.remove('d-none-print');
-        }
-
-        const partRows = document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)');
-        const tablePart = document.getElementById('table-part');
-        
-        let isPartEmpty = true;
-        partRows.forEach(r => {
-            const nameVal = r.querySelector('.item-name');
-            if (nameVal && nameVal.value.trim() !== "") isPartEmpty = false;
-        });
-
-        if (isPartEmpty) {
-            if (tablePart) tablePart.classList.add('d-none-print');
-        } else {
-            if (tablePart) tablePart.classList.remove('d-none-print');
-        }
-
-        window.print();
+    if (isJasaEmpty) {
+        if (tableJasa) tableJasa.classList.add('d-none-print');
+        if (titleJasa) titleJasa.classList.add('d-none-print');
+    } else {
+        if (tableJasa) tableJasa.classList.remove('d-none-print');
+        if (titleJasa) titleJasa.classList.remove('d-none-print');
     }
+
+    const lainRows = document.querySelectorAll('#table-lain tbody tr:not(.row-total):not(.row-discount)');
+    const tableLain = document.getElementById('table-lain');
+    const titleLain = document.getElementById('section-tabel-lain');
+    
+    let isLainEmpty = true;
+    lainRows.forEach(r => {
+        const selectVal = r.querySelector('.item-select');
+        const priceVal = r.querySelector('.price-input');
+        if ((selectVal && selectVal.value.trim() !== "") || (priceVal && parseFloat(priceVal.value) > 0)) {
+            isLainEmpty = false;
+        }
+    });
+
+    if (isLainEmpty) {
+        if (tableLain) tableLain.classList.add('d-none-print');
+        if (titleLain) titleLain.classList.add('d-none-print');
+    } else {
+        if (tableLain) tableLain.classList.remove('d-none-print');
+        if (titleLain) titleLain.classList.remove('d-none-print');
+    }
+
+    const partRows = document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)');
+    const tablePart = document.getElementById('table-part');
+    
+    let isPartEmpty = true;
+    partRows.forEach(r => {
+        const nameVal = r.querySelector('.item-name');
+        if (nameVal && nameVal.value.trim() !== "") isPartEmpty = false;
+    });
+
+    if (isPartEmpty) {
+        if (tablePart) tablePart.classList.add('d-none-print');
+    } else {
+        if (tablePart) tablePart.classList.remove('d-none-print');
+    }
+
+    window.print();
+}
 
     // ==========================================
     // OCR HANDLERS 
