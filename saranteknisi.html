@@ -474,7 +474,21 @@
         const todayStr = new Date().toDateString();
         let count = 0;
 
-        const sortedKeys = Object.keys(allMergedJobs).sort((a,b) => (allMergedJobs[b].timestamp || 0) - (allMergedJobs[a].timestamp || 0));
+        const sortedKeys = Object.keys(allMergedJobs).sort((a, b) => {
+            const jobA = allMergedJobs[a];
+            const jobB = allMergedJobs[b];
+            
+            // Tentukan Bobot Prioritas (1 paling atas, 3 paling bawah)
+            let weightA = jobA.dbSource === 'siap' ? 3 : (jobA.status === 'ON_PROCESS_PART' ? 2 : 1);
+            let weightB = jobB.dbSource === 'siap' ? 3 : (jobB.status === 'ON_PROCESS_PART' ? 2 : 1);
+            
+            // Urutkan berdasarkan kelompok status terlebih dahulu
+            if (weightA !== weightB) {
+                return weightA - weightB;
+            }
+            // Jika statusnya sama, baru urutkan dari yang terbaru (jam/tanggal)
+            return (jobB.timestamp || 0) - (jobA.timestamp || 0);
+        });
 
         sortedKeys.forEach(key => {
             const job = allMergedJobs[key];
@@ -519,7 +533,18 @@
         const todayStr = new Date().toDateString();
         let hasData = false;
 
-        const sortedKeys = Object.keys(allMergedJobs).sort((a,b) => (allMergedJobs[b].timestamp || 0) - (allMergedJobs[a].timestamp || 0));
+        const sortedKeys = Object.keys(allMergedJobs).sort((a, b) => {
+            const jobA = allMergedJobs[a];
+            const jobB = allMergedJobs[b];
+            
+            let weightA = jobA.dbSource === 'siap' ? 3 : (jobA.status === 'ON_PROCESS_PART' ? 2 : 1);
+            let weightB = jobB.dbSource === 'siap' ? 3 : (jobB.status === 'ON_PROCESS_PART' ? 2 : 1);
+            
+            if (weightA !== weightB) {
+                return weightA - weightB;
+            }
+            return (jobB.timestamp || 0) - (jobA.timestamp || 0);
+        });
 
         sortedKeys.forEach(key => {
             const job = allMergedJobs[key];
