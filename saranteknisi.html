@@ -174,10 +174,10 @@
                 <td class="tech-input" style="background: #e3f2fd;"></td>
             </tr>
             <tr>
-                <td class="tech-label">NO POLISI</td>
-                <td class="tech-colon">:</td>
-                <td class="tech-input"><input type="text" id="tek-nopol" placeholder="..."></td>
-            </tr>
+    		<td class="tech-label">NO POLISI</td>
+    		<td class="tech-colon">:</td>
+    		<td class="tech-input"><input type="text" id="tek-nopol" placeholder="..." oninput="this.value = this.value.replace(/\s+/g, '').toUpperCase()"></td>
+	    </tr>
             <tr>
                 <td class="tech-label">NAMA TEKNISI</td>
                 <td class="tech-colon">:</td>
@@ -415,7 +415,7 @@
     // LOGIKA TEKNISI
     // ==========================================
     function kirimSaranTeknisi() {
-        const nopol = document.getElementById('tek-nopol').value.trim().toUpperCase();
+        const nopol = document.getElementById('tek-nopol').value.replace(/\s+/g, '').toUpperCase();
         const nama = document.getElementById('tek-nama').value.trim().toUpperCase();
         const namaSA = document.getElementById('tek-sa').value;
         const saranText = document.getElementById('tek-saran').value.trim();
