@@ -674,8 +674,8 @@
     <!-- SIDEBAR KIRI: ANTRIAN SARAN TEKNISI -->
     <div class="sidebar-left hide-on-print">
         <h3 style="margin: 0 0 10px 0; font-size: 11pt; color: #d32f2f; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-            📥 Antrian Saran Teknisi (Hari Ini)
-        </h3>
+    📥 Antrian Saran Teknisi (Pending / Belum Dibuat)
+</h3>
         <table class="sa-queue-table" id="table-sa-queue">
             <thead>
                 <tr>
@@ -1752,73 +1752,82 @@
     }
 
     function loadSaranTeknisiList() {
-        const tbody = document.querySelector('#table-sa-queue tbody');
-        
-        if (window.db && window.dbRef && window.dbOnValue) {
-            const saranRef = window.dbRef(window.db, 'saran_siap_sa');
-            window.dbOnValue(saranRef, (snapshot) => {
-                const data = snapshot.val();
-                window.globalSaranData = data; 
-                
-                const todayStr = new Date().toDateString(); 
-                let saCounts = {};
+    const tbody = document.querySelector('#table-sa-queue tbody');
+    
+    if (window.db && window.dbRef && window.dbOnValue) {
+        const saranRef = window.dbRef(window.db, 'saran_siap_sa');
+        window.dbOnValue(saranRef, (snapshot) => {
+            const data = snapshot.val();
+            window.globalSaranData = data; 
+            
+            let saCounts = {};
 
-                if (data) {
-                    Object.keys(data).forEach(key => {
-                        const saran = data[key];
-                        if (new Date(saran.timestamp).toDateString() === todayStr) {
-                            const saName = saran.namaSA || "TIDAK ADA SA";
-                            saCounts[saName] = (saCounts[saName] || 0) + 1;
-                        }
-                    });
-                }
-                
-                tbody.innerHTML = '';
-                if (Object.keys(saCounts).length > 0) {
-                    Object.keys(saCounts).forEach(sa => {
-                        const tr = document.createElement('tr');
-                        tr.onclick = () => openQueueModal(sa);
-                        tr.innerHTML = `<td><strong>${sa}</strong></td><td>${saCounts[sa]}</td>`;
-                        tbody.appendChild(tr);
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="2" style="color:#999;">Kosong</td></tr>';
-                }
-            });
-        }
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    const saran = data[key];
+                    // LOGIKA BARU: Hitung semua saran yang status jasanya BUKAN "SUDAH DIBUAT"
+                    if (saran.status_jasa_sa !== "SUDAH DIBUAT") {
+                        const saName = saran.namaSA || "TIDAK ADA SA";
+                        saCounts[saName] = (saCounts[saName] || 0) + 1;
+                    }
+                });
+            }
+            
+            tbody.innerHTML = '';
+            if (Object.keys(saCounts).length > 0) {
+                Object.keys(saCounts).forEach(sa => {
+                    const tr = document.createElement('tr');
+                    tr.onclick = () => openQueueModal(sa);
+                    tr.innerHTML = `<td><strong>${sa}</strong></td><td>${saCounts[sa]}</td>`;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="2" style="color:#999;">Semua Antrean Selesai</td></tr>';
+            }
+        });
     }
+}
 
     function openQueueModal(saName) {
-        document.getElementById('modal-sa-name').innerText = saName;
-        const tbody = document.querySelector('#modal-queue-list tbody');
-        tbody.innerHTML = '';
-        
-        const data = window.globalSaranData;
-        const todayStr = new Date().toDateString();
-        let no = 1;
+    document.getElementById('modal-sa-name').innerText = saName;
+    const tbody = document.querySelector('#modal-queue-list tbody');
+    tbody.innerHTML = '';
+    
+    const data = window.globalSaranData;
+    let no = 1;
 
-        if (data) {
-            Object.keys(data).forEach(key => {
-                const saran = data[key];
-                if (new Date(saran.timestamp).toDateString() === todayStr && (saran.namaSA || "TIDAK ADA SA") === saName) {
-                    
-                    const tindakanSA = saran.status_tindakan_sa === "SUDAH DI KLIK SA" ? `<span style="color:#4caf50; font-weight:bold;">SUDAH DI KLIK SA</span>` : `<span style="color:#ff9800; font-weight:bold;">BELUM DITARIK</span>`;
-                    const statusJasa = saran.status_jasa_sa === "SUDAH DIBUAT" ? `<span style="color:#4caf50; font-weight:bold;">SUDAH DIBUAT (SIAP KIRIM CUSTOMER)</span>` : `-`;
-                    
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="text-align:center;">${no++}</td>
-                        <td><strong>${saran.nopol}</strong></td>
-                        <td>${tindakanSA}</td>
-                        <td>${statusJasa}</td>
-                        <td style="text-align:center;"><button class="btn" style="background:#673ab7; color:#fff;" onclick="loadSaranToForm('${key}')">Tarik Form</button></td>
-                    `;
-                    tbody.appendChild(tr);
-                }
-            });
-        }
-        document.getElementById('queueModal').style.display = 'flex';
+    if (data) {
+        Object.keys(data).forEach(key => {
+            const saran = data[key];
+            
+            // LOGIKA BARU: Filter berdasarkan SA dan yang BELUM DIBUAT saja
+            if (saran.status_jasa_sa !== "SUDAH DIBUAT" && (saran.namaSA || "TIDAK ADA SA") === saName) {
+                
+                const tindakanSA = saran.status_tindakan_sa === "SUDAH DI KLIK SA" ? `<span style="color:#4caf50; font-weight:bold;">SUDAH DI KLIK SA</span>` : `<span style="color:#ff9800; font-weight:bold;">BELUM DITARIK</span>`;
+                
+                // Karena modal ini sekarang khusus yang belum dibuat, kita fix teks statusnya
+                const statusJasa = `<span style="color:#d32f2f; font-weight:bold;">BELUM DIBUAT</span>`;
+                
+                // Tambahan: Ambil format tanggal untuk ditampilkan agar SA tahu ini antrean tanggal berapa
+                const tglAntrean = new Date(saran.timestamp).toLocaleDateString('id-ID');
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align:center;">${no++}</td>
+                    <td>
+                        <strong>${saran.nopol}</strong><br>
+                        <small style="color:#555;">Tgl: ${tglAntrean}</small>
+                    </td>
+                    <td>${tindakanSA}</td>
+                    <td>${statusJasa}</td>
+                    <td style="text-align:center;"><button class="btn" style="background:#673ab7; color:#fff;" onclick="loadSaranToForm('${key}')">Tarik Form</button></td>
+                `;
+                tbody.appendChild(tr);
+            }
+        });
     }
+    document.getElementById('queueModal').style.display = 'flex';
+}
 
     function loadSaranToForm(cleanKey) {
         const saran = window.globalSaranData[cleanKey];
