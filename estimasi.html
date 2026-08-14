@@ -1611,17 +1611,18 @@
             const cleanKey = nopol.replace(/[\.\#\$\[\]]/g, "-") + "_" + todayDateKey;
             
             if (currentSaranKey !== "") {
-                const cloudRef = window.dbRef(window.db, 'estimasi_saran_records/' + cleanKey);
-                window.dbSet(cloudRef, estimationData).then(() => {
-                    if (totalJasaOpl > 0) {
-                        window.dbUpdate(window.dbRef(window.db, 'saran_siap_sa/' + currentSaranKey), { 
-                            status_jasa_sa: "SUDAH DIBUAT" 
-                        });
-                    }
-                    if (!isSilent) showToast(`✅ Estimasi Khusus Saran (${nopol}) Tersimpan!`);
-                    currentSaranKey = ""; 
+            const cloudRef = window.dbRef(window.db, 'estimasi_saran_records/' + cleanKey);
+            window.dbSet(cloudRef, estimationData).then(() => {
+                
+                // Hapus syarat if (totalJasaOpl > 0), langsung update statusnya
+                window.dbUpdate(window.dbRef(window.db, 'saran_siap_sa/' + currentSaranKey), {
+                    status_jasa_sa: "SUDAH DIBUAT"
                 });
-            } else {
+                
+                if (!isSilent) showToast(`✅ Estimasi Khusus Saran (${nopol}) Tersimpan!`);
+                currentSaranKey = "";
+            });
+        } else {
                 const cloudRef = window.dbRef(window.db, 'estimasi_records_v2/' + cleanKey);
                 window.dbSet(cloudRef, estimationData).then(() => {
                     if (!isSilent) showToast(`✅ Estimasi Reguler (${nopol}) Tersimpan!`);
