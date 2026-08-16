@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WA INVITER PRO - DAYA TOYOTA (UPDATE V2)</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Firebase (sama dengan sistem lain: penerimaan-service) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHLuzqXq_T6BGACGbDdheC7w8ZEQcsqCM",
+            authDomain: "penerimaan-service.firebaseapp.com",
+            databaseURL: "https://penerimaan-service-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "penerimaan-service",
+            storageBucket: "penerimaan-service.firebasestorage.app",
+            messagingSenderId: "238520546109",
+            appId: "1:238520546109:web:1e1b6c31288fd431290b54"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        window.wadb = db; window.wadbRef = ref; window.wadbSet = set; window.wadbOnValue = onValue;
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+        /* IMPORT FONT SAMA DENGAN PORTAL */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f3f4f6;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(353,100%,88%,1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(210,100%,85%,1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(39,100%,85%,1) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(158,100%,88%,1) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #2d3748;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* HEADER GLASS SEPERTI PORTAL */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 15px;
+            padding: 20px 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.8);
+            margin-bottom: 25px;
+            color: #2d3748;
+        }
+        .header h1 { font-family: 'Poppins', sans-serif; color: #e53e3e; margin: 0; font-size: 22px; font-weight: 700; }
+
+        button {
+            padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer;
+            font-weight: 600; font-size: 12px; margin-left: 10px; color: #fff;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .btn-export { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #2d3748; }
+        .btn-upload { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .btn-reset { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+        }
+        .card h3 { font-size: 14px; font-weight: 700; color: #2d3748; margin-top: 0; }
+        .config-grid { margin-bottom: 30px; }
+
+        .tpl-btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .tpl-tab {
+            padding: 8px 14px; border-radius: 12px;
+            border: 2px solid #cbd5e1; font-size: 11px; font-weight: 700;
+            cursor: pointer; transition: 0.3s; color: #4a5568; background: #fff;
+        }
+        .tpl-tab.active { background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); color: white; border: none; }
+
+        textarea {
+            width: 100%; height: 160px; border-radius: 12px;
+            border: 2px solid #cbd5e1; padding: 12px; resize: none;
+            font-family: inherit; box-sizing: border-box; font-size: 13px;
+        }
+        textarea:focus { outline: none; border-color: #63b3ed; }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.8);
+            margin-bottom: 50px;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 1300px; }
+        th {
+            background: #f8fafc; color: #4a5568; padding: 12px 15px;
+            font-size: 11px; text-transform: uppercase; font-weight: 700;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td { padding: 12px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #2d3748; }
+        tr.sent-msg { background: #dcfce7; }
+        tr.sent-call { background: #dbeafe; }
+        tr.booking-row { background: #dcfce7; }
+        tr.reject-row { background: #fee2e2; }
+
+        .action-btn {
+            display: block; text-align: center; padding: 8px; border-radius: 8px;
+            color: white; font-size: 10px; font-weight: 800; text-decoration: none; cursor: pointer;
+        }
+        .btn-wa { background: linear-gradient(45deg, #25d366, #128c7e); }
+        .btn-call { background: linear-gradient(45deg, #00d2ff, #3a7bd5); }
+
+        .status { padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; background: #e2e8f0; display: inline-block; }
+        .status.sent { background: #25d366; color: white; }
+
+        input[type="text"], input[type="time"], select {
+            padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1;
+            width: 100%; box-sizing: border-box; font-family: 'Poppins', sans-serif; font-size: 13px;
+        }
+
+        /* CHIP VARIABLE BISA DIKLIK */
+        .var-chip {
+            display: inline-block; padding: 4px 12px; margin: 6px 6px 0 0;
+            border-radius: 8px; background: #ebf8ff; border: 1px solid #90caf9;
+            color: #2b6cb0; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s;
+        }
+        .var-chip:hover { background: #bee3f8; transform: translateY(-1px); }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="header">
+<h1>⚡ WA INVITER PRO <span style="font-size: 14px; color: #4a5568;">v2.0</span></h1>
+<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+<button class="btn-upload" onclick="fileIn.click()" style="margin-left:0;">📊 Upload Excel</button>
+<button class="btn-export" onclick="downloadTemplate()" style="margin-left:0;">⬇️ Download Template</button>
+<button class="btn-export" onclick="exportData()" style="margin-left:0;">📑 Download Report</button>
+<button class="btn-reset" onclick="clearAll()" style="margin-left:0;">RESET</button>
+</div>
+</div>
+<input type="file" id="fileIn" accept=".xlsx,.xls,.csv" hidden>
+
+<div class="config-grid">
+<div class="card">
+<h3>🎯 TEMPLATE CHAT</h3>
+<div class="tpl-btn-group" id="tplGroup"></div>
+<input type="text" id="tplTitle" placeholder="Judul Template..." oninput="saveTpl()">
+<textarea id="tplEditor" oninput="saveTpl()"></textarea>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+<small style="color:#555;">💡 Klik variable untuk menyisipkan ke template:</small>
+<span id="tplSync" style="font-size:11px; font-weight:700; color:#128c7e;"></span>
+</div>
+<div>
+<span class="var-chip" onclick="insertVar('{{nama}}')">{{nama}}</span>
+<span class="var-chip" onclick="insertVar('{{tipe}}')">{{tipe}}</span>
+<span class="var-chip" onclick="insertVar('{{nopol}}')">{{nopol}}</span>
+<span class="var-chip" onclick="insertVar('{{jam}}')">{{jam}}</span>
+</div>
+<div style="display:flex; gap:8px; margin-top:10px;">
+<button class="btn-export" onclick="addTpl()" style="margin-left:0; flex:1;">➕ Tambah Template</button>
+<button class="btn-reset" onclick="deleteTpl()" style="flex:1;">🗑 Hapus Template</button>
+</div>
+</div>
+
+
+</div>
+
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th width="12%">Nama</th>
+<th width="10%">Nopol</th>
+<th width="10%">Tipe</th>
+<th width="10%">Jam Booking</th>
+<th width="10%">Telepon</th>
+<th width="7%">Call</th>
+<th width="7%">Message</th>
+<th width="8%">Status</th>
+<th width="10%">Booking?</th>
+<th width="16%">Keterangan</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+let activeTpl=0;
+let templates=[
+{title:"REMINDER STANDART",text:`Halo Sahabat Daya Toyota Cakung Bapak/ibu {{nama}}, 🙏🏻
+Bagaimana kabarnya? Semoga sehat selalu 😊
+
+Kami dari Bengkel Daya Toyota Cakung ingin menginfokan bahwa bulan Januari 2026 adalah jadwal servis berkala dan ganti oli mesin mobil Toyota {{tipe}} ({{nopol}}).
+
+Kapan ada waktu luang sahabat?
+
+Terimakasih 🙏🏻
+Reminder Servis Daya Toyota Cakung`},
+
+{title:"PROMO DISC JASA 25%",text:`Halo Sahabat Daya Toyota Cakung Bapak/ibu *{{nama}}*,
+
+Jadwal servis berkala dan ganti oli mesin mobil Toyota *{{tipe}}* ({{nopol}}) sudah tiba.
+
+✨ Promo Disc Jasa Servis 25% ✨
+Berlaku bulan ini untuk booking servis.
+
+Terimakasih
+*_Reminder Servis Daya Toyota Cakung_*`},
+
+{title:"PROMO DISC 55% DAYA PRIMA",text:`Halo Sahabat Daya Toyota Cakung Bapak/ibu *{{nama}}*,
+
+Promo spesial *Disc Jasa Servis 55%* untuk Toyota *{{tipe}}* ({{nopol}}).
+
+Booking sekarang ya sahabat 😊
+
+*_Reminder Servis Daya Toyota Cakung_*`},
+
+{title:"PROMO 25% + FREE OLI",text:`Halo Sahabat Daya Toyota Cakung Bapak/ibu *{{nama}}*,
+
+Promo spesial 🎉
+*Disc Jasa 25% + FREE 1L Oli TMO*
+Untuk Toyota *{{tipe}}* ({{nopol}}).
+
+*_Reminder Servis Daya Toyota Cakung_*`},
+
+{title:"REMINDER T-CARE",text:`Halo Sahabat Daya Toyota Cakung Bapak/ibu {{nama}},
+
+Mobil Toyota {{tipe}} ({{nopol}}) masih mendapatkan *Program T-Care Free Jasa & Part*.
+
+Sayang jika tidak dimanfaatkan 😊
+
+Reminder Servis Daya Toyota Cakung`},
+
+{title:"KONFIRMASI BOOKING H-1",text:`=== KONFIRMASI BOOKING SERVIS ===
+Halo Bapak/Ibu {{nama}},
+
+Besok terdapat jadwal booking servis Toyota *{{tipe}} {{nopol}}* di Jam *{{jam}}*
+
+Mohon konfirmasi ya pak/ibu 🙏`},
+
+{title:"KONFIRMASI BOOKING J-1",text:`=== KONFIRMASI BOOKING SERVIS ===
+Halo Bapak/Ibu {{nama}},
+
+Hari ini terdapat jadwal booking servis Toyota *{{tipe}} {{nopol}}* di Jam *{{jam}}*
+
+Mohon konfirmasi ya pak/ibu 🙏`}
+];
+
+let customers=[];
+
+window.onload=()=>{
+const d=localStorage.getItem("db");
+if(d)customers=JSON.parse(d);
+
+// Muat template: Firebase dulu (online), fallback ke localStorage
+if(window.wadb&&window.wadbRef&&window.wadbOnValue){
+window.wadbOnValue(window.wadbRef(window.wadb,'wa_pro_templates'),(snap)=>{
+const data=normalizeTemplates(snap.val());
+if(data&&data.length>0){
+templates=data;
+localStorage.setItem("tpls",JSON.stringify(templates));
+}else{
+const t=localStorage.getItem("tpls");
+if(t){try{templates=JSON.parse(t);}catch(e){}}
+saveTemplatesToFirebase(); // seed default ke Firebase
+}
+initTpl();
+render();
+},{onlyOnce:true},(err)=>{
+console.warn('Firebase template load error, pakai lokal:',err);
+const t=localStorage.getItem("tpls");
+if(t){try{templates=JSON.parse(t);}catch(e){}}
+initTpl();
+render();
+});
+}else{
+const t=localStorage.getItem("tpls");
+if(t){try{templates=JSON.parse(t);}catch(e){}}
+initTpl();
+render();
+}
+};
+
+function normalizeTemplates(data){
+if(!data)return null;
+if(Array.isArray(data))return data;
+return Object.values(data); // RTDB menyimpan array sebagai objek ber-index angka
+}
+
+function saveTemplatesToFirebase(){
+localStorage.setItem("tpls",JSON.stringify(templates));
+const sync=document.getElementById("tplSync");
+if(window.wadb&&window.wadbRef&&window.wadbSet){
+window.wadbSet(window.wadbRef(window.wadb,'wa_pro_templates'),templates)
+.then(()=>{if(sync)sync.textContent="☁️ Tersimpan di Firebase";})
+.catch(()=>{if(sync)sync.textContent="📱 Tersimpan lokal (offline)";});
+}else{
+if(sync)sync.textContent="📱 Tersimpan lokal";
+}
+}
+
+function initTpl(){
+if(!templates.length)templates=[{title:"TEMPLATE BARU",text:"Tulis template chat di sini..."}];
+tplGroup.innerHTML="";
+templates.forEach((t,i)=>{
+let s=document.createElement("span");
+s.className="tpl-tab "+(i===activeTpl?"active":"");
+s.innerText=t.title;
+s.onclick=()=>{activeTpl=i;initTpl()};
+tplGroup.appendChild(s);
+});
+tplEditor.value=templates[activeTpl].text;
+tplTitle.value=templates[activeTpl].title;
+}
+
+function saveTpl(){
+if(!templates.length)return;
+templates[activeTpl].text=tplEditor.value;
+if(tplTitle.value.trim())templates[activeTpl].title=tplTitle.value.trim();
+// Perbarui label tab tanpa reload penuh
+const tabs=tplGroup.children;
+if(tabs[activeTpl])tabs[activeTpl].innerText=templates[activeTpl].title;
+saveTemplatesToFirebase();
+}
+
+function insertVar(v){
+const ta=document.getElementById('tplEditor');
+const start=ta.selectionStart||0;
+const end=ta.selectionEnd||0;
+ta.value=ta.value.slice(0,start)+v+ta.value.slice(end);
+ta.focus();
+ta.selectionStart=ta.selectionEnd=start+v.length;
+saveTpl();
+}
+
+function addTpl(){
+templates.push({title:"TEMPLATE BARU",text:"Tulis template chat di sini..."});
+activeTpl=templates.length-1;
+saveTemplatesToFirebase();
+initTpl();
+}
+
+function deleteTpl(){
+if(templates.length<=1){
+Swal.fire({icon:'warning',title:'Tidak Bisa Dihapus',text:'Minimal harus ada 1 template.',confirmButtonColor:'#3085d6'});
+return;
+}
+Swal.fire({
+title:'Hapus Template?',
+html:'Template <b>"'+templates[activeTpl].title+'"</b> akan dihapus permanen.',
+icon:'warning',
+showCancelButton:true,
+confirmButtonColor:'#d33',
+cancelButtonColor:'#3085d6',
+confirmButtonText:'Ya, Hapus',
+cancelButtonText:'Batal'
+}).then(result=>{
+if(result.isConfirmed){
+templates.splice(activeTpl,1);
+if(activeTpl>=templates.length)activeTpl=templates.length-1;
+saveTemplatesToFirebase();
+initTpl();
+Swal.fire({icon:'success',title:'Template Dihapus',timer:1200,showConfirmButton:false});
+}
+});
+}
+
+fileIn.onchange=e=>{
+let f=e.target.files[0];
+let r=new FileReader();
+r.onload=ev=>{
+let wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+let raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+customers=raw.map(x=>({
+nama:x["Nama"]||x["Nama customer"]||"-",
+nopol:x["No Polisi"]||"-",
+tipe:x["Tipe"]||"-",
+jam:x["Jam"]||"08:00",
+telp:format(x["No Telepon"]||""),
+status:"PENDING",booking:"",ket:""
+}));
+saveDB();render();
+};
+r.readAsArrayBuffer(f);
+};
+
+function format(n){
+if(!n) return "";
+let s=n.toString().replace(/\D/g,'');
+if(s.startsWith('0'))s='62'+s.slice(1);
+if(s.startsWith('8'))s='62'+s;
+return s;
+}
+
+function render(){
+tbody.innerHTML="";
+customers.forEach((c,i)=>{
+let tr=document.createElement("tr");
+if(c.status==="MESSAGE")tr.classList.add("sent-msg");
+if(c.status==="CALL")tr.classList.add("sent-call");
+if(c.booking==="Booking")tr.classList.add("booking-row");
+if(c.booking==="Tidak")tr.classList.add("reject-row");
+
+tr.innerHTML=`
+<td>${c.nama}</td>
+<td>${c.nopol}</td>
+<td>${c.tipe}</td>
+<td><input type="time" value="${c.jam}" onchange="upd(${i},'jam',this.value)"></td>
+<td>${c.telp}</td>
+<td><a class="action-btn btn-call" onclick="wa(${i},'call')">CALL</a></td>
+<td><a class="action-btn btn-wa" onclick="wa(${i},'msg')">MESSAGE</a></td>
+<td><span class="status ${c.status!='PENDING'?'sent':''}">${c.status}</span></td>
+<td>
+<select onchange="upd(${i},'booking',this.value)">
+<option value="" ${c.booking===''?'selected':''}></option>
+<option value="Booking" ${c.booking==='Booking'?'selected':''}>Booking</option>
+<option value="Tidak" ${c.booking==='Tidak'?'selected':''}>Tidak</option>
+</select>
+</td>
+<td><input type="text" value="${c.ket}" oninput="upd(${i},'ket',this.value)"></td>`;
+tbody.appendChild(tr);
+});
+}
+
+function wa(i,m){
+let c=customers[i];
+if(m==="msg"){
+let t=templates[activeTpl].text
+.replaceAll("{{nama}}",c.nama)
+.replaceAll("{{tipe}}",c.tipe)
+.replaceAll("{{nopol}}",c.nopol)
+.replaceAll("{{jam}}",c.jam);
+window.open(`https://wa.me/${c.telp}?text=${encodeURIComponent(t)}`);
+c.status="MESSAGE";
+}else{
+window.open(`https://wa.me/${c.telp}`);
+c.status="CALL";
+}
+saveDB();render();
+}
+
+function upd(i,k,v){customers[i][k]=v;saveDB();render();}
+function saveDB(){localStorage.setItem("db",JSON.stringify(customers))}
+function clearAll(){
+Swal.fire({
+title:'Reset Semua Data?',
+text:'Semua data customer akan dihapus dari perangkat ini. Tindakan ini tidak dapat dibatalkan!',
+icon:'warning',
+showCancelButton:true,
+confirmButtonColor:'#d33',
+cancelButtonColor:'#3085d6',
+confirmButtonText:'Ya, Reset',
+cancelButtonText:'Batal'
+}).then(result=>{
+if(result.isConfirmed){localStorage.clear();location.reload();}
+});
+}
+function exportData(){
+let ws=XLSX.utils.json_to_sheet(customers);
+let wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,"REPORT");
+XLSX.writeFile(wb,"WA_DAYA_TOYOTA_REPORT.xlsx");
+}
+
+function downloadTemplate(){
+const wb=XLSX.utils.book_new();
+const ws=XLSX.utils.json_to_sheet([
+{
+"Nama":"Budi Santoso",
+"No Polisi":"B 1234 ABC",
+"Tipe":"AVANZA",
+"Jam":"08:00",
+"No Telepon":"081234567890"
+}
+]);
+ws['!cols']=[
+{wch:22},
+{wch:15},
+{wch:15},
+{wch:10},
+{wch:18}
+];
+XLSX.utils.book_append_sheet(wb,ws,"CUSTOMER");
+XLSX.writeFile(wb,"TEMPLATE_CUSTOMER_WA.xlsx");
+}
+</script>
+</body>
+</html>
