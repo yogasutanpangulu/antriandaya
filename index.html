@@ -3,2838 +3,534 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Antrian Service Daya Toyota</title>
+    <title>Portal Sistem - Daya Toyota</title>
+    
+    <!-- Import Font Modern dari Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
+        /* --- BASE STYLES & MODERN BACKGROUND --- */
         * { box-sizing: border-box; }
-        body {
-            font-family: 'Poppins', sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
+        body, html { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            /* Modern Mesh Gradient Background */
             background-color: #f3f4f6;
-            background-image:
+            background-image: 
                 radial-gradient(at 0% 0%, hsla(353,100%,88%,1) 0px, transparent 50%),
                 radial-gradient(at 100% 0%, hsla(210,100%,85%,1) 0px, transparent 50%),
                 radial-gradient(at 100% 100%, hsla(39,100%,85%,1) 0px, transparent 50%),
                 radial-gradient(at 0% 100%, hsla(158,100%,88%,1) 0px, transparent 50%);
             background-attachment: fixed;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; 
             color: #2d3748;
         }
-        .container {
-            max-width: 98%;
-            margin: 0 auto 20px auto;
-            background: rgba(255, 255, 255, 0.92);
+
+        /* --- SIDEBAR MENU (GLASSMORPHISM) --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -280px; 
+            width: 280px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.6);
-            padding: 22px;
-            border-radius: 18px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
-        }
-        input, select, button {
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-        button {
-            background: linear-gradient(135deg, #0072ff 0%, #00c6ff 100%);
-            color: white;
-            cursor: pointer;
-            border: none;
-            font-weight: 600;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        }
-        button:hover {
-            filter: brightness(0.95);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.18);
-        }
-        
-        .btn-booking { background: #28a745; width: 48%; display: inline-block; }
-        .btn-non-booking { background: #17a2b8; width: 48%; display: inline-block; }
-        .btn-recall { background: #ffc107; color: black; width: 90%; }
-        #btn-logout { background: #dc3545; width: auto; padding: 8px 20px; font-weight: normal; font-size: 14px; display: none; }
-        #btn-logout:hover { background: #c82333; }
-
-        #monitor-view, #counter-view, #valey-view { display: none; }
-        .big-number { font-size: 80px; font-weight: bold; color: #d9534f; margin: 20px 0; }
-        .calling-counter { font-size: 30px; font-weight: bold; color: #333; }
-        
-        .valey-input-grid { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
-        .valey-input-grid div { flex: 1; min-width: 180px; text-align: left; }
-        .valey-input-grid label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 3px; }
-        .valey-input-grid input, .valey-input-grid select { width: 100%; text-align: center; font-weight: bold; font-size: 18px; margin: 0; }
-
-        .nopol-box { display: flex; align-items: center; justify-content: center; background: #e2e3e5; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: none; }
-        .btn-copy { background: #6c757d; padding: 8px 15px; width: auto; margin: 0 15px 0 0; font-size: 14px; display: inline-block; }
-        .btn-copy:hover { background: #5a6268; }
-        #last-nopol { font-size: 24px; letter-spacing: 2px; }
-
-        .waktu-tunggu-info { font-size: 14px; color: #555; margin-top: 5px; font-weight: bold; }
-
-        .waiting-list-container { margin-top: 20px; text-align: left; }
-        .waiting-grid { display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap; }
-        .waiting-col { flex: 1; min-width: 300px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 14px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
-        .waiting-col h4 { margin-top: 0; margin-bottom: 10px; font-size: 15px; }
-        
-        .badge-waiting { display: block; padding: 8px; margin-bottom: 6px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px; text-align: center; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
-        .badge-waiting:hover { opacity: 0.85; transform: scale(1.02); }
-        .badge-booking { background: #28a745; }
-        .badge-non { background: #17a2b8; }
-        .badge-sa { background: #6f42c1; }
-        
-        .live-timer { display: inline-block; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 6px; font-family: monospace; }
-
-        .table-responsive { overflow-x: auto; margin-top: 15px; }
-        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .history-table th, .history-table td { border: 1px solid #999; padding: 4px 3px; vertical-align: top; text-align: center; word-wrap: break-word; }
-        .history-table th { background: linear-gradient(135deg, #0072ff 0%, #00c6ff 100%); color: #fff; font-weight: bold; font-size: 11px; }
-        .history-table .sub-header th { font-size: 10px; background: #f8f9fa; color: #333; }
-        
-        .btn-hist-book { background: #28a745; color: white; border: none; padding: 4px; margin: 1px 0; border-radius: 4px; cursor: pointer; font-size: 10px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box; }
-        .btn-hist-non { background: #17a2b8; color: white; border: none; padding: 4px; margin: 1px 0; border-radius: 4px; cursor: pointer; font-size: 10px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box;}
-        .btn-hist-book:hover { background: #218838; }
-        .btn-hist-non:hover { background: #138496; }
-        .hist-nopol { display: block; font-size: 9px; font-weight: normal; margin-top: 1px; background: rgba(0,0,0,0.1); padding: 1px; border-radius: 2px; }
-        .hist-time { display: block; font-size: 8px; font-weight: normal; margin-top: 1px; color: #fff; background: rgba(0,0,0,0.2); padding: 1px; border-radius: 2px; }
-        
-        #btn-enable-audio { background: #fd7e14; color: white; padding: 10px 20px; font-size: 15px; border-radius: 5px; border: none; cursor: pointer; margin-bottom: 10px; }
-        #btn-enable-audio:hover { background: #e8590c; }
-
-        .booking-wrapper { background: rgba(255,255,255,0.9); border-radius: 16px; padding: 18px; margin: 15px 0 20px 0; border: 1px solid #e2e8f0; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
-        .booking-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-        .booking-header h3 { margin: 0; font-size: 18px; }
-        .booking-header .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-danger-booking { background: #dc3545; color: white; padding: 6px 16px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
-        .btn-danger-booking:hover { background: #c82333; }
-        .btn-add-row-manual { background: #28a745; color: white; padding: 6px 16px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
-        .btn-add-row-manual:hover { background: #218838; }
-        .btn-download-report { background: #17a2b8; color: white; padding: 6px 16px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
-        .btn-download-report:hover { background: #138496; }
-        .btn-save-all { background: #6f42c1; color: white; padding: 6px 16px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
-        .btn-save-all:hover { background: #5a32a3; }
-        
-        .search-box { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
-        .search-box input[type="text"] { flex: 1; min-width: 180px; padding: 8px 12px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; }
-        .search-box input[type="date"] { padding: 8px 12px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; min-width: 150px; }
-        .search-box button { padding: 8px 16px; font-size: 14px; background: #6c757d; }
-        .search-box button:hover { background: #5a6268; }
-        .search-box .btn-filter { background: #007bff; }
-        .search-box .btn-filter:hover { background: #0056b3; }
-
-        .booking-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .booking-table th { background: linear-gradient(135deg, #0072ff 0%, #00c6ff 100%); color: white; padding: 8px 4px; border: 1px solid rgba(255,255,255,0.2); text-align: center; position: sticky; top: 0; z-index: 10; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .booking-table td { padding: 4px 3px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle; font-size: 12px; }
-        .booking-table tr:nth-child(even) { background: #f8f9fa; }
-        .booking-table tr:hover { background: #e3f0ff; }
-        
-        .status-belum-datang { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
-        .status-dipanggil { background: #28a745; color: #fff; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
-        .status-selesai { background: #dc3545; color: #fff; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold; }
-        
-        .btn-get-in { background: #28a745; color: white; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; }
-        .btn-get-in:hover { background: #218838; }
-        .btn-get-in:disabled { background: #6c757d; cursor: not-allowed; }
-        
-        .btn-delete-booking { background: #dc3545; color: white; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; }
-        .btn-delete-booking:hover { background: #c82333; }
-        .btn-restore-booking { background: #fd7e14; color: white; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; }
-        .btn-restore-booking:hover { background: #e8590c; }
-        .btn-edit-booking { background: #17a2b8; color: white; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; }
-        .btn-edit-booking:hover { background: #138496; }
-        .btn-delete-antrian { background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; margin-left: 4px; }
-        .btn-delete-antrian:hover { background: #c82333; }
-
-        .empty-booking { color: #999; font-size: 14px; padding: 15px 0; text-align: center; }
-
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #ffffff; margin: 3% auto; padding: 25px; border: 1px solid #e2e8f0; width: 95%; max-width: 600px; border-radius: 18px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-        .modal-close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .modal-close:hover { color: #000; }
-
-        .login-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.6); padding: 40px; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.12); max-width: 560px; margin: 40px auto; }
-        .login-card h2 { color: #d9534f; margin-bottom: 5px; }
-        .login-card .subtitle { color: #666; font-size: 14px; margin-bottom: 25px; }
-        .login-card select { width: 100%; padding: 14px; font-size: 18px; border-radius: 8px; border: 2px solid #ddd; background: white; cursor: pointer; }
-        .login-card select:focus { border-color: #007bff; outline: none; }
-        .login-card .btn-login { width: 100%; padding: 14px; font-size: 18px; background: linear-gradient(135deg, #0072ff 0%, #00c6ff 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 6px 16px rgba(0,114,255,0.3); }
-        .login-card .btn-login:hover { filter: brightness(0.95); transform: scale(1.02); }
-        .login-card .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .login-card .role-icon { font-size: 48px; display: block; margin-bottom: 10px; }
-
-        /* ===== Pilihan Role Interaktif ===== */
-        .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
-        .role-card {
-            display: flex; flex-direction: column; align-items: center; gap: 3px;
-            padding: 12px 6px; border-radius: 14px; cursor: pointer;
-            background: #f8fafc; border: 2px solid #e2e8f0;
-            transition: all 0.2s ease; user-select: none;
-        }
-        .role-card:hover { border-color: #0072ff; transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,114,255,0.15); }
-        .role-card.active {
-            border-color: #0072ff;
-            background: linear-gradient(135deg, #0072ff 0%, #00c6ff 100%);
-            color: #fff;
-            box-shadow: 0 8px 20px rgba(0,114,255,0.35);
-        }
-        .role-card .rc-icon { font-size: 26px; line-height: 1; }
-        .role-card .rc-name { font-size: 13px; font-weight: 700; }
-        .role-card .rc-desc { font-size: 10px; opacity: 0.75; }
-        .role-card.active .rc-desc { opacity: 0.9; }
-        @media (max-width: 560px) { .role-grid { grid-template-columns: repeat(2, 1fr); } }
-
-        .history-section { margin-top: 15px; border-top: 2px solid #dee2e6; padding-top: 15px; }
-        .booking-section { margin-top: 20px; }
-
-        .modal-getin .modal-content { max-width: 500px; }
-        .modal-getin .form-group { margin-bottom: 15px; text-align: left; }
-        .modal-getin .form-group label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
-        .modal-getin .form-group input { width: 100%; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
-        .modal-getin .info-booking { background: #e9ecef; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: left; font-size: 14px; }
-        .modal-getin .info-booking strong { color: #007bff; }
-        .btn-save-getin { background: #28a745; width: 100%; padding: 12px; font-size: 16px; }
-        .btn-save-getin:hover { background: #218838; }
-        .btn-cancel-getin { background: #dc3545; width: 100%; padding: 12px; font-size: 16px; margin-top: 5px; }
-        .btn-cancel-getin:hover { background: #c82333; }
-
-        .btn-mute { background: #6c757d; color: white; padding: 6px 16px; font-size: 13px; border-radius: 5px; border: none; cursor: pointer; margin-left: 10px; transition: 0.3s; }
-        .btn-mute.active { background: #dc3545; }
-        .btn-mute:hover { opacity: 0.85; }
-
-        .counter-header { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; }
-
-        .antrian-item { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
-        .antrian-item .badge-waiting { flex: 1; margin-bottom: 0; }
-
-        .modal-hapus .modal-content { max-width: 450px; text-align: center; }
-        .modal-hapus .modal-content .icon-danger { font-size: 48px; color: #dc3545; }
-        .modal-hapus .modal-content .btn-group-hapus { display: flex; gap: 10px; margin-top: 15px; }
-        .modal-hapus .modal-content .btn-group-hapus button { flex: 1; padding: 10px; font-size: 14px; }
-        .modal-hapus .modal-content .btn-confirm-hapus { background: #dc3545; }
-        .modal-hapus .modal-content .btn-confirm-hapus:hover { background: #c82333; }
-        .modal-hapus .modal-content .btn-cancel-hapus { background: #6c757d; }
-        .modal-hapus .modal-content .btn-cancel-hapus:hover { background: #5a6268; }
-        #total-booking-info { font-size: 13px; color: #666; margin-left: 10px; font-weight: normal; }
-
-        .paste-info { background: #e3f0ff; border: 1px dashed #007bff; border-radius: 5px; padding: 8px 12px; margin-bottom: 10px; font-size: 13px; color: #0056b3; text-align: left; }
-        .paste-info code { background: #fff; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
-
-        .edit-input { width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px; background: white; min-width: 60px; }
-        .edit-input:focus { border-color: #007bff; outline: none; box-shadow: 0 0 0 2px rgba(0,123,255,0.25); }
-        .btn-cancel-row { background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 10px; }
-        .btn-cancel-row:hover { background: #c82333; }
-        .edit-waktu-text { width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px; background: white; }
-
-        .modal-tanggal .modal-content { max-width: 400px; text-align: center; }
-        .modal-tanggal .modal-content .form-group { margin-bottom: 15px; text-align: left; }
-        .modal-tanggal .modal-content .form-group label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
-        .modal-tanggal .modal-content .form-group input { width: 100%; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
-        .modal-tanggal .modal-content .info-data { background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; max-height: 200px; overflow-y: auto; text-align: left; }
-        .modal-tanggal .modal-content .info-data .duplicate-item { color: #dc3545; font-size: 12px; }
-        .modal-tanggal .modal-content .info-data .new-item { color: #28a745; font-size: 12px; }
-        .btn-save-all-modal { background: #28a745; width: 100%; padding: 12px; font-size: 16px; }
-        .btn-save-all-modal:hover { background: #218838; }
-        .btn-cancel-modal { background: #dc3545; width: 100%; padding: 12px; font-size: 16px; margin-top: 5px; }
-        .btn-cancel-modal:hover { background: #c82333; }
-
-        .modal-hapus .form-group { text-align: left; margin-bottom: 15px; }
-        .modal-hapus .form-group label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
-        .modal-hapus .form-group input { width: 100%; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
-
-        .modal-edit .modal-content { max-width: 500px; }
-        .modal-edit .form-group { margin-bottom: 12px; text-align: left; }
-        .modal-edit .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 3px; }
-        .modal-edit .form-group input { width: 100%; padding: 8px 10px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; }
-
-        .hide-pekerjaan .col-pekerjaan { display: none; }
-        .hide-pekerjaan .col-pekerjaan-header { display: none; }
-
-        .row-dipanggil { background: #e8f5e9 !important; }
-        .row-dipanggil td { border-bottom: 1px solid #a5d6a7; }
-        .row-menunggu { background: #fff3e0 !important; }
-        .row-menunggu td { border-bottom: 1px solid #ffcc80; }
-        .row-selesai { background: #fce4ec !important; }
-        .row-selesai td { border-bottom: 1px solid #ef9a9a; }
-
-        .separator-row td { background: #e0e0e0 !important; color: #555; font-weight: bold; padding: 6px; text-align: center; font-size: 13px; border-top: 2px solid #999; border-bottom: 2px solid #999; }
-
-        @media (max-width: 768px) {
-            .booking-row { grid-template-columns: 1fr 1fr; }
-            .login-card { padding: 25px; margin: 20px auto; }
-            .valey-input-grid div { min-width: 100%; }
-            .booking-header { flex-direction: column; align-items: stretch; gap: 8px; }
-            .booking-header .btn-group { justify-content: center; }
-            .booking-table { font-size: 10px; }
-            .booking-table th, .booking-table td { padding: 3px 2px; }
-            .search-box { flex-direction: column; }
-            .search-box input, .search-box button { width: 100%; }
-            .modal-content { width: 98%; margin: 2% auto; padding: 15px; }
-            .history-table { font-size: 10px; }
-            .history-table th, .history-table td { padding: 3px 2px; }
-            .edit-input { font-size: 10px; padding: 3px 4px; }
-        }
-
-        #monitor-view { display: none; max-width: 99% !important; padding: 15px !important; background: #eef2f5 !important; }
-        .monitor-layout { display: flex; gap: 20px; width: 100%; height: 82vh; }
-        .monitor-left { flex: 1.2; background: #ffffff; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; border: 2px solid #007bff; background-image: url('LOGO DAYA.webp'); background-repeat: no-repeat; background-position: center; background-size: 65%; position: relative; }
-        .monitor-left::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.88); z-index: 1; }
-        .monitor-header-call, .monitor-body-call { position: relative; z-index: 2; }
-        .monitor-header-call { background: #007bff; color: white; font-size: 26px; font-weight: bold; padding: 15px; text-transform: uppercase; letter-spacing: 1px; }
-        .monitor-body-call { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-        .monitor-type-display { font-size: 55px; font-weight: bold; color: #28a745; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
-        .monitor-number-display { font-size: 140px; font-weight: bold; color: #dc3545; line-height: 1; margin: 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
-        @keyframes monitorPulse { 0% { transform: scale(1); } 30% { transform: scale(1.12); } 60% { transform: scale(0.98); } 100% { transform: scale(1); } }
-        .monitor-number-display.pulse { animation: monitorPulse 0.8s ease; }
-        .monitor-type-display.pulse { animation: monitorPulse 0.8s ease; }
-        .monitor-counter-display { font-size: 52px; font-weight: bold; color: #333; background: #ffc107; padding: 10px 40px; border-radius: 40px; margin-top: 15px; letter-spacing: 1px; }
-
-        .monitor-right { flex: 1; background: #ffffff; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; border: 2px solid #6c757d; }
-        .monitor-header-waiting { background: #343a40; color: white; font-size: 22px; font-weight: bold; padding: 15px; letter-spacing: 1px; }
-        .monitor-waiting-grid { display: flex; height: calc(100% - 60px); }
-        .monitor-waiting-col { flex: 1; padding: 10px; overflow-y: auto; border-right: 1px solid #dee2e6; }
-        .monitor-waiting-col:last-child { border-right: none; }
-        .monitor-waiting-col h5 { margin: 0 0 10px 0; font-size: 16px; padding: 8px; border-radius: 5px; color: white; }
-        .col-booking-title { background: #28a745; }
-        .col-non-title { background: #17a2b8; }
-        
-        .monitor-item-card { background: #f8f9fa; border-left: 5px solid #007bff; padding: 8px 12px; margin-bottom: 6px; border-radius: 4px; text-align: left; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 14px; font-weight: bold; color: #333; transition: all 0.2s ease; }
-        .monitor-item-card:hover { background: #e9ecef; transform: translateX(3px); }
-        .monitor-item-card .monitor-timer { font-size: 11px; color: #666; background: #e9ecef; padding: 2px 8px; border-radius: 10px; font-weight: normal; }
-
-        #customer-view { display: none; max-width: 500px !important; margin: 20px auto; padding: 20px; background: #ffffff; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); text-align: center; }
-        .customer-card-box { background: linear-gradient(135deg, #007bff, #0056b3); color: white; border-radius: 12px; padding: 20px; margin: 15px 0; box-shadow: 0 4px 10px rgba(0,123,255,0.3); }
-        .customer-big-number { font-size: 90px; font-weight: bold; color: #ffc107; line-height: 1; margin: 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
-        .customer-type { font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        .customer-counter { background: rgba(255,255,255,0.2); padding: 6px 20px; border-radius: 20px; display: inline-block; font-size: 20px; font-weight: bold; margin-top: 10px; }
-
-        .customer-mode #login-section { display: none !important; }
-        .customer-mode #btn-logout { display: none !important; }
-        .customer-mode #valey-view, .customer-mode #counter-view, .customer-mode #monitor-view { display: none !important; }
-        .customer-mode #customer-view { display: block !important; }
-
-        #nopol-display-area { display: none; background: linear-gradient(135deg, #007bff, #0056b3); border-radius: 12px; padding: 20px; margin: 15px 0; box-shadow: 0 4px 15px rgba(0,123,255,0.3); transition: all 0.3s ease; }
-        #nopol-display-area .btn-copy { background: #28a745; padding: 10px 25px; font-size: 16px; margin: 0; border-radius: 8px; font-weight: bold; border: none; color: white; cursor: pointer; transition: all 0.3s ease; }
-        #nopol-display-area .btn-copy:hover { background: #218838; transform: scale(1.05); }
-        #last-nopol { font-size: 56px; font-weight: bold; color: white; letter-spacing: 6px; text-shadow: 2px 2px 8px rgba(0,0,0,0.3); font-family: 'Arial Black', Arial, sans-serif; min-width: 100px; text-align: center; }
-        #counter-nopol-info { color: rgba(255,255,255,0.9); font-size: 18px; font-weight: bold; background: rgba(0,0,0,0.25); padding: 8px 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.2); }
-
-        @keyframes nopolAppear { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-        #last-nopol.animate { animation: nopolAppear 0.5s ease forwards; }
-
-        @media (max-width: 768px) {
-            #nopol-display-area { padding: 15px; }
-            #last-nopol { font-size: 36px; letter-spacing: 3px; min-width: 60px; }
-            #counter-nopol-info { font-size: 14px; padding: 5px 12px; }
-            #nopol-display-area .btn-copy { padding: 8px 16px; font-size: 14px; }
-        }
-
-        #qr-fullscreen-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #0056b3, #003d82); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; box-sizing: border-box; animation: fadeInQR 0.5s ease-in-out; }
-        @keyframes fadeInQR { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-        .qr-fs-card { background: white; padding: 35px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); color: #333; max-width: 450px; width: 90%; }
-        #qrcode-fullscreen-container img { width: 400px !important; height: 400px !important; display: block; margin: 0 auto; border-radius: 10px; border: 3px solid #eee; }
-
-
-        .modal-edit-antrian .modal-content { max-width: 450px; }
-        .modal-edit-antrian .form-group { margin-bottom: 12px; text-align: left; }
-        .modal-edit-antrian .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 3px; }
-        .modal-edit-antrian .form-group input { width: 100%; padding: 8px 10px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; }
-
-/* CSS Tombol Kembali */
-        .top-bar-nav {
+            border-right: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.05);
+            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 1000;
             display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            margin-bottom: 15px;
-            text-align: left;
+            flex-direction: column;
         }
 
-        .btn-back-portal {
-            display: inline-flex;
+        .sidebar-tab {
+            position: absolute;
+            top: 30px;
+            right: -55px;
+            width: 55px;
+            height: 130px;
+            background: linear-gradient(135deg, #e53935, #c62828);
+            color: white;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            color: #495057;
-            border: 1px solid rgba(255,255,255,0.7);
-            padding: 8px 16px;
+            justify-content: center;
+            border-radius: 0 15px 15px 0;
+            cursor: pointer;
+            box-shadow: 5px 5px 15px rgba(229, 57, 53, 0.3);
+            transition: transform 0.2s;
+        }
+        .sidebar-tab:hover { transform: translateX(5px); }
+        .sidebar-tab .icon { font-size: 24px; margin-bottom: 8px; font-weight: bold;}
+        .sidebar-tab .menu-text { transform: rotate(-90deg); letter-spacing: 3px; font-size: 13px; font-weight: 700; margin-top: 20px; }
+        
+        .sidebar:hover { left: 0; }
+        
+        .sidebar-header { padding: 30px 20px 20px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .sidebar-header img { max-height: 45px; margin-bottom: 15px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));}
+        .sidebar-header h2 { color: #c62828; margin: 0; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;}
+        
+        .sidebar-menu { list-style: none; padding: 20px 0; margin: 0; flex-grow: 1; overflow-y: auto;}
+        .sidebar-menu li { margin: 5px 15px; }
+        .sidebar-menu a { 
+            display: flex; 
+            align-items: center;
+            padding: 12px 20px; 
+            color: #4a5568; 
+            text-decoration: none; 
+            font-weight: 600; 
+            font-size: 14px; 
             border-radius: 10px;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: all 0.2s ease;
+            transition: all 0.3s ease; 
+            cursor: pointer;
+        }
+        .sidebar-menu a:hover { background-color: #ffebee; color: #d32f2f; transform: translateX(5px); }
+
+        /* --- TAMPILAN DASHBOARD PORTAL --- */
+        #portal-home {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px 20px 20px 60px; /* Menyesuaikan jarak pinggir agar tidak tertutup menu */
         }
 
-        .btn-back-portal:hover {
-            background-color: #e9ecef;
-            color: #212529;
-            border-color: #adb5bd;
-            transform: translateX(-3px);
+        .portal-container {
+            width: 100%;
+            max-width: 850px;
+            margin: auto; /* Ini kunci agar konten ke tengah namun tidak terpotong ke atas */
+            animation: fadeInUp 0.8s ease;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- Senada dengan Portal --- */
-        .container h2 { color: #d9534f; margin: 0 0 15px 0; font-weight: 700; letter-spacing: 0.5px; }
-        .container h3 { color: #2d3748; font-weight: 700; }
+        .portal-header {
+            background: #ffffff;
+            padding: 15px 30px; /* Diperkecil agar lebih padat */
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 25px; /* Jarak bawah diperkecil */
+            text-align: center;
+        }
+        .portal-header h1 { 
+            color: #d9534f; 
+            margin: 0 0 5px 0; 
+            font-size: 28px; /* Diperkecil sedikit */
+            font-weight: 700; 
+            letter-spacing: 1px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px;
+        }
+        .portal-header p { 
+            color: #6c757d; 
+            margin: 0; 
+            font-size: 15px; 
+            font-weight: 400;
+        }
 
-        .info-badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 11px;
+        /* --- MODERN STAT CARDS --- */
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px; /* Diperkecil */
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            position: relative;
+            border-radius: 20px;
+            padding: 20px 15px; /* Diperkecil */
+            width: 230px; /* Lebar dikurangi sedikit */
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            z-index: 1;
+        }
+        .stat-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .stat-card::after {
+            content: ''; position: absolute; top: -30px; right: -30px;
+            width: 100px; height: 100px; background: rgba(255,255,255,0.2);
+            border-radius: 50%; z-index: -1;
+        }
+        .stat-card::before {
+            content: ''; position: absolute; bottom: -20px; left: -20px;
+            width: 80px; height: 80px; background: rgba(255,255,255,0.1);
+            border-radius: 50%; z-index: -1;
+        }
+        
+        .card-blue { background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); }
+        .card-orange { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); }
+        .card-red { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); }
+        /* --- KARTU STATISTIK ANTRIAN HARI INI (senada gradient) --- */
+        .card-green2 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .card-teal { background: linear-gradient(135deg, #00c9ff 0%, #00b09b 100%); }
+        .card-purple { background: linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%); }
+        .stat-card-sub {
+            font-size: 12px;
             font-weight: 700;
-            margin-left: 6px;
-            vertical-align: middle;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffffff;
+            margin-top: 6px;
+            background: rgba(255,255,255,0.25);
+            padding: 3px 14px;
+            border-radius: 20px;
         }
-        .badge-call { background: #d1fae5; color: #065f46; }
-        .badge-wait { background: #fef3c7; color: #92400e; }
+
+        .stat-card-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 5px; /* Diperkecil */
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+        .stat-card-value {
+            font-size: 55px; /* Diperkecil dari 70px agar tidak makan tempat */
+            font-weight: 700;
+            margin: 0;
+            line-height: 1;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.2);
+        }
+
+        /* --- MODERN TABLE UI --- */
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px 30px; /* Diperkecil */
+            margin: 0 auto;
+            max-width: 550px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        .dashboard-card h3 {
+            margin: 0 0 15px 0; /* Diperkecil */
+            font-size: 16px; 
+            color: #2d3748; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px;
+            font-weight: 700;
+        }
+        
+        .table-container {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .sa-queue-table { width: 100%; border-collapse: collapse; }
+        .sa-queue-table th, .sa-queue-table td { 
+            padding: 12px; /* Diperkecil dari 15px */
+            font-size: 13.5px; 
+            text-align: center;
+            border-bottom: 1px solid #edf2f7;
+        }
+        .sa-queue-table th { 
+            background: #f8fafc; font-weight: 700; color: #4a5568;
+            text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;
+        }
+        .sa-queue-table tr:last-child td { border-bottom: none; }
+        .sa-queue-table tbody tr { transition: background 0.3s; }
+        .sa-queue-table tbody tr:hover { background: #f1f5f9; }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 25px; /* Diperkecil dari 40px */
+            font-size: 12px; 
+            color: #a0aec0;
+            font-weight: 300;
+        }
+
+        /* --- IFRAME (WADAH UNTUK SISTEM LAIN) --- */
+        #content-frame {
+            display: none; 
+            width: calc(100vw - 40px); 
+            height: 100vh;
+            border: none;
+            margin-left: 40px; 
+            background: #f3f4f6;
+        }
+
+        @media (max-width: 850px) {
+            .portal-container { padding: 20px; margin-left: 40px;}
+            .stat-card { width: 100%; max-width: 300px; }
+            .stats-container { flex-direction: column; align-items: center; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- TARUH KODE INI TEPAT DI BAWAH BODY -->
-    <div class="top-bar-nav">
-        <a href="index.html" class="btn-back-portal">
-            ⬅️ Kembali ke Menu Utama
-        </a>
+    <!-- 1. SIDEBAR MENU -->
+    <div class="sidebar">
+        <!-- Tab Merah -->
+        <div class="sidebar-tab">
+            <div class="icon">≡</div>
+            <div class="menu-text">MENU</div>
+        </div>
+
+        <!-- Isi Menu -->
+        <div class="sidebar-header">
+            <img src="LOGO DAYA.webp" alt="Daya Toyota">
+            <h2>Sistem Bengkel</h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a onclick="showHome()">🏠 Dashboard Portal</a></li>
+            <li><a onclick="loadPage('antrian.html')">👥 Sistem Antrian</a></li>
+            <li><a onclick="loadPage('laporan.html')">📊 Rekap Laporan</a></li>
+            <li><a onclick="loadPage('estimasi.html')">📝 Estimasi</a></li>
+            <li><a onclick="loadPage('flatrateservice.html')">⏱️ Flat Rate Service</a></li>
+            <li><a onclick="loadPage('saranteknisi.html')">🔧 Saran Teknisi & Partman</a></li>
+            <li><a onclick="loadPage('WA Pro.html')">💬 WA Template Chat</a></li>
+        </ul>
     </div>
 
-    <!-- Kode HTML halaman antrian kamu selanjutnya... -->
+    <!-- 2. WADAH IFRAME (Untuk menampilkan file lain) -->
+    <iframe id="content-frame" name="content-frame"></iframe>
 
-    <!-- ================ LOGIN ================ -->	
-    <div id="login-section" class="login-card">
-        <span class="role-icon">🚗</span>
-        <h2>Sistem Antrian Service</h2>
-        <p class="subtitle">Daya Toyota</p>
-        
-        <div class="role-grid" id="role-grid">
-            <div class="role-card" data-role="Valey" onclick="pilihRole(this)">
-                <span class="rc-icon">👤</span>
-                <span class="rc-name">Valey</span>
-                <span class="rc-desc">Input Antrian</span>
-            </div>
-            <div class="role-card" data-role="Counter 2" onclick="pilihRole(this)">
-                <span class="rc-icon">🖥️</span>
-                <span class="rc-name">Counter 2</span>
-                <span class="rc-desc">Panggil</span>
-            </div>
-            <div class="role-card" data-role="Counter 3" onclick="pilihRole(this)">
-                <span class="rc-icon">🖥️</span>
-                <span class="rc-name">Counter 3</span>
-                <span class="rc-desc">Panggil</span>
-            </div>
-            <div class="role-card" data-role="Counter 4" onclick="pilihRole(this)">
-                <span class="rc-icon">🖥️</span>
-                <span class="rc-name">Counter 4</span>
-                <span class="rc-desc">Panggil</span>
-            </div>
-            <div class="role-card" data-role="Counter 5" onclick="pilihRole(this)">
-                <span class="rc-icon">🖥️</span>
-                <span class="rc-name">Counter 5</span>
-                <span class="rc-desc">Panggil</span>
-            </div>
-            <div class="role-card" data-role="Counter 6" onclick="pilihRole(this)">
-                <span class="rc-icon">🖥️</span>
-                <span class="rc-name">Counter 6</span>
-                <span class="rc-desc">Panggil</span>
-            </div>
-            <div class="role-card" data-role="Counter 7" onclick="pilihRole(this)">
-                <span class="rc-icon">🖥️</span>
-                <span class="rc-name">Counter 7</span>
-                <span class="rc-desc">Panggil</span>
-            </div>
-            <div class="role-card" data-role="Counter 8" onclick="pilihRole(this)">
-                <span class="rc-icon">🖥️</span>
-                <span class="rc-name">Counter 8</span>
-                <span class="rc-desc">Panggil</span>
-            </div>
-            <div class="role-card" data-role="Monitor" onclick="pilihRole(this)">
-                <span class="rc-icon">📺</span>
-                <span class="rc-name">Monitor</span>
-                <span class="rc-desc">Layar Besar</span>
-            </div>
-        </div>
-        <select id="login-id" style="display: none;">
-            <option value="Valey">Valey</option>
-            <option value="Counter 2">Counter 2</option>
-            <option value="Counter 3">Counter 3</option>
-            <option value="Counter 4">Counter 4</option>
-            <option value="Counter 5">Counter 5</option>
-            <option value="Counter 6">Counter 6</option>
-            <option value="Counter 7">Counter 7</option>
-            <option value="Counter 8">Counter 8</option>
-            <option value="Monitor">Monitor</option>
-        </select>
-        
-        <button class="btn-login" id="btn-login" onclick="loginProses()">🔑 Masuk</button>
-        <p style="color:red; display:none; margin-top:10px;" id="login-error">⚠️ Gagal login! Coba refresh halaman.</p>
-    </div>
-
-    <!-- ================ VIEW VALEY ================ -->
-    <div id="valey-view" class="container" style="max-width: 100%; display: none;">
-        <h2>👤 Petugas Valey</h2>
-        
-        <h3>➕ Input Antrian</h3>
-        <div class="valey-input-grid">
-            <div>
-                <label for="nopol-input">1. Nomor Polisi:</label>
-                <input type="text" id="nopol-input" placeholder="B 1234 ABC" style="text-transform: uppercase;">
-            </div>
-            <div>
-                <label for="nomor-input">2. Nomor Antrian:</label>
-                <input type="number" id="nomor-input" placeholder="Contoh: 1" min="1">
-            </div>
-            <div>
-                <label for="sa-input">3. SA (Opsional):</label>
-                <input type="text" id="sa-input" placeholder="Nama SA (Opsional)">
-            </div>
-        </div>
-
-        <p style="margin: 15px 0 5px 0; font-weight: bold;">4. Pilih Kategori Antrian:</p>
-        <div style="display: flex; gap: 4%; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-booking" onclick="tambahAntrianValey('Booking', null)">+ Antrian Booking</button>
-            <button class="btn-non-booking" onclick="tambahAntrianValey('Non Booking', null)">+ Antrian Non Booking</button>
-        </div>
-
-        <div class="waiting-list-container">Memuat daftar tunggu...</div>
-
-        <div class="booking-section">
-            <div class="booking-wrapper">
-                <div class="booking-header">
-                    <h3>📋 Daftar Booking <span id="total-booking-info"></span></h3>
-                    <div class="btn-group">
-                        <button class="btn-add-row-manual" onclick="tambahBarisManual()">➕ Tambah Baris</button>
-                        <button class="btn-save-all" onclick="bukaModalSimpanSemua()">💾 Simpan Semua</button>
-                        <button class="btn-download-report" onclick="downloadReport()">📥 Download Laporan</button>
-                        <button class="btn-danger-booking" onclick="bukaModalHapusSemua()">🗑️ Hapus Booking</button>
-                    </div>
-                </div>
-                
-                <div class="paste-info">
-                    💡 <strong>Paste Magic:</strong> Copy data dari spreadsheet (format: <code>Nopol | Tipe | Nama | Telpon | Pekerjaan | Waktu | SA</code>) 
-                    dan paste langsung ke kolom Nopol. Bisa paste <strong>1 baris atau banyak baris</strong>, akan otomatis menambah baris.
-                    <br><strong>📌 Tanggal akan ditentukan saat klik "Simpan Semua"</strong>
-                </div>
-                
-                <div class="search-box">
-                    <input type="text" id="search-booking" placeholder="🔍 Cari Nopol, Nama, atau No Telpon..." onkeyup="filterBooking()">
-                    <input type="date" id="filter-tanggal" onchange="filterBooking()">
-                    <button class="btn-filter" onclick="filterBooking()">🔍 Filter</button>
-                    <button onclick="resetFilter()" style="background:#6c757d;">Reset</button>
-                </div>
-                
-                <div id="booking-list" style="min-height: 60px;">
-                    <div class="empty-booking">⏳ Memuat daftar booking...</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="history-section">
-            <h3>📊 History & Panggilan Unit Selesai</h3>
-            <p style="font-size: 13px; color: #555;">(Klik nomor polisi di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
+    <!-- 3. KONTEN DASHBOARD AWAL -->
+    <div id="portal-home">
+        <div class="portal-container">
             
-            <div class="table-responsive">
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th colspan="2">COUNTER 2</th>
-                            <th colspan="2">COUNTER 3</th>
-                            <th colspan="2">COUNTER 4</th>
-                            <th colspan="2">COUNTER 5</th>
-                            <th colspan="2">COUNTER 6</th>
-                            <th colspan="2">COUNTER 7</th>
-                            <th colspan="2">COUNTER 8</th>
-                        </tr>
-                        <tr class="sub-header">
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-table-body">
-                        <tr><td colspan="14">Memuat history...</td></tr>
-                    </tbody>
-                </table>
+            <div class="portal-header">
+                <h1>🚗 DAYA TOYOTA</h1>
+                <p>Dashboard Sistem Bengkel Interaktif</p>
             </div>
-        </div>
-    </div>
 
-    <!-- ================ VIEW MONITOR ================ -->
-    <div id="monitor-view" class="container" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px;">
-            <h2 style="margin: 0; color: #333; font-size: 20px;">📺 Layar Monitor Utama - Daya Toyota</h2>
-            <button id="btn-enable-audio" onclick="aktifkanSuaraMonitor()" style="margin: 0; padding: 8px 15px; font-size: 14px;">🔊 Aktifkan Suara Monitor</button>
-        </div>
-
-        <div class="monitor-layout">
-            <div class="monitor-left">
-                <div class="monitor-header-call">Panggilan Saat Ini</div>
-                <div class="monitor-body-call">
-                    <div class="monitor-type-display" id="display-type">--</div>
-                    <div class="monitor-number-display" id="display-number">--</div>
-                    <div class="monitor-counter-display" id="display-counter">Menunggu Panggilan...</div>
+            <!-- KOTAK STATISTIK MODERN -->
+            <div class="stats-container">
+                <div class="stat-card card-blue">
+                    <div class="stat-card-title">Saran & Temuan Teknisi</div>
+                    <div class="stat-card-value" id="count-teknisi">0</div>
+                </div>
+                <div class="stat-card card-orange">
+                    <div class="stat-card-title">Pengecekan Estimasi</div>
+                    <div class="stat-card-value" id="count-partman">0</div>
+                </div>
+                <div class="stat-card card-red">
+                    <div class="stat-card-title">Pending Estimasi All SA</div>
+                    <div class="stat-card-value" id="count-sa">0</div>
                 </div>
             </div>
 
-            <div class="monitor-right">
-                <div class="monitor-header-waiting">DAFTAR PELANGGAN MENUNGGU</div>
-                <div class="monitor-waiting-grid">
-                    <div class="monitor-waiting-col">
-                        <h5 class="col-booking-title">BOOKING</h5>
-                        <div id="monitor-waiting-booking"><i style="color: #777; font-size: 13px;">Belum ada antrian</i></div>
-                    </div>
-                    <div class="monitor-waiting-col">
-                        <h5 class="col-non-title">NON BOOKING</h5>
-                        <div id="monitor-waiting-non"><i style="color: #777; font-size: 13px;">Belum ada antrian</i></div>
-                    </div>
+            <!-- KOTAK STATISTIK ANTRIAN HARI INI -->
+            <div class="stats-container">
+                <div class="stat-card card-green2">
+                    <div class="stat-card-title">Total Booking Hari Ini</div>
+                    <div class="stat-card-value" id="count-booking-hari-ini">0</div>
+                </div>
+                <div class="stat-card card-teal">
+                    <div class="stat-card-title">Tunggu Panggilan</div>
+                    <div class="stat-card-value" id="count-tunggu-booking">0</div>
+                    <div class="stat-card-sub">Booking</div>
+                </div>
+                <div class="stat-card card-purple">
+                    <div class="stat-card-title">Tunggu Panggilan</div>
+                    <div class="stat-card-value" id="count-tunggu-non">0</div>
+                    <div class="stat-card-sub">Non Booking</div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- ================ VIEW CUSTOMER ================ -->
-    <div id="customer-view" class="container" style="display: none;">
-        <h3 style="margin: 0; color: #333;">🚗 Daya Toyota</h3>
-        <p style="font-size: 13px; color: #666; margin-top: 2px;">Live Monitor Antrian Service</p>
-        
-        <button id="btn-enable-customer-audio" onclick="aktifkanSuaraCustomer()" style="width: 100%; background: #28a745; padding: 12px; font-size: 15px; border-radius: 8px; margin-bottom: 10px;">
-            🔊 Ketuk di Sini untuk Aktifkan Suara Panggilan HP
-        </button>
-
-        <div class="customer-card-box">
-            <div style="font-size: 14px; opacity: 0.9;">PANGGILAN SAAT INI</div>
-            <div class="customer-type" id="cust-display-type">--</div>
-            <div class="customer-big-number" id="cust-display-number">--</div>
-            <div class="customer-counter" id="cust-display-counter">Menunggu Panggilan...</div>
-        </div>
-
-        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: left; margin-top: 15px; border: 1px solid #dee2e6;">
-            <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #333;">📋 Daftar Pelanggan Menunggu:</h4>
-            <div style="display: flex; gap: 10px;">
-                <div style="flex: 1;">
-                    <div style="background: #28a745; color: white; padding: 4px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px 4px 0 0;">BOOKING</div>
-                    <div id="cust-waiting-booking" style="background: white; padding: 8px; min-height: 80px; max-height: 150px; overflow-y: auto; font-size: 12px; border: 1px solid #dee2e6; border-radius: 0 0 4px 4px;"><i>Memuat...</i></div>
-                </div>
-                <div style="flex: 1;">
-                    <div style="background: #17a2b8; color: white; padding: 4px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px 4px 0 0;">NON BOOKING</div>
-                    <div id="cust-waiting-non" style="background: white; padding: 8px; min-height: 80px; max-height: 150px; overflow-y: auto; font-size: 12px; border: 1px solid #dee2e6; border-radius: 0 0 4px 4px;"><i>Memuat...</i></div>
+            <!-- Tabel Antrian Saran Teknisi -->
+            <div class="dashboard-card">
+                <h3>📥 Antrian Saran Teknisi (Belum Dibuat)</h3>
+                <div class="table-container">
+                    <table class="sa-queue-table" id="table-sa-queue">
+                        <thead>
+                            <tr>
+                                <th>NAMA SA</th>
+                                <th>QTY SARAN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="2" style="color:#a0aec0; padding: 25px;">Memuat data secara real-time...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div>
-        <p style="font-size: 11px; color: #888; margin-top: 15px;">Halaman ini terhubung secara otomatis ke sistem antrian.</p>
-    </div>
-
-    <!-- ================ VIEW COUNTER ================ -->
-    <div id="counter-view" class="container" style="max-width: 100%; display: none;">
-        <div class="counter-header">
-            <h2 id="counter-name-display">Counter</h2>
-            <button class="btn-mute" id="btn-mute-counter" onclick="toggleMute()">🔊 Suara ON</button>
-        </div>
-        
-        <h3>📞 Tarik Antrian dari Daftar Tunggu</h3>
-        <p style="font-size: 13px; color: #555; margin-bottom: 10px;">(Atau klik langsung antrian pada daftar di bawah)</p>
-        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-booking" onclick="panggilAntrian('Booking')" style="width: 200px;">Panggil Booking Teratas</button>
-            <button class="btn-non-booking" onclick="panggilAntrian('Non Booking')" style="width: 200px;">Panggil Non Booking Teratas</button>
-        </div>
-        
-        <hr>
-        
-        <!-- AREA NOMOR POLISI - HANYA TAMPIL UNTUK COUNTER YANG MEMANGGIL -->
-        <div id="nopol-display-area" style="display: none; background: linear-gradient(135deg, #007bff, #0056b3); border-radius: 12px; padding: 20px; margin: 15px 0; box-shadow: 0 4px 15px rgba(0,123,255,0.3);">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; width: 100%;">
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-    <button onclick="salinNopol()" class="btn-copy" style="background: #28a745; padding: 10px 25px; font-size: 16px; margin: 0; border-radius: 8px; font-weight: bold; color: white; border: none; cursor: pointer; width: 100%;">📋 Salin</button>
-    <button onclick="selesaiAntrian()" class="btn-copy" style="background: #17a2b8; padding: 10px 25px; font-size: 16px; margin: 0; border-radius: 8px; font-weight: bold; color: white; border: none; cursor: pointer; width: 100%;">✅ Selesai</button>
-</div>
-                <span id="last-nopol" style="font-size: 56px; font-weight: bold; color: white; letter-spacing: 6px; text-shadow: 2px 2px 8px rgba(0,0,0,0.3); font-family: 'Arial Black', Arial, sans-serif; min-width: 100px; text-align: center;">-</span>
-                <span id="counter-nopol-info" style="color: rgba(255,255,255,0.9); font-size: 18px; font-weight: bold; background: rgba(0,0,0,0.25); padding: 8px 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.2);">
-                    <span id="last-called-info">Menunggu</span>
-                </span>
-            </div>
-            <div id="waktu-tunggu-counter" style="color: rgba(255,255,255,0.8); text-align: center; margin-top: 10px; font-size: 14px;"></div>
-        </div>
-
-        <p style="margin: 10px 0 5px 0;">Terakhir Dipanggil: <strong id="last-called">Belum ada</strong></p>
-
-        <div style="display: flex; justify-content: center; gap: 10px; width: 90%; margin: 10px auto 15px auto;">
-            <button class="btn-recall" onclick="panggilUlang()" style="width: 50%; margin: 0; padding: 12px; font-size: 15px;">🔊 Panggil Ulang</button>
-            <button onclick="kembalikanAntrian()" style="width: 50%; margin: 0; background: #dc3545; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; padding: 12px; font-size: 15px;">↩️ Kembalikan Antrian</button>
-        </div>
-        
-        <div class="waiting-list-container">Memuat daftar tunggu...</div>
-
-        <div class="booking-section">
-            <div class="booking-wrapper">
-                <div class="booking-header">
-                    <h3>📋 Booking <span id="total-booking-info-counter"></span></h3>
-                </div>
-                
-                <div class="search-box">
-                    <input type="text" id="search-booking-counter" placeholder="🔍 Cari Nopol, Nama, atau No Telpon..." onkeyup="filterBookingCounter()">
-                    <input type="date" id="filter-tanggal-counter" onchange="filterBookingCounter()">
-                    <button class="btn-filter" onclick="filterBookingCounter()">🔍 Filter</button>
-                    <button onclick="resetFilterCounter()" style="background:#6c757d;">Reset</button>
-                </div>
-                
-                <div id="booking-list-counter" style="min-height: 60px;">
-                    <div class="empty-booking">⏳ Memuat daftar booking...</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="history-section">
-            <h3>📊 History & Panggilan Unit Selesai</h3>
-            <p style="font-size: 13px; color: #555;">(Klik nomor polisi di bawah ini untuk memanggil pelanggan yang kendaraannya sudah selesai).</p>
             
-            <div class="table-responsive">
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th colspan="2">COUNTER 2</th>
-                            <th colspan="2">COUNTER 3</th>
-                            <th colspan="2">COUNTER 4</th>
-                            <th colspan="2">COUNTER 5</th>
-                            <th colspan="2">COUNTER 6</th>
-                            <th colspan="2">COUNTER 7</th>
-                            <th colspan="2">COUNTER 8</th>
-                        </tr>
-                        <tr class="sub-header">
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                            <th>BOOKING</th> <th>NON BOOKING</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-table-body-counter">
-                        <tr><td colspan="14">Memuat history...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <p class="footer-text">&copy; 2026 Daya Toyota Service System | Coded with passion</p>
         </div>
     </div>
 
-    <div style="text-align: center; margin-bottom: 30px;">
-        <button id="btn-logout" onclick="logoutAkun()" style="display: none; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">Keluar Akun</button>
-    </div>
-
-    <!-- ================ MODALS ================ -->
-    <div id="modal-hapus-semua" class="modal modal-hapus">
-        <div class="modal-content">
-            <span class="modal-close" onclick="tutupModalHapusSemua()">&times;</span>
-            <div class="icon-danger">⚠️</div>
-            <h2 style="color: #dc3545;">Hapus Booking?</h2>
-            <p style="font-size: 15px; color: #555; margin-bottom: 5px;">Pilih tanggal booking yang akan dihapus.</p>
-            <p style="font-size: 13px; color: #999; margin-bottom: 15px;">Data yang dihapus <strong>TIDAK BISA</strong> dikembalikan!</p>
-            <div class="form-group">
-                <label for="hapus-tanggal">📅 Pilih Tanggal:</label>
-                <input type="date" id="hapus-tanggal">
-            </div>
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: left; font-size: 13px;">
-                <div id="hapus-count-info">📊 Menghitung jumlah booking...</div>
-            </div>
-            <div class="btn-group-hapus">
-                <button class="btn-cancel-hapus" onclick="tutupModalHapusSemua()">❌ Batal</button>
-                <button class="btn-confirm-hapus" onclick="hapusBookingByTanggal()" id="btn-confirm-hapus">🗑️ Hapus</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-tanggal" class="modal modal-tanggal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="tutupModalTanggal()">&times;</span>
-            <h2>📅 Pilih Tanggal Booking</h2>
-            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">Pilih tanggal untuk semua booking yang akan disimpan.</p>
-            <div class="info-data" id="modal-tanggal-info">📊 Menghitung jumlah data...</div>
-            <div class="form-group">
-                <label for="tanggal-simpan">Tanggal:</label>
-                <input type="date" id="tanggal-simpan" value="">
-            </div>
-            <button class="btn-save-all-modal" onclick="simpanSemuaBooking()">💾 Simpan Semua</button>
-            <button class="btn-cancel-modal" onclick="tutupModalTanggal()">❌ Batal</button>
-        </div>
-    </div>
-
-    <div id="modal-getin" class="modal modal-getin">
-        <div class="modal-content">
-            <span class="modal-close" onclick="tutupModalGetIn()">&times;</span>
-            <h2>🚪 Get In - Masuk Antrian</h2>
-            <div id="getin-info" class="info-booking"></div>
-            <div class="form-group">
-                <label for="getin-nomor">Nomor Antrian:</label>
-                <input type="number" id="getin-nomor" placeholder="Masukkan nomor antrian..." min="1">
-            </div>
-            <div class="form-group">
-                <label for="getin-sa">Ketemu SA (Opsional):</label>
-                <input type="text" id="getin-sa" placeholder="Nama SA...">
-            </div>
-            <button class="btn-save-getin" onclick="saveGetIn()">✅ Masukkan ke Antrian</button>
-            <button class="btn-cancel-getin" onclick="tutupModalGetIn()">❌ Batal</button>
-        </div>
-    </div>
-
-    <div id="modal-edit" class="modal modal-edit">
-        <div class="modal-content">
-            <span class="modal-close" onclick="tutupModalEdit()">&times;</span>
-            <h2>✏️ Edit Booking</h2>
-            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">Edit data booking di bawah ini.</p>
-            <div id="edit-key" style="display:none;"></div>
-            <div class="form-group">
-                <label for="edit-nopol">Nopol:</label>
-                <input type="text" id="edit-nopol" style="text-transform:uppercase;">
-            </div>
-            <div class="form-group">
-                <label for="edit-tipe">Tipe:</label>
-                <input type="text" id="edit-tipe">
-            </div>
-            <div class="form-group">
-                <label for="edit-nama">Nama:</label>
-                <input type="text" id="edit-nama">
-            </div>
-            <div class="form-group">
-                <label for="edit-telp">Telpon:</label>
-                <input type="text" id="edit-telp">
-            </div>
-            <div class="form-group">
-                <label for="edit-pekerjaan">Pekerjaan:</label>
-                <input type="text" id="edit-pekerjaan">
-            </div>
-            <div class="form-group">
-                <label for="edit-waktu">Waktu:</label>
-                <input type="text" id="edit-waktu">
-            </div>
-            <div class="form-group">
-                <label for="edit-sa">SA:</label>
-                <input type="text" id="edit-sa">
-            </div>
-            <button class="btn-save-getin" onclick="simpanEdit()" style="background:#17a2b8;">💾 Simpan Perubahan</button>
-            <button class="btn-cancel-getin" onclick="tutupModalEdit()">❌ Batal</button>
-        </div>
-    </div>
-
-    <div id="modal-edit-antrian" class="modal modal-edit-antrian">
-        <div class="modal-content">
-            <span class="modal-close" onclick="tutupModalEditAntrian()">&times;</span>
-            <h2>✏️ Edit Data Antrian</h2>
-            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">Edit Nopol, Nomor Antrian, dan SA.</p>
-            <div id="edit-antrian-key" style="display:none;"></div>
-            <div class="form-group">
-                <label for="edit-antrian-nopol">🚗 Nopol:</label>
-                <input type="text" id="edit-antrian-nopol" style="text-transform:uppercase;" placeholder="Contoh: B 1234 ABC">
-            </div>
-            <div class="form-group">
-                <label for="edit-antrian-nomor">🔢 Nomor Antrian:</label>
-                <input type="number" id="edit-antrian-nomor" min="1" placeholder="Contoh: 5">
-            </div>
-            <div class="form-group">
-                <label for="edit-antrian-sa">👤 SA (Opsional):</label>
-                <input type="text" id="edit-antrian-sa" placeholder="Nama SA">
-            </div>
-            <button class="btn-save-getin" onclick="simpanEditAntrian()" style="background:#17a2b8;">💾 Simpan Perubahan</button>
-            <button class="btn-cancel-getin" onclick="tutupModalEditAntrian()">❌ Batal</button>
-        </div>
-    </div>
-
-    <div id="qr-fullscreen-overlay">
-        <div class="qr-fs-card">
-            <h2 style="margin: 0 0 5px 0; color: #0056b3; font-size: 26px;">🚗 Daya Toyota</h2>
-            <p style="margin: 0 0 20px 0; font-size: 14px; color: #666;">Scan QR Code untuk Buka Antrian & Suara di HP</p>
-            <div id="qrcode-fullscreen-container"></div>
-            <p style="margin: 15px 0 0 0; font-size: 12px; color: #888; word-break: break-all;" id="qr-fs-url-text"></p>
-        </div>
-        <p style="margin-top: 20px; font-size: 13px; opacity: 0.8; letter-spacing: 1px;">⏳ Layar akan kembali otomatis...</p>
-    </div>
-
+    <!-- SCRIPT NAVIGASI IFRAME -->
     <script>
-    // ============================================================
-    // ================ KONFIGURASI FIREBASE =======================
-    // ============================================================
-    const firebaseConfig = {
-        apiKey: "AIzaSyBGsylncIZxoRmJ9YD_f4CNc7R83QbBMg4",
-        authDomain: "antrian-service-daya-toyota.firebaseapp.com",
-        databaseURL: "https://antrian-service-daya-toyota-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "antrian-service-daya-toyota",
-        storageBucket: "antrian-service-daya-toyota.firebasestorage.app",
-        messagingSenderId: "421850738338",
-        appId: "1:421850738338:web:21d5d24822e7902923b1fb"
-    };
-    
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    
-    // ============================================================
-    // ================ VARIABEL GLOBAL ============================
-    // ============================================================
-    let sessionUser = "";
-    let dataPanggilanTerakhirKu = null;
-    let lastPlayedTimestamp = 0;
-    let daftarBooking = [];
-    let daftarBookingFiltered = [];
-    let getInTargetKey = null;
-    let isMuted = false;
-    let editTargetKey = null;
-    let editAntrianTargetKey = null;
-    let queueSuara = [];
-    let sedangMemutarSuara = false;
-    let daftarAntrianMenunggu = [];
-    let timerInterval = null;
-    let intervalCheckPanggilan = null;
-    let intervalMonitorCheck = null;
-
-    // ============================================================
-    // ================ SWEETALERT2 HELPER =========================
-    // ============================================================
-    function swalToast(icon, text) {
-        Swal.fire({
-            icon: icon,
-            text: text,
-            toast: true,
-            position: 'top-end',
-            timer: 2200,
-            timerProgressBar: true,
-            showConfirmButton: false
-        });
-    }
-
-    function swalInfo(title, text) {
-        Swal.fire({
-            icon: 'info',
-            title: title,
-            text: text,
-            confirmButtonColor: '#0072ff'
-        });
-    }
-
-    function swalError(title, text) {
-        Swal.fire({
-            icon: 'error',
-            title: title,
-            text: text,
-            confirmButtonColor: '#dc3545'
-        });
-    }
-
-    function swalConfirm(title, text, confirmText, confirmColor) {
-        return Swal.fire({
-            icon: 'warning',
-            title: title,
-            html: text,
-            showCancelButton: true,
-            confirmButtonColor: confirmColor || '#28a745',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: confirmText || 'Ya, Lanjutkan',
-            cancelButtonText: 'Batal',
-            reverseButtons: true
-        }).then(result => result.isConfirmed);
-    }
-
-    // ============================================================
-    // ================ PILIH ROLE LOGIN ===========================
-    // ============================================================
-    function pilihRole(el) {
-        document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
-        el.classList.add('active');
-        document.getElementById('login-id').value = el.getAttribute('data-role');
-    }
-
-    // ============================================================
-    // ================ MODE CUSTOMER ==============================
-    // ============================================================
-    function isCustomerMode() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('view') === 'customer';
-    }
-
-    function getBaseUrl() {
-        let url = window.location.href.split('?')[0];
-        if (url.endsWith('/')) url = url.slice(0, -1);
-        return url;
-    }
-
-        function generateQRCodeFullscreen() {
-        let qrContainer = document.getElementById('qrcode-fullscreen-container');
-        let qrTextEl = document.getElementById('qr-fs-url-text');
-        if (!qrContainer) return;
-
-        let baseUrl = getBaseUrl();
-        let currentUrl = baseUrl + '?view=customer';
-        
-        if(qrTextEl) {
-            qrTextEl.innerText = currentUrl;
-            console.log("🔗 URL QR Code:", currentUrl);
+        function loadPage(url) {
+            document.getElementById('portal-home').style.display = 'none';
+            document.getElementById('content-frame').style.display = 'block';
+            document.getElementById('content-frame').src = url;
         }
 
-        let qrApiUrl = `https://quickchart.io/qr?text=${encodeURIComponent(currentUrl)}&size=500&margin=2`;
-        qrContainer.innerHTML = `<img src="${qrApiUrl}" alt="QR Code" onerror="this.parentElement.innerHTML='<p style=\\'color:#dc3545;\\'>⚠️ Gagal load QR Code. Buka langsung: <br><a href=\\'${currentUrl}\\' target=\\'_blank\\' style=\\'color:#007bff;word-break:break-all;\\'>${currentUrl}</a></p>'">`;
-    }
-
-
-    // ============================================================
-    // ================ HELPER =====================================
-    // ============================================================
-    function getTanggalHariIni() {
-        let d = new Date();
-        let month = '' + (d.getMonth() + 1);
-        let day = '' + d.getDate();
-        let year = d.getFullYear();
-        if (month.length < 2) month = '0' + month;
-        if (day.length < 2) day = '0' + day;
-        return [year, month, day].join('-');
-    }
-
-    function formatTanggalIndonesia(tgl) {
-        if (!tgl) return '-';
-        let parts = tgl.split('-');
-        let bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-        return `${parseInt(parts[2])} ${bulan[parseInt(parts[1])-1]} ${parts[0]}`;
-    }
-
-    function formatWaktuLalu(ms) {
-        if (!ms || ms < 0) return "00:00";
-        let totalDetik = Math.floor(ms / 1000);
-        let menit = Math.floor(totalDetik / 60);
-        let detik = totalDetik % 60;
-        let mStr = menit < 10 ? "0" + menit : menit;
-        let dStr = detik < 10 ? "0" + detik : detik;
-        return `${mStr}:${dStr}`;
-    }
-
-    function formatWaktuTunggu(ms) {
-        if (!ms || ms < 0) return "-";
-        let totalDetik = Math.floor(ms / 1000);
-        let menit = Math.floor(totalDetik / 60);
-        let detik = totalDetik % 60;
-        if (menit > 0) return `${menit} mnt ${detik} dtk`;
-        return `${detik} dtk`;
-    }
-
-    function cekAtauResetHariBaru() {
-        let tanggalHariIni = getTanggalHariIni();
-        db.ref('tanggal_sistem').once('value', (snapshot) => {
-            let tanggalTersimpan = snapshot.val();
-            if (!tanggalTersimpan || tanggalTersimpan !== tanggalHariIni) {
-                db.ref('antrian/menunggu').remove();
-                db.ref('antrian/panggilan_aktif').remove();
-                db.ref('antrian/history').remove();
-                db.ref('tanggal_sistem').set(tanggalHariIni);
-            }
-        });
-    }
-
-    // ============================================================
-    // ================ LOGIN ======================================
-    // ============================================================
-    window.onload = function() {
-        if (isCustomerMode()) {
-            document.body.classList.add('customer-mode');
-            sessionUser = 'CustomerMobile';
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('customer-view').style.display = 'block';
-            document.getElementById('btn-logout').style.display = 'none';
-            
-            setTimeout(function() {
-                mulaiMendengarkanDaftarTunggu();
-                mulaiMendengarkanPanggilanAktif();
-                mulaiTimerRealtime();
-                setTimeout(aktifkanSuaraCustomer, 1000);
-            }, 300);
-            return;
+        function showHome() {
+            document.getElementById('content-frame').style.display = 'none';
+            document.getElementById('content-frame').src = 'about:blank';
+            document.getElementById('portal-home').style.display = 'flex';
         }
-        
-        let hariIni = getTanggalHariIni();
-        let filterInput = document.getElementById('filter-tanggal');
-        if (filterInput && !filterInput.value) filterInput.value = hariIni;
-        let filterInputCounter = document.getElementById('filter-tanggal-counter');
-        if (filterInputCounter && !filterInputCounter.value) filterInputCounter.value = hariIni;
-
-        cekAtauResetHariBaru();
-        setInterval(cekAtauResetHariBaru, 60000);
-        cekLoginSebelumnya();
-        mulaiMendengarkanBooking();
-    };
-
-    function cekLoginSebelumnya() {
-        let savedUser = localStorage.getItem("sesi_user_antriandaya");
-        let savedDate = localStorage.getItem("tanggal_login_antriandaya");
-        let hariIni = getTanggalHariIni();
-        if (savedUser && savedDate === hariIni) {
-            document.getElementById('login-id').value = savedUser;
-            let card = document.querySelector(`.role-card[data-role="${savedUser}"]`);
-            if (card) card.classList.add('active');
-            loginProses();
-        }
-    }
-
-    function loginProses() {
-        const id = document.getElementById('login-id').value;
-        if (!id) {
-            swalInfo('Pilih Role Dulu', 'Silakan pilih role login terlebih dahulu.');
-            return;
-        }
-        sessionUser = id;
-        
-        let btnLogin = document.getElementById('btn-login');
-        if (btnLogin) { btnLogin.disabled = true; btnLogin.textContent = '⏳ Masuk...'; }
-
-        localStorage.setItem("sesi_user_antriandaya", id);
-        localStorage.setItem("tanggal_login_antriandaya", getTanggalHariIni());
-
-        document.getElementById('login-section').style.display = 'none';
-        document.getElementById('btn-logout').style.display = 'inline-block';
-        swalToast('success', `✅ Berhasil masuk sebagai ${id}`);
-
-                if (id === 'Monitor') {
-            document.getElementById('monitor-view').style.display = 'block';
-            mulaiSlideshowMonitor();
-            mulaiMendengarkanPanggilanAktif();
-            
-            setTimeout(function() {
-                // MENGGANTI .once() DENGAN LISTENER REALTIME
-                mulaiMendengarkanDaftarTunggu();
-                mulaiTimerRealtime(); // Menjalankan timer secara live di monitor
-                
-                forceTampilMonitor();
-                mulaiIntervalCheckMonitor();
-            }, 500);
-            
-        } else if (id === 'Valey') {
-
-            document.getElementById('valey-view').style.display = 'block';
-            setTimeout(function() {
-                mulaiMendengarkanBooking();
-                mulaiMendengarkanDaftarTunggu();
-                mulaiMendengarkanHistory();
-                mulaiMendengarkanPanggilanAktif();
-                mulaiTimerRealtime();
-            }, 300);
-        } else {
-            document.getElementById('counter-view').style.display = 'block';
-            document.getElementById('counter-name-display').innerText = id;
-            
-            let savedMute = localStorage.getItem('mute_counter_' + id);
-            if (savedMute === 'true') {
-                isMuted = true;
-                document.getElementById('btn-mute-counter').innerText = '🔇 Suara OFF';
-                document.getElementById('btn-mute-counter').classList.add('active');
-                document.getElementById('btn-mute-counter').style.background = '#dc3545';
-            } else {
-                isMuted = false;
-                document.getElementById('btn-mute-counter').innerText = '🔊 Suara ON';
-                document.getElementById('btn-mute-counter').classList.remove('active');
-                document.getElementById('btn-mute-counter').style.background = '#6c757d';
-            }
-            
-            setTimeout(function() {
-                hidePekerjaanColumn();
-                mulaiMendengarkanBooking();
-                mulaiMendengarkanDaftarTunggu();
-                mulaiMendengarkanHistory();
-                mulaiMendengarkanPanggilanAktif();
-                mulaiTimerRealtime();
-                mulaiIntervalCheckPanggilan();
-            }, 500);
-        }
-    }
-
-    function logoutAkun() {
-        swalConfirm('Keluar Akun?', 'Anda yakin ingin keluar dari sistem?', 'Ya, Keluar', '#dc3545').then((ok) => {
-            if (!ok) return;
-            hentikanIntervalCheckPanggilan();
-            hentikanIntervalCheckMonitor();
-            localStorage.removeItem("sesi_user_antriandaya");
-            localStorage.removeItem("tanggal_login_antriandaya");
-            location.reload();
-        });
-    }
-
-    // ============================================================
-    // ================ SUARA ======================================
-    // ============================================================
-    function aktifkanSuaraMonitor() {
-        let wakeUp = new SpeechSynthesisUtterance('Suara monitor aktif');
-        wakeUp.lang = 'id-ID';
-        window.speechSynthesis.speak(wakeUp);
-        document.getElementById('btn-enable-audio').innerText = "✅ Suara Monitor Aktif";
-        document.getElementById('btn-enable-audio').style.background = "#28a745";
-    }
-
-    function aktifkanSuaraCustomer() {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            let wakeUp = new SpeechSynthesisUtterance('Suara antrian HP aktif');
-            wakeUp.lang = 'id-ID';
-            wakeUp.rate = 1.0;
-            window.speechSynthesis.speak(wakeUp);
-        }
-        let btn = document.getElementById('btn-enable-customer-audio');
-        if(btn) {
-            btn.innerText = "✅ Suara HP Aktif & Siap Mendengar";
-            btn.style.background = "#138496";
-        }
-    }
-
-    function isCounterMuted(counterName) {
-        if (!counterName) return false;
-        return localStorage.getItem('mute_counter_' + counterName) === 'true';
-    }
-
-    function toggleMute() {
-        isMuted = !isMuted;
-        let btn = document.getElementById('btn-mute-counter');
-        if (isMuted) {
-            btn.innerText = '🔇 Suara OFF';
-            btn.classList.add('active');
-            btn.style.background = '#dc3545';
-        } else {
-            btn.innerText = '🔊 Suara ON';
-            btn.classList.remove('active');
-            btn.style.background = '#6c757d';
-        }
-        localStorage.setItem('mute_counter_' + sessionUser, isMuted);
-    }
-
-    function tambahKeAntreanSuara(teks, counterName) {
-        if (sessionUser !== 'Monitor' && sessionUser !== 'CustomerMobile') return;
-        if (counterName && isCounterMuted(counterName)) return;
-        queueSuara.push(teks);
-        prosesAntreanSuara();
-    }
-
-    function prosesAntreanSuara() {
-        if (sessionUser !== 'Monitor' && sessionUser !== 'CustomerMobile') return;
-        if (sedangMemutarSuara || queueSuara.length === 0) return;
-
-        sedangMemutarSuara = true;
-        const teksYangDiputar = queueSuara.shift();
-
-        const utterance = new SpeechSynthesisUtterance(teksYangDiputar);
-        utterance.lang = 'id-ID';
-        utterance.rate = 1.0;
-
-        let daftarSuara = window.speechSynthesis.getVoices();
-        let suaraIndo = daftarSuara.filter(voice => voice.lang === 'id-ID' || voice.lang === 'id_ID');
-        if (suaraIndo.length > 0) utterance.voice = suaraIndo[0];
-
-        utterance.onend = function() {
-            sedangMemutarSuara = false;
-            setTimeout(prosesAntreanSuara, 400);
-        };
-        utterance.onerror = function() {
-            sedangMemutarSuara = false;
-            prosesAntreanSuara();
-        };
-
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // ============================================================
-    // ================ BOOKING FUNCTIONS ==========================
-    // ============================================================
-    function mulaiMendengarkanBooking() {
-        let containerValey = document.getElementById('booking-list');
-        let containerCounter = document.getElementById('booking-list-counter');
-        
-        if (containerValey) containerValey.innerHTML = `<div class="empty-booking">⏳ Memuat data dari server...</div>`;
-        if (containerCounter) containerCounter.innerHTML = `<div class="empty-booking">⏳ Memuat data dari server...</div>`;
-
-        db.ref('booking').on('value', (snapshot) => {
-            daftarBooking = [];
-            snapshot.forEach((child) => {
-                let data = child.val();
-                data.key = child.key;
-                daftarBooking.push(data);
-            });
-            
-            updateTotalInfo();
-            
-            let hariIni = getTanggalHariIni();
-            let filterInput = document.getElementById('filter-tanggal');
-            if (filterInput && (!filterInput.value || filterInput.value.includes('/'))) filterInput.value = hariIni;
-            let filterInputCounter = document.getElementById('filter-tanggal-counter');
-            if (filterInputCounter && (!filterInputCounter.value || filterInputCounter.value.includes('/'))) filterInputCounter.value = hariIni;
-            
-            let tanggalFilter = filterInput ? filterInput.value : hariIni;
-            
-            if (daftarBooking.length > 0) {
-                let filtered = daftarBooking.filter(b => {
-                    if (!b.tanggal) return true;
-                    return b.tanggal === tanggalFilter;
-                });
-                daftarBookingFiltered = filtered.length > 0 ? filtered : daftarBooking;
-            } else {
-                daftarBookingFiltered = [];
-            }
-            
-            if (containerValey) renderFilteredBooking(daftarBookingFiltered, containerValey);
-            if (containerCounter) renderFilteredBooking(daftarBookingFiltered, containerCounter);
-        }, (error) => {
-            console.error("Firebase error:", error);
-            if (containerValey) containerValey.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data: ${error.message}</div>`;
-            if (containerCounter) containerCounter.innerHTML = `<div class="empty-booking" style="color:red;">❌ Gagal memuat data: ${error.message}</div>`;
-        });
-    }
-
-    function renderFilteredBooking(data, container) {
-        if (!container) return;
-        
-        let belumDatang = data.filter(b => b.status !== 'dipanggil' && b.status !== 'selesai');
-        let sudahDipanggil = data.filter(b => b.status === 'dipanggil' || b.status === 'selesai');
-        
-        belumDatang.sort((a, b) => {
-            if (a.waktu && b.waktu) return a.waktu.localeCompare(b.waktu);
-            return 0;
-        });
-        
-        sudahDipanggil.sort((a, b) => {
-            if (a.status === 'dipanggil' && b.status === 'selesai') return -1;
-            if (a.status === 'selesai' && b.status === 'dipanggil') return 1;
-            return 0;
-        });
-        
-        let allData = [...belumDatang, ...sudahDipanggil];
-        
-        if (allData.length === 0) {
-            container.innerHTML = `
-                <div class="empty-booking">📭 Tidak ada booking untuk filter ini.</div>
-                <div style="margin-top:10px;">
-                    <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
-                </div>
-            `;
-            return;
-        }
-        
-        let isCounter = sessionUser && sessionUser.includes('Counter');
-        let colSpan = isCounter ? 10 : 11;
-        
-        let html = `
-            <table class="booking-table">
-                <thead>
-                    <tr>
-                        <th style="width:30px;">No</th>
-                        <th>Nopol</th>
-                        <th>Tipe</th>
-                        <th>Nama</th>
-                        <th>Telpon</th>
-                        <th class="col-pekerjaan-header ${isCounter ? 'hide-pekerjaan' : ''}">Pekerjaan</th>
-                        <th>Waktu</th>
-                        <th>Tanggal</th>
-                        <th>SA</th>
-                        <th>Status</th>
-                        <th style="width:200px;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        let counter = 0;
-        let hasDipanggil = sudahDipanggil.length > 0;
-        
-        belumDatang.forEach((b) => {
-            counter++;
-            html += renderRow(b, counter);
-        });
-        
-        if (hasDipanggil) {
-            html += `<tr class="separator-row"><td colspan="${colSpan}">📌 BOOKING YANG SUDAH DIPANGGIL / SELESAI</td></tr>`;
-            sudahDipanggil.forEach((b) => {
-                counter++;
-                html += renderRow(b, counter);
-            });
-        }
-        
-        html += `
-                </tbody>
-            </table>
-            <div style="margin-top:10px; text-align:center;">
-                <button class="btn-add-row-manual" onclick="tambahBarisManual()" style="background:#28a745; color:white; padding:6px 16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">➕ Tambah Baris</button>
-            </div>
-        `;
-        
-        container.innerHTML = html;
-        if (sessionUser && sessionUser.includes('Counter')) hidePekerjaanColumn();
-    }
-
-    function renderRow(b, index) {
-        let statusClass = 'status-belum-datang';
-        let statusText = 'BELUM DATANG';
-        let rowClass = 'row-menunggu';
-        let disabled = false;
-        
-        if (b.status === 'dipanggil') { 
-            statusClass = 'status-dipanggil'; 
-            statusText = 'DIPANGGIL'; 
-            rowClass = 'row-dipanggil';
-            disabled = true;
-        }
-        if (b.status === 'selesai') { 
-            statusClass = 'status-selesai'; 
-            statusText = 'SELESAI'; 
-            rowClass = 'row-selesai';
-            disabled = true;
-        }
-        
-        let isCounter = sessionUser && sessionUser.includes('Counter');
-        
-        return `
-            <tr class="${rowClass}">
-                <td><strong>${index}</strong></td>
-                <td><strong>${b.nopol || '-'}</strong></td>
-                <td>${b.tipe || '-'}</td>
-                <td>${b.nama || '-'}</td>
-                <td>${b.telp || '-'}</td>
-                <td class="col-pekerjaan ${isCounter ? 'hide-pekerjaan' : ''}">${b.pekerjaan || '-'}</td>
-                <td>${b.waktu || '-'}</td>
-                <td>${formatTanggalIndonesia(b.tanggal)}</td>
-                <td>${b.sa || '-'}</td>
-                <td><span class="${statusClass}">${statusText}</span></td>
-                <td>
-                    <button class="btn-edit-booking" onclick="bukaModalEdit('${b.key}')" title="Edit">✏️</button>
-                    <button class="btn-get-in" ${disabled ? 'disabled' : ''} onclick="bukaModalGetIn('${b.key}')" title="Masukkan ke antrian">🚪 Get In</button>
-                    ${b.status === 'dipanggil' ? `<button class="btn-restore-booking" onclick="restoreBooking('${b.key}')" title="Kembalikan ke daftar booking">↩️</button>` : ''}
-                    <button class="btn-delete-booking" onclick="deleteBooking('${b.key}')" title="Hapus booking">✕</button>
-                </td>
-            </tr>
-        `;
-    }
-
-    // ============================================================
-    // ================ BOOKING CRUD ===============================
-    // ============================================================
-    function filterBooking() {
-        let keyword = document.getElementById('search-booking').value.toLowerCase().trim();
-        let tanggal = document.getElementById('filter-tanggal').value || getTanggalHariIni();
-        document.getElementById('filter-tanggal').value = tanggal;
-        
-        let filtered = daftarBooking.filter(b => {
-            let match = true;
-            if (keyword) {
-                let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
-                if (!text.includes(keyword)) match = false;
-            }
-            if (tanggal && b.tanggal && b.tanggal !== tanggal) match = false;
-            return match;
-        });
-        
-        daftarBookingFiltered = filtered;
-        renderFilteredBooking(filtered, document.getElementById('booking-list'));
-    }
-
-    function filterBookingCounter() {
-        let keyword = document.getElementById('search-booking-counter').value.toLowerCase().trim();
-        let tanggal = document.getElementById('filter-tanggal-counter').value || getTanggalHariIni();
-        document.getElementById('filter-tanggal-counter').value = tanggal;
-        
-        let filtered = daftarBooking.filter(b => {
-            let match = true;
-            if (keyword) {
-                let text = (b.nopol + ' ' + b.nama + ' ' + b.telp + ' ' + b.tipe).toLowerCase();
-                if (!text.includes(keyword)) match = false;
-            }
-            if (tanggal && b.tanggal && b.tanggal !== tanggal) match = false;
-            return match;
-        });
-        
-        daftarBookingFiltered = filtered;
-        renderFilteredBooking(filtered, document.getElementById('booking-list-counter'));
-    }
-
-    function resetFilter() {
-        document.getElementById('search-booking').value = '';
-        document.getElementById('filter-tanggal').value = getTanggalHariIni();
-        filterBooking();
-    }
-
-    function resetFilterCounter() {
-        document.getElementById('search-booking-counter').value = '';
-        document.getElementById('filter-tanggal-counter').value = getTanggalHariIni();
-        filterBookingCounter();
-    }
-
-    function updateTotalInfo() {
-        let totalBooking = daftarBooking.length;
-        let sudahDipanggil = daftarBooking.filter(b => b.status === 'dipanggil' || b.status === 'selesai').length;
-        let belumDipanggil = totalBooking - sudahDipanggil;
-        let infoEl = document.getElementById('total-booking-info');
-        let infoCounterEl = document.getElementById('total-booking-info-counter');
-        let teksTotal = `(Total: ${totalBooking}) <span class="info-badge badge-call">📞 Sudah Dipanggil: ${sudahDipanggil}</span> <span class="info-badge badge-wait">⏳ Belum Dipanggil: ${belumDipanggil}</span>`;
-        if (infoEl) infoEl.innerHTML = teksTotal;
-        if (infoCounterEl) infoCounterEl.innerHTML = teksTotal;
-    }
-
-    function deleteBooking(key) {
-        swalConfirm('Hapus Booking?', '⚠️ Yakin ingin menghapus booking ini?', 'Ya, Hapus', '#dc3545').then((ok) => {
-            if (!ok) return;
-            db.ref('booking/' + key).remove().then(() => swalToast('success', '✅ Booking berhasil dihapus!'))
-                .catch(err => swalError('Gagal Menghapus', err.message));
-        });
-    }
-
-    function restoreBooking(key) {
-        swalConfirm('Kembalikan Booking?', '↩️ Yakin ingin mengembalikan booking ini ke daftar menunggu?', 'Ya, Kembalikan', '#28a745').then((ok) => {
-            if (!ok) return;
-            db.ref('booking/' + key).update({ status: 'menunggu' })
-                .then(() => swalToast('success', '✅ Booking berhasil dikembalikan!'))
-                .catch(err => swalError('Gagal Mengembalikan', err.message));
-        });
-    }
-
-    // ============================================================
-    // ================ GET IN =====================================
-    // ============================================================
-    function bukaModalGetIn(keyBooking) {
-        if (sessionUser !== 'Valey') {
-            swalInfo('Akses Ditolak', 'Hanya Valey yang bisa melakukan Get In!');
-            return;
-        }
-
-        let bookingData = daftarBookingFiltered.find(b => b.key === keyBooking);
-        if (!bookingData) { swalError('Error', "Data booking tidak ditemukan!"); return; }
-        if (bookingData.status === 'dipanggil' || bookingData.status === 'selesai') {
-            swalInfo('Booking Diproses', `Booking ini sudah ${bookingData.status}!`);
-            return;
-        }
-
-        let sudahDiAntrian = daftarAntrianMenunggu.some(a => a.nopol === bookingData.nopol && a.jenis === 'Booking');
-        if (sudahDiAntrian) {
-            swalInfo('Sudah di Antrian', `Booking dengan nopol ${bookingData.nopol} sudah ada di antrian!`);
-            return;
-        }
-
-        getInTargetKey = keyBooking;
-
-        let infoHtml = `
-            <div><strong>🚗 Nopol:</strong> ${bookingData.nopol}</div>
-            <div><strong>👤 Nama:</strong> ${bookingData.nama}</div>
-            <div><strong>📞 Telpon:</strong> ${bookingData.telp || '-'}</div>
-            <div><strong>🔧 Pekerjaan:</strong> ${bookingData.pekerjaan || '-'}</div>
-            <div><strong>⏰ Waktu:</strong> ${bookingData.waktu || '-'}</div>
-            <div><strong>📅 Tanggal:</strong> ${formatTanggalIndonesia(bookingData.tanggal)}</div>
-        `;
-        document.getElementById('getin-info').innerHTML = infoHtml;
-
-        let nomorTerakhir = 0;
-        daftarAntrianMenunggu.forEach(a => { if (a.nomor > nomorTerakhir) nomorTerakhir = a.nomor; });
-        document.getElementById('getin-nomor').value = nomorTerakhir + 1;
-        document.getElementById('getin-sa').value = bookingData.sa || '';
-
-        document.getElementById('modal-getin').style.display = 'block';
-    }
-
-    function tutupModalGetIn() {
-        document.getElementById('modal-getin').style.display = 'none';
-        getInTargetKey = null;
-    }
-
-    function saveGetIn() {
-        if (!getInTargetKey) { swalError('Error', 'Tidak ada booking yang dipilih!'); return; }
-
-        let bookingData = daftarBookingFiltered.find(b => b.key === getInTargetKey);
-        if (!bookingData) { swalError('Error', "Data booking tidak ditemukan!"); return; }
-
-        let nomorAntrian = parseInt(document.getElementById('getin-nomor').value);
-        let saValue = document.getElementById('getin-sa').value.trim();
-
-        if (!nomorAntrian || nomorAntrian <= 0) {
-            swalInfo('Nomor Tidak Valid', 'Harap masukkan Nomor Antrian yang valid!');
-            document.getElementById('getin-nomor').focus();
-            return;
-        }
-
-        let nomorSudahAda = daftarAntrianMenunggu.some(a => a.nomor === nomorAntrian);
-        if (nomorSudahAda) {
-            swalInfo('Nomor Sudah Dipakai', `Nomor antrian ${nomorAntrian} sudah digunakan! Silakan gunakan nomor lain.`);
-            document.getElementById('getin-nomor').focus();
-            return;
-        }
-
-        swalConfirm('Masukkan ke Antrian?', `🚪 Yakin memasukkan ke antrian?<br><br>🚗 <b>${bookingData.nopol}</b><br>👤 ${bookingData.nama}<br>📌 Nomor Antrian: <b>${nomorAntrian}</b>`, 'Ya, Masukkan').then((ok) => {
-            if (!ok) return;
-
-            const waktuInput = firebase.database.ServerValue.TIMESTAMP;
-
-            let dataAntrian = {
-                jenis: 'Booking',
-                nomor: nomorAntrian,
-                nopol: bookingData.nopol,
-                nama: bookingData.nama,
-                tipe: bookingData.tipe || '',
-                telp: bookingData.telp || '',
-                pekerjaan: bookingData.pekerjaan || '',
-                sa: saValue || bookingData.sa || '',
-                timestamp: waktuInput,
-                waktuMasuk: waktuInput,
-                bookingKey: getInTargetKey,
-                fromGetIn: true
-            };
-
-            db.ref('antrian/menunggu').push(dataAntrian).then(() => {
-                db.ref('booking/' + getInTargetKey).update({ status: 'dipanggil' });
-                tutupModalGetIn();
-                swalToast('success', `✅ Booking ${bookingData.nopol} masuk antrian nomor ${nomorAntrian}!`);
-            }).catch(err => swalError('Gagal Menambahkan', err.message));
-        });
-    }
-
-    // ============================================================
-    // ================ EDIT BOOKING ===============================
-    // ============================================================
-    function bukaModalEdit(key) {
-        let bookingData = daftarBooking.find(b => b.key === key);
-        if (!bookingData) { swalError('Error', "Data booking tidak ditemukan!"); return; }
-
-        editTargetKey = key;
-        document.getElementById('edit-nopol').value = bookingData.nopol || '';
-        document.getElementById('edit-tipe').value = bookingData.tipe || '';
-        document.getElementById('edit-nama').value = bookingData.nama || '';
-        document.getElementById('edit-telp').value = bookingData.telp || '';
-        document.getElementById('edit-pekerjaan').value = bookingData.pekerjaan || '';
-        document.getElementById('edit-waktu').value = bookingData.waktu || '';
-        document.getElementById('edit-sa').value = bookingData.sa || '';
-        
-        document.getElementById('modal-edit').style.display = 'block';
-    }
-
-    function tutupModalEdit() {
-        document.getElementById('modal-edit').style.display = 'none';
-        editTargetKey = null;
-    }
-
-    function simpanEdit() {
-        if (!editTargetKey) { swalError('Error', 'Tidak ada data yang dipilih!'); return; }
-
-        let nopol = document.getElementById('edit-nopol').value.trim().toUpperCase();
-        let tipe = document.getElementById('edit-tipe').value.trim();
-        let nama = document.getElementById('edit-nama').value.trim();
-        let telp = document.getElementById('edit-telp').value.trim();
-        let pekerjaan = document.getElementById('edit-pekerjaan').value.trim();
-        let waktu = document.getElementById('edit-waktu').value.trim();
-        let sa = document.getElementById('edit-sa').value.trim();
-
-        if (!nopol || !nama) { swalInfo('Data Tidak Lengkap', 'Nopol dan Nama harus diisi!'); return; }
-
-        let updates = {};
-        updates['booking/' + editTargetKey + '/nopol'] = nopol;
-        updates['booking/' + editTargetKey + '/tipe'] = tipe || '';
-        updates['booking/' + editTargetKey + '/nama'] = nama;
-        updates['booking/' + editTargetKey + '/telp'] = telp || '';
-        updates['booking/' + editTargetKey + '/pekerjaan'] = pekerjaan || '-';
-        updates['booking/' + editTargetKey + '/waktu'] = waktu || '';
-        updates['booking/' + editTargetKey + '/sa'] = sa || '';
-
-        let btn = document.querySelector('.modal-edit .btn-save-getin');
-        btn.textContent = '⏳ Menyimpan...';
-        btn.disabled = true;
-
-        db.ref().update(updates).then(() => {
-            swalToast('success', '✅ Data booking berhasil diupdate!');
-            tutupModalEdit();
-            filterBooking();
-        }).catch(err => {
-            swalError('Gagal Mengupdate', err.message);
-            btn.textContent = '💾 Simpan Perubahan';
-            btn.disabled = false;
-        });
-    }
-
-    // ============================================================
-    // ================ TAMBAH BARIS MANUAL ========================
-    // ============================================================
-    function tambahBarisManual() {
-        let container = document.getElementById('booking-list');
-        let table = container.querySelector('table');
-        let filterInput = document.getElementById('filter-tanggal');
-        let tanggalFilter = filterInput ? filterInput.value : getTanggalHariIni();
-        
-        if (!table) {
-            let html = `
-                <table class="booking-table">
-                    <thead>
-                        <tr>
-                            <th style="width:30px;">No</th>
-                            <th>Nopol</th>
-                            <th>Tipe</th>
-                            <th>Nama</th>
-                            <th>Telpon</th>
-                            <th class="col-pekerjaan-header">Pekerjaan</th>
-                            <th>Waktu</th>
-                            <th>Tanggal</th>
-                            <th>SA</th>
-                            <th>Status</th>
-                            <th style="width:200px;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            `;
-            container.innerHTML = html;
-            table = container.querySelector('table');
-        }
-        
-        let tbody = table.querySelector('tbody');
-        let rowCount = tbody.querySelectorAll('tr').length;
-        
-        let newRow = document.createElement('tr');
-        newRow.className = 'edit-row';
-        newRow.innerHTML = `
-            <td><strong>${rowCount + 1}</strong></td>
-            <td><input type="text" class="edit-input edit-nopol" placeholder="Nopol" value=""></td>
-            <td><input type="text" class="edit-input edit-tipe" placeholder="Tipe" value=""></td>
-            <td><input type="text" class="edit-input edit-nama" placeholder="Nama" value=""></td>
-            <td><input type="text" class="edit-input edit-telp" placeholder="Telpon" value=""></td>
-            <td class="col-pekerjaan"><input type="text" class="edit-input edit-pekerjaan" placeholder="Pekerjaan" value=""></td>
-            <td><input type="text" class="edit-input edit-waktu-text" placeholder="Waktu" value=""></td>
-            <td class="edit-tanggal-cell" data-tanggal="${tanggalFilter}" style="color:#333; font-weight:bold; font-size:11px;">${formatTanggalIndonesia(tanggalFilter)}</td>
-            <td><input type="text" class="edit-input edit-sa" placeholder="SA" value=""></td>
-            <td style="font-size:10px; color:#999;">-</td>
-            <td><button class="btn-cancel-row" onclick="hapusBarisManual(this)" title="Hapus baris">✕</button></td>
-        `;
-        
-        tbody.appendChild(newRow);
-        let firstInput = newRow.querySelector('.edit-nopol');
-        if (firstInput) { firstInput.focus(); firstInput.select(); }
-        newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        if (sessionUser && sessionUser.includes('Counter')) hidePekerjaanColumn();
-    }
-
-    function hapusBarisManual(btn) {
-        let row = btn.closest('tr');
-        swalConfirm('Hapus Baris?', 'Hapus baris input ini?', 'Ya, Hapus', '#dc3545').then((ok) => {
-            if (!ok) return;
-            row.remove();
-            let tbody = row.closest('tbody');
-            tbody.querySelectorAll('tr').forEach((r, idx) => {
-                let td = r.querySelector('td:first-child');
-                if (td) td.innerHTML = `<strong>${idx + 1}</strong>`;
-            });
-            swalToast('success', '✅ Baris dihapus');
-        });
-    }
-
-    // ============================================================
-    // ================ PASTE MAGIC ================================
-    // ============================================================
-    document.addEventListener('paste', function(e) {
-        let target = e.target;
-        if (!target.classList.contains('edit-input') && !target.classList.contains('edit-nopol')) return;
-        
-        let clipboardData = e.clipboardData || window.clipboardData;
-        let pastedText = clipboardData.getData('text');
-        if (!pastedText) return;
-        
-        let filterInput = document.getElementById('filter-tanggal');
-        let tanggalFilter = filterInput ? filterInput.value : getTanggalHariIni();
-        let separator = '\t';
-        let lines = pastedText.split('\n').filter(line => line.trim() !== '');
-        if (lines.length === 0) return;
-        
-        let hasTab = lines[0].includes('\t');
-        let hasPipe = lines[0].includes('|');
-        if (hasTab) separator = '\t';
-        else if (hasPipe) separator = '|';
-        
-        e.preventDefault();
-        let row = target.closest('tr');
-        if (!row) return;
-        
-        lines.forEach((line, lineIndex) => {
-            let parts = line.split(separator).map(s => s.trim());
-            if (parts.length < 2 && lineIndex === 0) {
-                let input = row.querySelector('.edit-nopol');
-                if (input) input.value = parts[0] || '';
-                return;
-            }
-            while (parts.length < 7) parts.push('');
-            if (lineIndex === 0) {
-                fillRow(row, parts, tanggalFilter);
-            } else {
-                let newRow = duplicateRow(row, tanggalFilter);
-                fillRow(newRow, parts, tanggalFilter);
-                let tbody = row.closest('tbody');
-                tbody.querySelectorAll('tr').forEach((r, idx) => {
-                    let td = r.querySelector('td:first-child');
-                    if (td) td.innerHTML = `<strong>${idx + 1}</strong>`;
-                });
-            }
-        });
-        if (sessionUser && sessionUser.includes('Counter')) hidePekerjaanColumn();
-    }, true);
-
-    function fillRow(row, parts, tanggal) {
-        let fields = [
-            { class: 'edit-nopol', value: parts[0] || '' },
-            { class: 'edit-tipe', value: parts[1] || '' },
-            { class: 'edit-nama', value: parts[2] || '' },
-            { class: 'edit-telp', value: parts[3] || '' },
-            { class: 'edit-pekerjaan', value: parts[4] || '' },
-            { class: 'edit-waktu-text', value: parts[5] || '' },
-            { class: 'edit-sa', value: parts[6] || '' }
-        ];
-        fields.forEach(field => {
-            let input = row.querySelector('.' + field.class);
-            if (input) {
-                input.value = field.value;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        });
-        let tglCell = row.querySelector('td:nth-child(8)');
-        if (tglCell && tanggal) tglCell.textContent = formatTanggalIndonesia(tanggal);
-    }
-
-    function duplicateRow(row, tanggal) {
-        let tbody = row.closest('tbody');
-        let newRow = row.cloneNode(true);
-        newRow.querySelectorAll('input').forEach(input => input.value = '');
-        let tglCell = newRow.querySelector('td:nth-child(8)');
-        if (tglCell && tanggal) tglCell.textContent = formatTanggalIndonesia(tanggal);
-        tbody.appendChild(newRow);
-        return newRow;
-    }
-
-    // ============================================================
-    // ================ SIMPAN SEMUA ===============================
-    // ============================================================
-    function bukaModalSimpanSemua() {
-        let container = document.getElementById('booking-list');
-        let table = container.querySelector('table');
-        if (!table) { swalInfo('Tidak Ada Data', 'Tidak ada data untuk disimpan!'); return; }
-        
-        let tbody = table.querySelector('tbody');
-        let rows = tbody.querySelectorAll('tr.edit-row');
-        if (rows.length === 0) { swalInfo('Tidak Ada Data Baru', 'Tidak ada data baru untuk disimpan!'); return; }
-        
-        let filterInput = document.getElementById('filter-tanggal');
-        let tanggalAktif = filterInput && filterInput.value && !filterInput.value.includes('/') ? filterInput.value : getTanggalHariIni();
-        document.getElementById('tanggal-simpan').value = tanggalAktif;
-        
-        let existingData = daftarBooking;
-        let duplicateList = [];
-        let newCount = 0;
-        
-        rows.forEach(row => {
-            let nopol = row.querySelector('.edit-nopol').value.trim().toUpperCase();
-            let nama = row.querySelector('.edit-nama').value.trim();
-            if (nopol && nama) {
-                let isDuplicate = existingData.some(b => b.nopol === nopol && b.nama === nama && b.tanggal === tanggalAktif);
-                if (isDuplicate) duplicateList.push(`${nopol} - ${nama}`);
-                else newCount++;
-            }
-        });
-        
-        let info = document.getElementById('modal-tanggal-info');
-        info.innerHTML = `
-            📊 Menyimpan <strong>${rows.length}</strong> data booking untuk tanggal <strong>${formatTanggalIndonesia(tanggalAktif)}</strong>.<br>
-            🆕 <span class="new-item">Data baru: ${newCount}</span><br>
-            ${duplicateList.length > 0 ? `⚠️ <span class="duplicate-item">Data duplikat: ${duplicateList.length} (akan dilewati)</span><br>` : ''}
-        `;
-        document.getElementById('modal-tanggal').style.display = 'block';
-    }
-
-    function tutupModalTanggal() {
-        document.getElementById('modal-tanggal').style.display = 'none';
-    }
-
-    function simpanSemuaBooking() {
-        let inputTanggalModal = document.getElementById('tanggal-simpan').value;
-        if (!inputTanggalModal) { swalInfo('Tanggal Kosong', 'Harap pilih tanggal!'); return; }
-        
-        let tanggal = inputTanggalModal;
-        if (inputTanggalModal.includes('/')) {
-            let parts = inputTanggalModal.split('/');
-            if (parts.length === 3) tanggal = `${parts[2]}-${parts[1]}-${parts[0]}`;
-        }
-        
-        let container = document.getElementById('booking-list');
-        let table = container.querySelector('table');
-        if (!table) { swalInfo('Tidak Ada Data', 'Tidak ada data untuk disimpan!'); return; }
-        
-        let tbody = table.querySelector('tbody');
-        let rows = tbody.querySelectorAll('tr.edit-row');
-        if (rows.length === 0) { swalInfo('Tidak Ada Data Baru', 'Tidak ada data baru untuk disimpan!'); return; }
-        
-        let dataBooking = [];
-        let isValid = true;
-        let existingData = daftarBooking;
-        
-        rows.forEach(row => {
-            let nopol = row.querySelector('.edit-nopol').value.trim().toUpperCase();
-            let tipe = row.querySelector('.edit-tipe').value.trim();
-            let nama = row.querySelector('.edit-nama').value.trim();
-            let telp = row.querySelector('.edit-telp').value.trim();
-            let pekerjaan = row.querySelector('.edit-pekerjaan').value.trim();
-            let waktu = row.querySelector('.edit-waktu-text').value.trim();
-            let sa = row.querySelector('.edit-sa').value.trim();
-
-            if (!nopol || !nama) { isValid = false; return; }
-
-            let dataBaru = {
-                nopol, tipe: tipe || '', nama, telp: telp || '',
-                pekerjaan: pekerjaan || '-', waktu: waktu || '', tanggal: tanggal,
-                sa: sa || '', status: 'menunggu', source: 'manual'
-            };
-
-            let isDuplicate = existingData.some(b => b.nopol === dataBaru.nopol && b.nama === dataBaru.nama && b.tanggal === dataBaru.tanggal);
-            if (!isDuplicate) dataBooking.push(dataBaru);
-        });
-
-        if (!isValid) { swalInfo('Data Tidak Lengkap', 'Ada data yang tidak lengkap (Nopol dan Nama wajib diisi)!'); return; }
-        if (dataBooking.length === 0) { swalInfo('Semua Duplikat', 'Semua data sudah ada (duplikat)!'); return; }
-
-        swalConfirm('Simpan Booking?', `📅 Simpan <b>${dataBooking.length}</b> data booking untuk tanggal <b>${formatTanggalIndonesia(tanggal)}</b>?`, 'Ya, Simpan').then((ok) => {
-            if (!ok) return;
-            prosesSimpanSemua(dataBooking, tanggal);
-        });
-    }
-
-    function prosesSimpanSemua(dataBooking, tanggal) {
-        let btn = document.querySelector('.btn-save-all-modal');
-        if(btn) { btn.textContent = '⏳ Menyimpan...'; btn.disabled = true; }
-
-        let updates = {};
-        dataBooking.forEach((b) => {
-            let cleanKey = (b.nopol + '_' + b.nama + '_' + b.tanggal).replace(/[.#$\/\[\]\s]/g, '_');
-            updates['booking/' + cleanKey] = b;
-        });
-
-        db.ref().update(updates).then(() => {
-            swalToast('success', `✅ Berhasil menyimpan ${dataBooking.length} data booking!`);
-            tutupModalTanggal();
-            let filterInput = document.getElementById('filter-tanggal');
-            if (filterInput) filterInput.value = tanggal;
-            let filterInputCounter = document.getElementById('filter-tanggal-counter');
-            if (filterInputCounter) filterInputCounter.value = tanggal;
-            document.querySelectorAll('tr.edit-row').forEach(r => r.remove());
-            filterBooking();
-        }).catch(err => swalError('Gagal Menyimpan', err.message)).finally(() => {
-            if(btn) { btn.textContent = '💾 Simpan Semua'; btn.disabled = false; }
-        });
-    }
-
-    // ============================================================
-    // ================ HAPUS BOOKING ==============================
-    // ============================================================
-    function bukaModalHapusSemua() {
-        let today = getTanggalHariIni();
-        document.getElementById('hapus-tanggal').value = today;
-        let btn = document.getElementById('btn-confirm-hapus');
-        btn.disabled = true;
-        btn.textContent = '⏳ Menghitung...';
-        hitungDataHapus();
-        document.getElementById('modal-hapus-semua').style.display = 'block';
-    }
-
-    function hitungDataHapus() {
-        let tanggal = document.getElementById('hapus-tanggal').value || getTanggalHariIni();
-        document.getElementById('hapus-tanggal').value = tanggal;
-        let btn = document.getElementById('btn-confirm-hapus');
-        
-        db.ref('booking').once('value', (snapshot) => {
-            let count = 0, dataList = [];
-            snapshot.forEach((child) => {
-                let data = child.val();
-                if (data.tanggal === tanggal) { count++; dataList.push(`${data.nopol || '-'} - ${data.nama || '-'}`); }
-            });
-            let info = document.getElementById('hapus-count-info');
-            if (count === 0) {
-                info.innerHTML = `📭 Tidak ada data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}.`;
-                btn.disabled = true;
-                btn.textContent = '🗑️ Tidak Ada Data';
-            } else {
-                let preview = dataList.slice(0, 5).map(d => `• ${d}`).join('<br>');
-                if (dataList.length > 5) preview += `<br>• ... dan ${dataList.length - 5} data lainnya`;
-                info.innerHTML = `📊 Ditemukan <strong>${count}</strong> data booking untuk tanggal ${formatTanggalIndonesia(tanggal)}.<br><div style="margin-top:5px; font-size:12px; color:#555;">${preview}</div>`;
-                btn.disabled = false;
-                btn.textContent = `🗑️ Hapus ${count} Data`;
-            }
-        }).catch(err => { swalError('Gagal Menghitung', err.message); btn.disabled = false; btn.textContent = '🗑️ Hapus'; });
-    }
-
-    function hapusBookingByTanggal() {
-        let tanggal = document.getElementById('hapus-tanggal').value;
-        if (!tanggal) { swalInfo('Tanggal Kosong', 'Harap pilih tanggal!'); return; }
-        
-        let btn = document.getElementById('btn-confirm-hapus');
-        let count = parseInt(btn.textContent.replace(/\D/g, '')) || 0;
-        if (count === 0) { swalInfo('Tidak Ada Data', 'Tidak ada data untuk tanggal ini!'); return; }
-
-        swalConfirm('Hapus Semua Booking?', `⚠️ Yakin ingin menghapus <b>${count}</b> data booking untuk tanggal <b>${formatTanggalIndonesia(tanggal)}</b>?`, 'Ya, Hapus', '#dc3545').then((ok) => {
-            if (!ok) return;
-            prosesHapusBooking(tanggal, btn);
-        });
-    }
-
-    function prosesHapusBooking(tanggal, btn) {
-        btn.disabled = true;
-        btn.textContent = '⏳ Menghapus...';
-
-        let keysToRemove = [];
-        db.ref('booking').once('value', (snapshot) => {
-            snapshot.forEach((child) => {
-                let data = child.val();
-                if (data.tanggal === tanggal) keysToRemove.push(child.key);
-            });
-            if (keysToRemove.length === 0) {
-                swalInfo('Tidak Ada Data', 'Tidak ada data untuk tanggal ini!');
-                btn.disabled = false;
-                btn.textContent = '🗑️ Hapus';
-                return;
-            }
-            Promise.all(keysToRemove.map(key => db.ref('booking/' + key).remove()))
-                .then(() => {
-                    swalToast('success', `✅ Berhasil menghapus ${keysToRemove.length} data booking!`);
-                    tutupModalHapusSemua();
-                    filterBooking();
-                })
-                .catch(err => swalError('Gagal Menghapus', err.message))
-                .finally(() => { btn.disabled = false; btn.textContent = '🗑️ Hapus'; });
-        }).catch(err => { swalError('Gagal Membaca Data', err.message); btn.disabled = false; btn.textContent = '🗑️ Hapus'; });
-    }
-
-    function tutupModalHapusSemua() {
-        document.getElementById('modal-hapus-semua').style.display = 'none';
-    }
-
-    // ============================================================
-    // ================ DOWNLOAD LAPORAN ===========================
-    // ============================================================
-    function downloadReport() {
-        let data = daftarBookingFiltered.length > 0 ? daftarBookingFiltered : daftarBooking;
-        if (data.length === 0) { swalInfo('Tidak Ada Data', 'Tidak ada data booking untuk diunduh.'); return; }
-
-        let reportData = data.map((b, index) => ({
-            'No': index + 1,
-            'Nopol': b.nopol || '',
-            'Tipe': b.tipe || '',
-            'Nama': b.nama || '',
-            'Telpon': b.telp || '',
-            'Pekerjaan': b.pekerjaan || '',
-            'Waktu': b.waktu || '',
-            'Tanggal': b.tanggal || '',
-            'SA': b.sa || '',
-            'Status': b.status === 'dipanggil' ? 'DIPANGGIL' : (b.status === 'selesai' ? 'SELESAI' : 'BELUM DATANG')
-        }));
-
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(reportData);
-        ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 14 }, { wch: 15 }, { wch: 12 }];
-        XLSX.utils.book_append_sheet(wb, ws, 'Laporan Booking');
-        XLSX.writeFile(wb, `Laporan_Booking_${getTanggalHariIni()}.xlsx`);
-    }
-
-    // ============================================================
-    // ================ HIDE PEKERJAAN UNTUK COUNTER ==============
-    // ============================================================
-    function hidePekerjaanColumn() {
-        document.querySelectorAll('.booking-table').forEach(table => {
-            table.querySelectorAll('th.col-pekerjaan-header').forEach(th => th.style.display = 'none');
-            table.querySelectorAll('td.col-pekerjaan').forEach(td => td.style.display = 'none');
-        });
-    }
-
-    // ============================================================
-    // ================ LOGIKA VALEY ===============================
-    // ============================================================
-    function tambahAntrianValey(jenis, bookingKey = null) {
-        cekAtauResetHariBaru();
-
-        const nopolInput = document.getElementById('nopol-input');
-        const nomorInput = document.getElementById('nomor-input');
-        const saInput = document.getElementById('sa-input');
-
-        const nopolValue = nopolInput.value.trim().toUpperCase();
-        const nomorValue = nomorInput.value.trim();
-        const saValue = saInput.value.trim();
-
-        if (nopolValue === "") { swalInfo('Nopol Kosong', "Harap ketik Nomor Polisi terlebih dahulu!"); nopolInput.focus(); return; }
-        if (nomorValue === "" || isNaN(nomorValue) || parseInt(nomorValue) <= 0) {
-            swalInfo('Nomor Tidak Valid', "Harap ketik Nomor Antrian yang valid!");
-            nomorInput.focus();
-            return;
-        }
-
-        const waktuInput = firebase.database.ServerValue.TIMESTAMP;
-        let dataAntrian = {
-            jenis, nomor: parseInt(nomorValue), nopol: nopolValue, sa: saValue,
-            timestamp: waktuInput, waktuMasuk: waktuInput
-        };
-
-        if (bookingKey) {
-            let bookingData = daftarBookingFiltered.find(b => b.key === bookingKey);
-            if (bookingData) {
-                dataAntrian.nama = bookingData.nama;
-                dataAntrian.tipe = bookingData.tipe || '';
-                dataAntrian.telp = bookingData.telp || '';
-                dataAntrian.pekerjaan = bookingData.pekerjaan;
-                dataAntrian.sa = bookingData.sa || saValue;
-                dataAntrian.bookingKey = bookingKey;
-            }
-        }
-
-        db.ref('antrian/menunggu').push(dataAntrian).then(() => {
-            nopolInput.value = "";
-            nomorInput.value = "";
-            saInput.value = "";
-            nopolInput.focus();
-            swalToast('success', `✅ Antrian ${jenis} ${nomorValue} berhasil ditambahkan!`);
-        }).catch(err => swalError("Gagal Menambahkan Antrian", err.message));
-    }
-
-    // ============================================================
-    // ================ LOGIKA COUNTER =============================
-    // ============================================================
-    function panggilAntrian(jenis) {
-    // Validasi: Tahan jika masih ada antrian yang belum diklik Selesai / Kembalikan
-    if (document.getElementById('nopol-display-area').style.display !== 'none') {
-        swalInfo('Masih Ada Panggilan Aktif', "Harap klik 'SELESAI' atau 'Kembalikan Antrian' pada panggilan saat ini terlebih dahulu!");
-        return;
-    }
-    
-    cekAtauResetHariBaru();
-
-        db.ref('antrian/menunggu').orderByChild('timestamp').once('value', (snapshot) => {
-            let ditemukan = false;
-            snapshot.forEach((child) => {
-                if (!ditemukan && child.val().jenis === jenis) {
-                    ditemukan = true;
-                    let dataAntrian = child.val();
-                    let waktuPanggil = Date.now();
-                    let waktuMasukAwal = dataAntrian.waktuMasuk || dataAntrian.timestamp;
-                    let durasiTunggu = waktuPanggil - waktuMasukAwal;
-                    let nopolDisplay = dataAntrian.nopol || "-";
-                    if (nopolDisplay === "" || nopolDisplay === "-") nopolDisplay = "-";
-                    
-                    child.ref.remove();
-                    
-                    dataPanggilanTerakhirKu = {
-                        jenis: dataAntrian.jenis, nomor: dataAntrian.nomor, nopol: nopolDisplay,
-                        nama: dataAntrian.nama || "-", tipe: dataAntrian.tipe || "",
-                        telp: dataAntrian.telp || "", sa: dataAntrian.sa || "",
-                        counter: sessionUser, status: 'baru', timestamp: waktuPanggil,
-                        waktuMasuk: waktuMasukAwal, waktuTunggu: durasiTunggu,
-                        bookingKey: dataAntrian.bookingKey || null, muteSuara: isMuted
-                    };
-                    
-                    db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
-                    db.ref('antrian/history/' + sessionUser).push({
-                        jenis: dataAntrian.jenis, nomor: dataAntrian.nomor, nopol: nopolDisplay,
-                        nama: dataAntrian.nama || "-", tipe: dataAntrian.tipe || "",
-                        telp: dataAntrian.telp || "", sa: dataAntrian.sa || "",
-                        timestamp: waktuPanggil, waktuTunggu: durasiTunggu,
-                        bookingKey: dataAntrian.bookingKey || null
-                    });
-
-                    if (dataAntrian.bookingKey) {
-                        db.ref('booking/' + dataAntrian.bookingKey).update({ status: 'dipanggil' });
-                    }
-                    swalToast('success', `✅ ${jenis} ${dataAntrian.nomor} dipanggil ke ${sessionUser}!`);
-                }
-            });
-            if (!ditemukan) swalInfo('Antrian Kosong', `Belum ada pelanggan untuk kategori ${jenis} yang diinput oleh Valey!`);
-        });
-    }
-
-    // ============================================================
-    // ================ KLIK ANTRIAN ===============================
-    // ============================================================
-    function panggilAntrianLangsung(keyAntrian) {
-    if (!sessionUser.includes('Counter')) {
-        swalInfo('Akses Ditolak', 'Hanya Counter yang bisa memanggil antrian!');
-        return;
-    }
-
-    // Validasi: Tahan jika masih ada antrian yang belum diklik Selesai / Kembalikan
-    if (document.getElementById('nopol-display-area').style.display !== 'none') {
-        swalInfo('Masih Ada Panggilan Aktif', "Harap klik 'SELESAI' atau 'Kembalikan Antrian' pada panggilan saat ini terlebih dahulu!");
-        return;
-    }
-
-    cekAtauResetHariBaru();
-
-        db.ref('antrian/menunggu/' + keyAntrian).once('value', (snapshot) => {
-            let dataAntrian = snapshot.val();
-            if (dataAntrian) {
-                let pesanHtml = `📌 <b>${dataAntrian.jenis} - ${dataAntrian.nomor}</b><br>🚗 <b>${dataAntrian.nopol || '-'}</b>`;
-                if (dataAntrian.nama) pesanHtml += `<br>👤 ${dataAntrian.nama}`;
-                if (dataAntrian.telp) pesanHtml += `<br>📞 ${dataAntrian.telp}`;
-                if (dataAntrian.sa) pesanHtml += `<br>👤 SA: ${dataAntrian.sa}`;
-                swalConfirm('Panggil Antrian Ini?', pesanHtml, 'Ya, Panggil', '#28a745').then((ok) => {
-                    if (!ok) return;
-                    prosesPanggilAntrianLangsung(snapshot, dataAntrian);
-                });
-                return;
-            } else {
-                swalInfo('Sudah Dipanggil', "Antrian ini sudah dipanggil oleh counter lain.");
-            }
-        });
-    }
-
-    function prosesPanggilAntrianLangsung(snapshot, dataAntrian) {
-                let waktuPanggil = Date.now();
-                let waktuMasukAwal = dataAntrian.waktuMasuk || dataAntrian.timestamp;
-                let durasiTunggu = waktuPanggil - waktuMasukAwal;
-
-                let nopolDisplay = dataAntrian.nopol || "-";
-                if (nopolDisplay === "" || nopolDisplay === "-") nopolDisplay = "-";
-
-                snapshot.ref.remove();
-
-                dataPanggilanTerakhirKu = {
-                    jenis: dataAntrian.jenis, nomor: dataAntrian.nomor, nopol: nopolDisplay,
-                    nama: dataAntrian.nama || "-", tipe: dataAntrian.tipe || "",
-                    telp: dataAntrian.telp || "", sa: dataAntrian.sa || "",
-                    counter: sessionUser, status: 'baru', timestamp: waktuPanggil,
-                    waktuMasuk: waktuMasukAwal, waktuTunggu: durasiTunggu,
-                    bookingKey: dataAntrian.bookingKey || null, muteSuara: isMuted
-                };
-
-                db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
-                db.ref('antrian/history/' + sessionUser).push({
-                    jenis: dataAntrian.jenis, nomor: dataAntrian.nomor, nopol: nopolDisplay,
-                    nama: dataAntrian.nama || "-", tipe: dataAntrian.tipe || "",
-                    telp: dataAntrian.telp || "", sa: dataAntrian.sa || "",
-                    timestamp: waktuPanggil, waktuTunggu: durasiTunggu,
-                    bookingKey: dataAntrian.bookingKey || null
-                });
-
-                if (dataAntrian.bookingKey) {
-                    db.ref('booking/' + dataAntrian.bookingKey).update({ status: 'dipanggil' });
-                }
-                swalToast('success', `✅ ${dataAntrian.jenis} ${dataAntrian.nomor} dipanggil ke ${sessionUser}!`);
-    }
-
-    // ============================================================
-    // ================ PANGGIL UNIT SELESAI =======================
-    // ============================================================
-    function panggilUnitSelesai(counterPemilik, jenis, nomor, nopol) {
-        if (sessionUser !== counterPemilik) {
-            swalInfo('Akses Ditolak', `MAAF! Anda login sebagai ${sessionUser}. Hanya ${counterPemilik} yang bisa memanggil unit ini.`);
-            return;
-        }
-
-        let teksPanggilan = `Unit Selesai. ${jenis} ${nopol} di ${counterPemilik}`;
-        db.ref('antrian/panggilan_aktif').set({
-            jenis, nomor, nopol: nopol || "-", counter: sessionUser,
-            status: 'selesai', timestamp: Date.now(),
-            teksPanggilan: teksPanggilan, muteSuara: isMuted
-        });
-    }
-
-    // ============================================================
-    // ================ FUNGSI LAINNYA =============================
-    // ============================================================
-    function salinNopol() {
-        const teksNopol = document.getElementById('last-nopol').innerText;
-        if (teksNopol && teksNopol !== "-") {
-            navigator.clipboard.writeText(teksNopol).then(() => {
-                let btn = document.querySelector('#nopol-display-area .btn-copy');
-                let textAsli = btn.innerText;
-                btn.innerText = "✔️ Tersalin";
-                setTimeout(() => { btn.innerText = textAsli; }, 1500);
-            }).catch(() => {
-                let btn = document.querySelector('#nopol-display-area .btn-copy');
-                let textAsli = btn.innerText;
-                btn.innerText = "✔️ Tersalin";
-                setTimeout(() => { btn.innerText = textAsli; }, 1500);
-            });
-        }
-    }
-
-    function panggilUlang() {
-        if (dataPanggilanTerakhirKu) {
-            dataPanggilanTerakhirKu.timestamp = Date.now();
-            dataPanggilanTerakhirKu.muteSuara = isMuted;
-            db.ref('antrian/panggilan_aktif').set(dataPanggilanTerakhirKu);
-            swalToast('success', '🔊 Panggilan diulang!');
-        } else {
-            swalInfo('Belum Ada Panggilan', "Anda belum menarik antrian baru!");
-        }
-    }
-
-    function kembalikanAntrian() {
-    if (!dataPanggilanTerakhirKu) { swalInfo('Tidak Ada Panggilan', "Tidak ada antrian yang sedang dipanggil!"); return; }
-    swalConfirm('Kembalikan Antrian?', `↩️ Kembalikan antrian nomor <b>${dataPanggilanTerakhirKu.nomor}</b> (${dataPanggilanTerakhirKu.jenis}) ke daftar tunggu?`, 'Ya, Kembalikan', '#dc3545').then((ok) => {
-    if (!ok) return;
-    prosesKembalikanAntrian();
-    });
-    }
-
-    function prosesKembalikanAntrian() {
-    let dataPanggilanTerakhirKuLocal = dataPanggilanTerakhirKu;
-
-    let waktuKembali = Date.now();
-    // Ambil waktu masuk orisinal
-    let waktuAwal = dataPanggilanTerakhirKuLocal.waktuMasuk || waktuKembali; 
-
-    let dataKembali = {
-        jenis: dataPanggilanTerakhirKuLocal.jenis,
-        nomor: dataPanggilanTerakhirKuLocal.nomor,
-        nopol: dataPanggilanTerakhirKuLocal.nopol === "-" ? "" : dataPanggilanTerakhirKuLocal.nopol,
-        nama: dataPanggilanTerakhirKuLocal.nama === "-" ? "" : dataPanggilanTerakhirKuLocal.nama,
-        tipe: dataPanggilanTerakhirKuLocal.tipe || "",
-        telp: dataPanggilanTerakhirKuLocal.telp || "",
-        sa: dataPanggilanTerakhirKuLocal.sa || "",
-        // Minus 1 millisecond memastikan timestamp ini selalu jadi yang TERKECIL/TERATAS dari antrian lain
-        timestamp: waktuAwal - 1, 
-        waktuMasuk: waktuAwal
-    };
-
-    if (dataPanggilanTerakhirKuLocal.bookingKey) {
-        dataKembali.bookingKey = dataPanggilanTerakhirKuLocal.bookingKey;
-        db.ref('booking/' + dataPanggilanTerakhirKuLocal.bookingKey).update({ status: 'menunggu' });
-    }
-
-    db.ref('antrian/menunggu').push(dataKembali).then(() => {
-        db.ref('antrian/panggilan_aktif').remove();
-        dataPanggilanTerakhirKu = null;
-        document.getElementById('last-called').innerText = "Belum ada";
-        document.getElementById('nopol-display-area').style.display = 'none';
-        document.getElementById('waktu-tunggu-counter').innerText = "";
-        swalToast('success', "✅ Antrian berhasil dikembalikan ke posisi teratas daftar tunggu!");
-    }).catch(err => swalError("Gagal Mengembalikan Antrian", err.message));
-}
-
-    // ============================================================
-    // ================ EDIT ANTRIAN ===============================
-    // ============================================================
-    function bukaModalEditAntrian(key) {
-        let antrianData = daftarAntrianMenunggu.find(a => a.key === key);
-        if (!antrianData) { swalError('Error', "Data antrian tidak ditemukan!"); return; }
-
-        editAntrianTargetKey = key;
-        document.getElementById('edit-antrian-nopol').value = antrianData.nopol || '';
-        document.getElementById('edit-antrian-nomor').value = antrianData.nomor || '';
-        document.getElementById('edit-antrian-sa').value = antrianData.sa || '';
-        
-        document.getElementById('modal-edit-antrian').style.display = 'block';
-    }
-
-    function tutupModalEditAntrian() {
-        document.getElementById('modal-edit-antrian').style.display = 'none';
-        editAntrianTargetKey = null;
-    }
-
-    function simpanEditAntrian() {
-        if (!editAntrianTargetKey) { swalError('Error', 'Tidak ada data yang dipilih!'); return; }
-
-        let nopol = document.getElementById('edit-antrian-nopol').value.trim().toUpperCase();
-        let nomor = parseInt(document.getElementById('edit-antrian-nomor').value);
-        let sa = document.getElementById('edit-antrian-sa').value.trim();
-
-        if (!nopol) { swalInfo('Nopol Kosong', 'Nopol harus diisi!'); return; }
-        if (!nomor || nomor <= 0) { swalInfo('Nomor Tidak Valid', 'Nomor Antrian harus diisi dengan angka valid!'); return; }
-
-        let nomorSudahAda = daftarAntrianMenunggu.some(a => a.key !== editAntrianTargetKey && a.nomor === nomor);
-        if (nomorSudahAda) {
-            swalInfo('Nomor Sudah Dipakai', `Nomor antrian ${nomor} sudah digunakan oleh antrian lain!`);
-            document.getElementById('edit-antrian-nomor').focus();
-            return;
-        }
-
-        let updates = {};
-        updates['antrian/menunggu/' + editAntrianTargetKey + '/nopol'] = nopol;
-        updates['antrian/menunggu/' + editAntrianTargetKey + '/nomor'] = nomor;
-        updates['antrian/menunggu/' + editAntrianTargetKey + '/sa'] = sa;
-
-        let btn = document.querySelector('#modal-edit-antrian .btn-save-getin');
-        btn.textContent = '⏳ Menyimpan...';
-        btn.disabled = true;
-
-        db.ref().update(updates).then(() => {
-            swalToast('success', '✅ Data antrian berhasil diupdate!');
-            tutupModalEditAntrian();
-        }).catch(err => {
-            swalError('Gagal Mengupdate', err.message);
-        }).finally(() => {
-            btn.textContent = '💾 Simpan Perubahan';
-            btn.disabled = false;
-        });
-    }
-
-    // ============================================================
-    // ================ DELETE ANTRIAN =============================
-    // ============================================================
-    function deleteAntrian(key) {
-        swalConfirm('Hapus Antrian?', '⚠️ Yakin ingin menghapus antrian ini?', 'Ya, Hapus', '#dc3545').then((ok) => {
-            if (!ok) return;
-
-            db.ref('antrian/menunggu/' + key).once('value', (snapshot) => {
-                let dataAntrian = snapshot.val();
-                if (dataAntrian && dataAntrian.bookingKey) {
-                    db.ref('antrian/menunggu/' + key).remove().then(() => {
-                        db.ref('booking/' + dataAntrian.bookingKey).update({ status: 'menunggu' })
-                            .then(() => swalToast('success', '✅ Antrian berhasil dihapus!'))
-                            .catch(err => swalError('Gagal Mengembalikan Status Booking', err.message));
-                    }).catch(err => swalError('Gagal Menghapus Antrian', err.message));
-                } else {
-                    db.ref('antrian/menunggu/' + key).remove()
-                        .then(() => swalToast('success', '✅ Antrian berhasil dihapus!'))
-                        .catch(err => swalError('Gagal Menghapus Antrian', err.message));
-                }
-            }).catch(err => swalError('Gagal Mengambil Data Antrian', err.message));
-        });
-    }
-
-    // ============================================================
-    // ================ LISTENER FIREBASE ==========================
-    // ============================================================
-    function mulaiMendengarkanDaftarTunggu() {
-        db.ref('antrian/menunggu').orderByChild('timestamp').on('value', (snapshot) => {
-            daftarAntrianMenunggu = [];
-            snapshot.forEach((child) => {
-                let item = child.val();
-                item.key = child.key;
-                daftarAntrianMenunggu.push(item);
-            });
-            renderDaftarTunggu();
-        });
-    }
-
-    function renderDaftarTunggu() {
-        let htmlBooking = "", htmlNonBooking = "";
-        let monitorBookingHtml = "", monitorNonHtml = "";
-        let custBookingHtml = "", custNonHtml = "";
-        let sekarang = Date.now();
-
-        if (daftarAntrianMenunggu.length === 0) {
-            htmlBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Booking</i>";
-            htmlNonBooking = "<i style='font-size:13px; color:#777; display:block; padding:10px;'>Belum ada antrian Non Booking</i>";
-            monitorBookingHtml = "<i style='color:#777; font-size:13px;'>Belum ada antrian</i>";
-            monitorNonHtml = "<i style='color:#777; font-size:13px;'>Belum ada antrian</i>";
-            custBookingHtml = "<i style='color:#777; font-size:12px;'>Belum ada antrian</i>";
-            custNonHtml = "<i style='color:#777; font-size:12px;'>Belum ada antrian</i>";
-        } else {
-            daftarAntrianMenunggu.forEach((d) => {
-                let teksNopol = d.nopol ? ` | ${d.nopol}` : '';
-                let teksNama = d.nama ? ` | ${d.nama}` : '';
-                let teksTelp = d.telp ? ` | 📞${d.telp}` : '';
-                let teksSA = d.sa ? ` | SA: ${d.sa}` : '';
-                let waktuAwal = d.waktuMasuk || d.timestamp || sekarang;
-                let durasiMs = sekarang - waktuAwal;
-                let strTimer = formatWaktuLalu(durasiMs);
-
-                let badgeClass = d.jenis === 'Booking' ? 'badge-booking' : 'badge-non';
-                if (d.sa && d.sa.trim() !== '') badgeClass = 'badge-sa';
-
-                let badgeHtml = `
-                    <div class="antrian-item">
-                        <button onclick="bukaModalEditAntrian('${d.key}')" style="padding: 2px 5px; font-size: 10px; cursor: pointer; background:#6c757d; color:white; border:none; border-radius:3px;" title="Edit Nopol + Nomor + SA">✏️</button>
-                        <div class="badge-waiting ${badgeClass}" onclick="panggilAntrianLangsung('${d.key}')" style="flex: 1; cursor: pointer;">
-                            ${d.jenis} ${d.nomor}${teksNopol}${teksNama}${teksTelp}${teksSA}
-                            <span class="live-timer" id="timer-${d.key}">⏱️ ${strTimer}</span>
-                        </div>
-                        <button class="btn-delete-antrian" onclick="deleteAntrian('${d.key}')" title="Hapus antrian">✕</button>
-                    </div>`;
-
-                let monitorCardHtml = `
-                    <div class="monitor-item-card">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span><strong>${d.nomor}</strong>${teksNopol}${teksNama}</span>
-                            <span class="monitor-timer">⏱️ ${strTimer}</span>
-                        </div>
-                    </div>`;
-
-                let custCardHtml = `
-                    <div style="background:#f8f9fa; padding:5px 8px; margin-bottom:4px; border-radius:4px; font-size:12px; border-left:3px solid ${d.jenis === 'Booking' ? '#28a745' : '#17a2b8'};">
-                        <strong>${d.nomor}</strong>${teksNopol}${teksNama}
-                        <span style="font-size:10px; color:#888;">⏱️ ${strTimer}</span>
-                    </div>`;
-
-                if (d.jenis === 'Booking') {
-                    htmlBooking += badgeHtml;
-                    monitorBookingHtml += monitorCardHtml;
-                    custBookingHtml += custCardHtml;
-                } else {
-                    htmlNonBooking += badgeHtml;
-                    monitorNonHtml += monitorCardHtml;
-                    custNonHtml += custCardHtml;
-                }
-            });
-        }
-
-        let elements = document.getElementsByClassName('waiting-list-container');
-        for(let i=0; i<elements.length; i++) {
-            elements[i].innerHTML = `
-                <strong>📋 Daftar Pelanggan Menunggu:</strong>
-                <div class="waiting-grid">
-                    <div class="waiting-col"><h4 style="color: #218838;">📌 KOLOM BOOKING</h4>${htmlBooking}</div>
-                    <div class="waiting-col"><h4 style="color: #138496;">📌 KOLOM NON BOOKING</h4>${htmlNonBooking}</div>
-                </div>
-            `;
-        }
-
-        let monBookEl = document.getElementById('monitor-waiting-booking');
-        let monNonEl = document.getElementById('monitor-waiting-non');
-        if (monBookEl) monBookEl.innerHTML = monitorBookingHtml;
-        if (monNonEl) monNonEl.innerHTML = monitorNonHtml;
-
-        let custBookEl = document.getElementById('cust-waiting-booking');
-        let custNonEl = document.getElementById('cust-waiting-non');
-        if (custBookEl) custBookEl.innerHTML = custBookingHtml;
-        if (custNonEl) custNonEl.innerHTML = custNonHtml;
-    }
-
-    function mulaiTimerRealtime() {
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            let sekarang = Date.now();
-            daftarAntrianMenunggu.forEach((d) => {
-                let waktuAwal = d.waktuMasuk || d.timestamp || sekarang;
-                let durasiMs = sekarang - waktuAwal;
-                let el = document.getElementById('timer-' + d.key);
-                if (el) el.innerText = '⏱️ ' + formatWaktuLalu(durasiMs);
-            });
-        }, 1000);
-    }
-
-    // ============================================================
-    // ================ PANGGILAN AKTIF ============================
-    // ============================================================
-    function mulaiMendengarkanPanggilanAktif() {
-        db.ref('antrian/panggilan_aktif').off();
-        db.ref('antrian/panggilan_aktif').on('value', function(snapshot) {
-            const data = snapshot.val();
-            if (data) {
-                // ===== MONITOR =====
-                if (sessionUser === 'Monitor') {
-                    let typeEl = document.getElementById('display-type');
-                    let numEl = document.getElementById('display-number');
-                    let cntEl = document.getElementById('display-counter');
-                    if (typeEl) typeEl.innerText = data.jenis || "--";
-                    if (numEl) numEl.innerText = data.nomor || "--";
-                    if (cntEl) cntEl.innerText = data.status === 'selesai' ? `UNIT SELESAI -> ${data.counter}` : (data.counter || "Counter");
-                    if (data.timestamp && data.timestamp !== lastPlayedTimestamp) {
-                        if (numEl) { numEl.classList.remove('pulse'); void numEl.offsetWidth; numEl.classList.add('pulse'); }
-                        if (typeEl) { typeEl.classList.remove('pulse'); void typeEl.offsetWidth; typeEl.classList.add('pulse'); }
-                    }
-                    if (data.muteSuara !== true && data.timestamp !== lastPlayedTimestamp) {
-                        lastPlayedTimestamp = data.timestamp;
-                        tambahKeAntreanSuara(`Antrian ${data.jenis} ${data.nomor} di ${data.counter}`, data.counter);
-                    }
-                }
-                // ===== CUSTOMER =====
-                else if (sessionUser === 'CustomerMobile') {
-                    let typeEl = document.getElementById('cust-display-type');
-                    let numEl = document.getElementById('cust-display-number');
-                    let cntEl = document.getElementById('cust-display-counter');
-                    if (typeEl) typeEl.innerText = data.jenis || "--";
-                    if (numEl) numEl.innerText = data.nomor || "--";
-                    if (cntEl) cntEl.innerText = data.status === 'selesai' ? `UNIT SELESAI -> ${data.counter}` : data.counter;
-                    if (data.muteSuara !== true && data.timestamp !== lastPlayedTimestamp) {
-                        lastPlayedTimestamp = data.timestamp;
-                        tambahKeAntreanSuara(`Antrian ${data.jenis} ${data.nomor} di ${data.counter}`, data.counter);
-                    }
-                }
-                // ===== COUNTER - HANYA YANG MEMANGGIL YANG TAMPIL =====
-                else if (sessionUser && sessionUser.includes('Counter')) {
-                    // CEK: Hanya tampilkan jika counter ini yang memanggil DAN belum diselesaikan
-		if (data.counter === sessionUser && !data.isSelesai) {
-                        let nopolArea = document.getElementById('nopol-display-area');
-                        let lastNopol = document.getElementById('last-nopol');
-                        let lastCalled = document.getElementById('last-called');
-                        let infoNopol = document.getElementById('counter-nopol-info');
-                        let lastCalledInfo = document.getElementById('last-called-info');
-                        let waktuTunggu = document.getElementById('waktu-tunggu-counter');
-                        
-                        if (nopolArea) { nopolArea.style.display = 'flex'; nopolArea.style.background = 'linear-gradient(135deg, #007bff, #0056b3)'; }
-                        if (lastNopol) {
-                            let nopolDisplay = (data.nopol && data.nopol !== "-" && data.nopol !== "") ? data.nopol : "-";
-                            lastNopol.innerText = nopolDisplay;
-                            lastNopol.classList.remove('animate');
-                            void lastNopol.offsetWidth;
-                            lastNopol.classList.add('animate');
-                        }
-                        if (lastCalled) lastCalled.innerText = `${data.jenis} - ${data.nomor}`;
-                        if (infoNopol) infoNopol.innerText = `📌 ${data.jenis} - ${data.nomor}`;
-                        if (lastCalledInfo) lastCalledInfo.innerText = `${data.jenis} - ${data.nomor}`;
-                        if (waktuTunggu && data.waktuTunggu) {
-                            waktuTunggu.innerText = `⏱️ Total Waktu Tunggu: ${formatWaktuTunggu(data.waktuTunggu)}`;
-                        }
-                    } else {
-                        // Counter lain memanggil - sembunyikan area nopol
-                        let nopolArea = document.getElementById('nopol-display-area');
-                        let lastNopol = document.getElementById('last-nopol');
-                        let lastCalled = document.getElementById('last-called');
-                        let infoNopol = document.getElementById('counter-nopol-info');
-                        let lastCalledInfo = document.getElementById('last-called-info');
-                        let waktuTunggu = document.getElementById('waktu-tunggu-counter');
-                        
-                        if (nopolArea) nopolArea.style.display = 'none';
-                        if (lastNopol) lastNopol.innerText = "-";
-                        if (lastCalled) lastCalled.innerText = "Belum ada";
-                        if (infoNopol) infoNopol.innerText = "Menunggu";
-                        if (lastCalledInfo) lastCalledInfo.innerText = "Menunggu";
-                        if (waktuTunggu) waktuTunggu.innerText = "";
-                    }
-                }
-            } else {
-                // ===== TIDAK ADA DATA =====
-                if (sessionUser === 'Monitor') {
-                    let typeEl = document.getElementById('display-type');
-                    let numEl = document.getElementById('display-number');
-                    let cntEl = document.getElementById('display-counter');
-                    if (typeEl) typeEl.innerText = "--";
-                    if (numEl) numEl.innerText = "--";
-                    if (cntEl) cntEl.innerText = "Menunggu Panggilan...";
-                } else if (sessionUser === 'CustomerMobile') {
-                    let typeEl = document.getElementById('cust-display-type');
-                    let numEl = document.getElementById('cust-display-number');
-                    let cntEl = document.getElementById('cust-display-counter');
-                    if (typeEl) typeEl.innerText = "--";
-                    if (numEl) numEl.innerText = "--";
-                    if (cntEl) cntEl.innerText = "Menunggu Panggilan...";
-                } else if (sessionUser && sessionUser.includes('Counter')) {
-                    let nopolArea = document.getElementById('nopol-display-area');
-                    let lastNopol = document.getElementById('last-nopol');
-                    let lastCalled = document.getElementById('last-called');
-                    let infoNopol = document.getElementById('counter-nopol-info');
-                    let lastCalledInfo = document.getElementById('last-called-info');
-                    let waktuTunggu = document.getElementById('waktu-tunggu-counter');
-                    if (nopolArea) nopolArea.style.display = 'none';
-                    if (lastNopol) lastNopol.innerText = "-";
-                    if (lastCalled) lastCalled.innerText = "Belum ada";
-                    if (infoNopol) infoNopol.innerText = "Menunggu";
-                    if (lastCalledInfo) lastCalledInfo.innerText = "Menunggu";
-                    if (waktuTunggu) waktuTunggu.innerText = "";
-                }
-            }
-        });
-    }
-
-    // ============================================================
-    // ================ FORCE TAMPIL MONITOR =======================
-    // ============================================================
-    function forceTampilMonitor() {
-        db.ref('antrian/panggilan_aktif').once('value').then((snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                let typeEl = document.getElementById('display-type');
-                let numEl = document.getElementById('display-number');
-                let cntEl = document.getElementById('display-counter');
-                if (typeEl) typeEl.innerText = data.jenis || "--";
-                if (numEl) numEl.innerText = data.nomor || "--";
-                if (cntEl) cntEl.innerText = data.status === 'selesai' ? `UNIT SELESAI -> ${data.counter}` : (data.counter || "Counter");
-                if (data.muteSuara !== true && data.timestamp !== lastPlayedTimestamp) {
-                    lastPlayedTimestamp = data.timestamp;
-                    tambahKeAntreanSuara(`Antrian ${data.jenis} ${data.nomor} di ${data.counter}`, data.counter);
-                }
-            } else {
-                let typeEl = document.getElementById('display-type');
-                let numEl = document.getElementById('display-number');
-                let cntEl = document.getElementById('display-counter');
-                if (typeEl) typeEl.innerText = "--";
-                if (numEl) numEl.innerText = "--";
-                if (cntEl) cntEl.innerText = "Menunggu Panggilan...";
-            }
-        }).catch(err => console.error("❌ Error monitor check:", err));
-    }
-
-    // ============================================================
-    // ================ INTERVAL CHECK =============================
-    // ============================================================
-    function mulaiIntervalCheckPanggilan() {
-        if (intervalCheckPanggilan) { clearInterval(intervalCheckPanggilan); intervalCheckPanggilan = null; }
-        intervalCheckPanggilan = setInterval(function() {
-            if (sessionUser && sessionUser.includes('Counter')) {
-                db.ref('antrian/panggilan_aktif').once('value', (snapshot) => {
-                    const data = snapshot.val();
-                    let nopolArea = document.getElementById('nopol-display-area');
-                    let lastNopol = document.getElementById('last-nopol');
-                    let lastCalled = document.getElementById('last-called');
-                    let infoNopol = document.getElementById('counter-nopol-info');
-                    let lastCalledInfo = document.getElementById('last-called-info');
-                    let waktuTunggu = document.getElementById('waktu-tunggu-counter');
-                    
-                    if (data && data.counter === sessionUser && !data.isSelesai) {
-                        if (nopolArea) { nopolArea.style.display = 'flex'; nopolArea.style.background = 'linear-gradient(135deg, #007bff, #0056b3)'; }
-                        if (lastNopol) {
-                            let nopolDisplay = (data.nopol && data.nopol !== "-" && data.nopol !== "") ? data.nopol : "-";
-                            lastNopol.innerText = nopolDisplay;
-                        }
-                        if (lastCalled) lastCalled.innerText = `${data.jenis} - ${data.nomor}`;
-                        if (infoNopol) infoNopol.innerText = `📌 ${data.jenis} - ${data.nomor}`;
-                        if (lastCalledInfo) lastCalledInfo.innerText = `${data.jenis} - ${data.nomor}`;
-                        if (waktuTunggu && data.waktuTunggu) {
-                            waktuTunggu.innerText = `⏱️ Total Waktu Tunggu: ${formatWaktuTunggu(data.waktuTunggu)}`;
-                        }
-                    } else {
-                        if (nopolArea) nopolArea.style.display = 'none';
-                        if (lastNopol) lastNopol.innerText = "-";
-                        if (lastCalled) lastCalled.innerText = "Belum ada";
-                        if (infoNopol) infoNopol.innerText = "Menunggu";
-                        if (lastCalledInfo) lastCalledInfo.innerText = "Menunggu";
-                        if (waktuTunggu) waktuTunggu.innerText = "";
-                    }
-                }).catch(err => console.error("❌ Error interval check:", err));
-            }
-        }, 2000);
-    }
-
-    function hentikanIntervalCheckPanggilan() {
-        if (intervalCheckPanggilan) { clearInterval(intervalCheckPanggilan); intervalCheckPanggilan = null; }
-    }
-
-function selesaiAntrian() {
-    swalConfirm('Tandai Selesai?', "Tandai antrian ini sebagai selesai? Anda akan dapat memanggil antrian berikutnya.", 'Ya, Selesai', '#28a745').then((ok) => {
-        if (!ok) return;
-
-        // Set status isSelesai di Firebase agar interval tidak memunculkan UI lagi
-        db.ref('antrian/panggilan_aktif/isSelesai').set(true);
-        dataPanggilanTerakhirKu = null;
-
-        // Sembunyikan dan reset tampilan lokal counter
-        let nopolArea = document.getElementById('nopol-display-area');
-        if (nopolArea) nopolArea.style.display = 'none';
-        document.getElementById('last-called').innerText = "Belum ada";
-        document.getElementById('counter-nopol-info').innerText = "Menunggu";
-        document.getElementById('last-called-info').innerText = "Menunggu";
-        document.getElementById('waktu-tunggu-counter').innerText = "";
-
-        swalToast('success', "✅ Antrian selesai! Silakan panggil pelanggan berikutnya.");
-    });
-}
-
-    function mulaiIntervalCheckMonitor() {
-        if (intervalMonitorCheck) { clearInterval(intervalMonitorCheck); intervalMonitorCheck = null; }
-        intervalMonitorCheck = setInterval(function() {
-            if (sessionUser === 'Monitor') forceTampilMonitor();
-        }, 2000);
-    }
-
-    function hentikanIntervalCheckMonitor() {
-        if (intervalMonitorCheck) { clearInterval(intervalMonitorCheck); intervalMonitorCheck = null; }
-    }
-
-    // ============================================================
-    // ================ HISTORY ====================================
-    // ============================================================
-    function mulaiMendengarkanHistory() {
-        db.ref('antrian/history').on('value', (snapshot) => {
-            let historyData = snapshot.val();
-            let tbodyValey = document.getElementById('history-table-body');
-            let tbodyCounter = document.getElementById('history-table-body-counter');
-            
-            let counters = ['Counter 2', 'Counter 3', 'Counter 4', 'Counter 5', 'Counter 6', 'Counter 7', 'Counter 8'];
-            let counterRecords = {};
-            counters.forEach(c => counterRecords[c] = { booking: [], non: [] });
-
-            if (historyData) {
-                Object.keys(historyData).forEach(counterName => {
-                    if (counterRecords[counterName]) {
-                        let items = historyData[counterName];
-                        Object.keys(items).forEach(itemKey => {
-                            let rec = items[itemKey];
-                            if (rec.jenis === 'Booking') counterRecords[counterName].booking.push(rec);
-                            else counterRecords[counterName].non.push(rec);
-                        });
-                    }
-                });
-            }
-
-            let maxRows = 1;
-            counters.forEach(c => {
-                let lenB = counterRecords[c].booking.length;
-                let lenN = counterRecords[c].non.length;
-                if (lenB > maxRows) maxRows = lenB;
-                if (lenN > maxRows) maxRows = lenN;
-            });
-
-            let html = "";
-            if (!historyData) {
-                html = `<tr><td colspan="14" style="color:#777; padding:10px;">Belum ada history panggilan.</td></tr>`;
-            } else {
-                for (let i = 0; i < maxRows; i++) {
-                    html += "<tr>";
-                    counters.forEach(c => {
-                        let bItem = counterRecords[c].booking[i];
-                        let nItem = counterRecords[c].non[i];
-
-                        if (bItem) {
-                            html += `<td><button class="btn-hist-book" onclick="panggilUnitSelesai('${c}', 'Booking', ${bItem.nomor}, '${bItem.nopol}')">${bItem.nomor}<span class="hist-nopol">${bItem.nopol}</span></button></td>`;
-                        } else {
-                            html += `<td>-</td>`;
-                        }
-
-                        if (nItem) {
-                            html += `<td><button class="btn-hist-non" onclick="panggilUnitSelesai('${c}', 'Non Booking', ${nItem.nomor}, '${nItem.nopol}')">${nItem.nomor}<span class="hist-nopol">${nItem.nopol}</span></button></td>`;
-                        } else {
-                            html += `<td>-</td>`;
-                        }
-                    });
-                    html += "</tr>";
-                }
-            }
-
-            if (tbodyValey) tbodyValey.innerHTML = html;
-            if (tbodyCounter) tbodyCounter.innerHTML = html;
-        });
-    }
-
-    // ============================================================
-    // ================ QR CODE & SLIDESHOW ========================
-    // ============================================================
-    let qrSlideInterval = null;
-
-    function mulaiSlideshowMonitor() {
-        if (sessionUser !== 'Monitor') return;
-
-        let waktuTampilMonitor = 30000;
-        let waktuTampilQR = 10000;
-
-        function jalankanSiklusQR() {
-            let monitorContainer = document.getElementById('monitor-view');
-            let qrOverlay = document.getElementById('qr-fullscreen-overlay');
-            
-            if (monitorContainer && qrOverlay && sessionUser === 'Monitor') {
-                monitorContainer.style.display = 'none';
-                qrOverlay.style.display = 'flex';
-                generateQRCodeFullscreen();
-
-                setTimeout(() => {
-                    if (sessionUser === 'Monitor') {
-                        qrOverlay.style.display = 'none';
-                        monitorContainer.style.display = 'block';
-                    }
-                }, waktuTampilQR);
-            }
-        }
-
-        if (qrSlideInterval) clearInterval(qrSlideInterval);
-        qrSlideInterval = setInterval(jalankanSiklusQR, waktuTampilMonitor + waktuTampilQR);
-    }
-
-    // ============================================================
-    // ================ MODAL CLOSE ================================
-    // ============================================================
-    window.onclick = function(event) {
-        if (event.target == document.getElementById('modal-getin')) tutupModalGetIn();
-        if (event.target == document.getElementById('modal-tanggal')) tutupModalTanggal();
-        if (event.target == document.getElementById('modal-edit')) tutupModalEdit();
-        if (event.target == document.getElementById('modal-edit-antrian')) tutupModalEditAntrian();
-        if (event.target == document.getElementById('modal-hapus-semua')) tutupModalHapusSemua();
-    }
-
-    console.log("✅ Sistem Antrian Daya Toyota siap digunakan!");
-    console.log("📱 Untuk akses pelanggan, tambahkan ?view=customer di URL");
-    console.log("🔗 URL lengkap untuk QR Code:", getBaseUrl() + "?view=customer");
     </script>
 
+    <!-- SCRIPT FIREBASE UNTUK DASHBOARD -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHLuzqXq_T6BGACGbDdheC7w8ZEQcsqCM",
+            authDomain: "penerimaan-service.firebaseapp.com",
+            databaseURL: "https://penerimaan-service-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "penerimaan-service",
+            storageBucket: "penerimaan-service.firebasestorage.app",
+            messagingSenderId: "238520546109",
+            appId: "1:238520546109:web:1e1b6c31288fd431290b54"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        function loadDashboardData() {
+            const antrianRef = ref(db, 'antrian_temuan');
+            const saranSaRef = ref(db, 'saran_siap_sa');
+            
+            // 1. Membaca antrian Saran Teknisi & Pengecekan Partman
+            onValue(antrianRef, (snapshot) => {
+                let countTeknisi = 0;
+                let countPartman = 0;
+                const data = snapshot.val();
+                
+                if (data) {
+                    Object.values(data).forEach(job => {
+                        if (job.status === "WAITING_PART") countTeknisi++;
+                        else if (job.status === "ON_PROCESS_PART") countPartman++;
+                    });
+                }
+                
+                // Animasi update angka
+                animateValue("count-teknisi", document.getElementById('count-teknisi').innerText, countTeknisi, 500);
+                animateValue("count-partman", document.getElementById('count-partman').innerText, countPartman, 500);
+            });
+
+            // 2. Membaca Pending Estimasi SA (yang belum dibuat Jasanya)
+            onValue(saranSaRef, (snapshot) => {
+                const tbody = document.querySelector('#table-sa-queue tbody');
+                let countPendingSA = 0;
+                let saCounts = {};
+                const data = snapshot.val();
+                
+                if (data) {
+                    Object.values(data).forEach(saran => {
+                        if (saran.status_jasa_sa !== "SUDAH DIBUAT") {
+                            countPendingSA++;
+                            const saName = saran.namaSA || "TIDAK ADA SA";
+                            saCounts[saName] = (saCounts[saName] || 0) + 1;
+                        }
+                    });
+                }
+                
+                animateValue("count-sa", document.getElementById('count-sa').innerText, countPendingSA, 500);
+                
+                // Render hasil ke tabel
+                tbody.innerHTML = '';
+                if (Object.keys(saCounts).length > 0) {
+                    Object.keys(saCounts).forEach(sa => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td><strong>${sa}</strong></td><td><span style="background: #e2e8f0; padding: 4px 12px; border-radius: 20px; font-weight: bold; color: #4a5568;">${saCounts[sa]}</span></td>`;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="2" style="color:#718096; padding: 30px;">🎉 Semua Estimasi SA Sudah Selesai Dibuat!</td></tr>';
+                }
+            });
+        }
+        
+        // Fungsi kecil untuk membuat efek animasi saat angka berubah
+        function animateValue(id, start, end, duration) {
+            if (start == end) return;
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = end;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        loadDashboardData();
+
+        // ===== DATA ANTRIAN (proyek Firebase terpisah: antrian-service-daya-toyota) =====
+        const antrianConfig = {
+            apiKey: "AIzaSyBGsylncIZxoRmJ9YD_f4CNc7R83QbBMg4",
+            authDomain: "antrian-service-daya-toyota.firebaseapp.com",
+            databaseURL: "https://antrian-service-daya-toyota-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "antrian-service-daya-toyota",
+            storageBucket: "antrian-service-daya-toyota.firebasestorage.app",
+            messagingSenderId: "421850738338",
+            appId: "1:421850738338:web:21d5d24822e7902923b1fb"
+        };
+        const antrianApp = initializeApp(antrianConfig, "antrianApp");
+        const dbAntrian = getDatabase(antrianApp);
+
+        function getTanggalHariIni() {
+            let d = new Date();
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            let year = d.getFullYear();
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+            return [year, month, day].join('-');
+        }
+
+        // 1. TOTAL BOOKING HARI INI (dari daftar booking, filter tanggal hari ini)
+        onValue(ref(dbAntrian, 'booking'), (snapshot) => {
+            let hariIni = getTanggalHariIni();
+            let totalHariIni = 0;
+            snapshot.forEach((child) => {
+                const b = child.val();
+                if (b && b.tanggal === hariIni) totalHariIni++;
+            });
+            const el = document.getElementById('count-booking-hari-ini');
+            if (el) animateValue('count-booking-hari-ini', el.innerText, totalHariIni, 500);
+        });
+
+        // 2. TUNGGU PANGGILAN - BOOKING & NON BOOKING (dari antrian menunggu)
+        onValue(ref(dbAntrian, 'antrian/menunggu'), (snapshot) => {
+            let booking = 0;
+            let nonBooking = 0;
+            snapshot.forEach((child) => {
+                const d = child.val();
+                if (d && d.jenis === 'Booking') booking++;
+                else nonBooking++;
+            });
+            const elB = document.getElementById('count-tunggu-booking');
+            const elN = document.getElementById('count-tunggu-non');
+            if (elB) animateValue('count-tunggu-booking', elB.innerText, booking, 500);
+            if (elN) animateValue('count-tunggu-non', elN.innerText, nonBooking, 500);
+        });
+    </script>
 </body>
 </html>
