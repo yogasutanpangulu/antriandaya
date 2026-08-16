@@ -238,6 +238,39 @@
         .double-underline { border-bottom: 3px double #000000; }
         .clearfix::after { content: ""; clear: both; display: table; }
 
+        /* --- SARAN TEKNISI & DISCLAIMER (KIRI BAWAH ESTIMASI) --- */
+        .saran-box {
+            width: 38%;
+            float: left;
+            margin-top: 10px;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fffbe6;
+            font-family: 'Arial', sans-serif;
+        }
+        .saran-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .saran-header span { font-size: 10pt; text-transform: uppercase; color: #000; }
+        .saran-box textarea {
+            width: 100%;
+            border: 1px dashed #cbd5e0;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 9.5pt;
+            font-family: 'Arial', sans-serif;
+            resize: vertical;
+            background: #ffffff;
+            color: #000;
+        }
+        .disclaimer-note {
+            width: 100%;
+            margin-top: 10px;
+            font-size: 9pt;
+            color: #000;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+        }
+
         /* --- 6. MODERN PANELS & EXTRAS (TETAP MODERN) --- */
         .action-panel { margin-top: 25px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 15px; justify-content: center;}
         
@@ -604,7 +637,7 @@
             <tbody id="body-lain"></tbody>
         </table>
 
-        <div class="table-title">
+        <div class="table-title" id="section-tabel-part">
             <span>KOLOM PART / BAHAN</span>
             <div>
                 <button class="btn btn-add" onclick="addRow('table-part')">+ Tambah Part</button>
@@ -669,6 +702,16 @@
         </table>
 
         <div class="clearfix">
+            <div id="saran-toggle-row" class="hide-on-print" style="width: 38%; float: left; margin-top: 10px;">
+                <button class="btn btn-add" onclick="toggleSaranRow()" style="padding: 4px 10px; font-size: 10px;">+ Tampilkan Saran Teknisi</button>
+            </div>
+            <div id="saran-row" class="saran-box" style="display: none;">
+                <div class="saran-header">
+                    <span>📝 Saran Teknisi</span>
+                    <button class="btn-remove" onclick="toggleSaranRow()" title="Sembunyikan Saran Teknisi" style="font-size: 9pt;">− Sembunyikan</button>
+                </div>
+                <textarea id="saran-text" rows="4" placeholder="Tulisan saran teknisi akan tampil di sini..."></textarea>
+            </div>
             <table class="grand-total-table">
                 <tbody>
                     <tr>
@@ -684,8 +727,23 @@
                             </div>
                         </td>
                     </tr>
+                    <tr id="dp-inactive-row" class="hide-on-print">
+                        <td colspan="2" style="text-align: right; padding-right: 15px;">
+                            <button id="btn-toggle-dp-off" class="hide-on-print" onclick="toggleDpRow()" title="Aktifkan DP / UANG MUKA" style="padding: 3px 10px; font-size: 9pt; font-weight: bold; border-radius: 4px; border: 1px solid #cbd5e0; background: #edf2f7; color: #4a5568; cursor: pointer;">DP</button>
+                        </td>
+                    </tr>
+                    <tr id="dp-row" style="display: none;">
+                        <td class="grand-total-label">DP / UANG MUKA</td>
+                        <td class="grand-total-value">
+                            <div class="currency-box">
+                                <span style="font-weight: bold;">Rp</span>
+                                <input type="text" id="dp-input" class="price-input" placeholder="0" inputmode="numeric" style="width:110px; font-weight: bold;" oninput="formatDpInput(this)" onblur="formatDpInput(this)">
+                                <button id="btn-toggle-dp" class="hide-on-print" onclick="toggleDpRow()" title="Nonaktifkan DP / UANG MUKA" style="padding: 3px 10px; font-size: 9pt; font-weight: bold; border-radius: 4px; border: 1px solid #0072ff; background: #0072ff; color: #fff; cursor: pointer;">DP</button>
+                            </div>
+                        </td>
+                    </tr>
                     <tr>
-                        <td class="grand-total-label">TOTAL SETELAH DISKON</td>
+                        <td class="grand-total-label">TOTAL PEMBAYARAN</td>
                         <td class="grand-total-value double-underline">
                             <div class="currency-box">
                                 <button class="btn-copy" onclick="copyFinalTotal()" title="Salin Total Setelah Diskon">📋</button>
@@ -695,6 +753,12 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- DISCLAIMER HARGA -->
+        <div class="disclaimer-note">
+            <b>* Harga tidak mengikat, sewaktu-waktu dapat berubah.</b><br>
+            <span id="disclaimer-estimasi"><b>* Estimasi dibuat berdasarkan kondisi kendaraan pada saat pemeriksaan.</b></span>
         </div>
 
         <div class="clearfix" style="width: 100%;">
@@ -849,6 +913,88 @@
 
     function scrollToTop() { document.getElementById('top-anchor').scrollIntoView({ behavior: 'smooth' }); }
 
+    // --- DP / UANG MUKA: tampil/sembunyikan, format ribuan, dan perhitungan ---
+    function toggleDpRow() {
+        const row = document.getElementById('dp-row');
+        const active = row.style.display !== 'none';
+        setDpActive(!active);
+        if (!active) document.getElementById('dp-input').focus();
+        calculateAll();
+    }
+
+    function setDpActive(active) {
+        const row = document.getElementById('dp-row');
+        const inactiveRow = document.getElementById('dp-inactive-row');
+        if (active) {
+            row.style.display = '';
+            inactiveRow.style.display = 'none';
+        } else {
+            row.style.display = 'none';
+            inactiveRow.style.display = '';
+        }
+    }
+
+    function formatNumber(value) {
+        const digits = String(value).replace(/\D/g, '');
+        if (digits === '') return '';
+        return parseInt(digits, 10).toLocaleString('id-ID');
+    }
+
+    function formatDpInput(input) {
+        input.value = formatNumber(input.value);
+        calculateAll();
+    }
+
+    function getDpValue() {
+        const row = document.getElementById('dp-row');
+        const input = document.getElementById('dp-input');
+        if (!row || row.style.display === 'none') return 0;
+        const digits = String(input.value).replace(/\D/g, '');
+        return digits === '' ? 0 : parseInt(digits, 10);
+    }
+
+    // --- SARAN TEKNISI: tampil/sembunyikan, simpan & muat ---
+    function toggleSaranRow() {
+        const row = document.getElementById('saran-row');
+        const toggleRow = document.getElementById('saran-toggle-row');
+        const showing = row.style.display !== 'none';
+        if (showing) {
+            row.style.display = 'none';
+            toggleRow.style.display = '';
+        } else {
+            toggleRow.style.display = 'none';
+            row.style.display = '';
+            document.getElementById('saran-text').focus();
+        }
+        updateDisclaimerSaran(!showing);
+    }
+
+    function updateDisclaimerSaran(showing) {
+        const el = document.getElementById('disclaimer-estimasi');
+        if (el) el.style.display = showing ? '' : 'none';
+    }
+
+    function getSaranText() {
+        const row = document.getElementById('saran-row');
+        if (!row || row.style.display === 'none') return '';
+        return document.getElementById('saran-text').value.trim();
+    }
+
+    function setSaranText(text) {
+        const input = document.getElementById('saran-text');
+        const row = document.getElementById('saran-row');
+        const toggleRow = document.getElementById('saran-toggle-row');
+        input.value = text || '';
+        if (text) {
+            row.style.display = '';
+            toggleRow.style.display = 'none';
+        } else {
+            row.style.display = 'none';
+            toggleRow.style.display = '';
+        }
+        updateDisclaimerSaran(!!text);
+    }
+
     function calculateAll() {
         let subtotalJasa = 0, discTotalJasa = 0;
         let subtotalLain = 0, discTotalLain = 0;
@@ -908,7 +1054,8 @@
         const totalpotongandiscount = discTotalJasa + discTotalLain + discTotalPart;
         document.getElementById('main-discount').value = totalpotongandiscount.toLocaleString('id-ID');
 
-        const finalTotal = Math.max(0, grandTotalGross - totalpotongandiscount);
+        const dpValue = getDpValue();
+        const finalTotal = Math.max(0, grandTotalGross - totalpotongandiscount - dpValue);
         document.getElementById('final-total').innerText = finalTotal.toLocaleString('id-ID');
 
         compilePartCodes();
@@ -1364,6 +1511,8 @@ function toggleAccordion() {
             typeKendaraan: document.getElementById('type-kendaraan').value.trim(),
             date: currentDateStr,
             timestamp: new Date().getTime(), // Membantu urutan riwayat
+            dp: getDpValue() || 0,
+            saranText: getSaranText(),
             jasa: [], lain: [], part: []
         };
 
@@ -1659,6 +1808,7 @@ function toggleAccordion() {
             addRow('table-part');
         }
         
+        setSaranText(saran.saranText || '');
         calculateAll();
         showToast(`✅ Part ditarik! Mengupdate status...`);
 
@@ -1687,6 +1837,17 @@ function toggleAccordion() {
         document.getElementById('nama-pelanggan').value = est.namaPelanggan || '';
         document.getElementById('type-kendaraan').value = est.typeKendaraan || '';
         document.getElementById('tgl-pembuatan').value = est.date || '';
+        const dpVal = parseInt(String(est.dp || '').replace(/\D/g, '')) || 0;
+        const dpInput = document.getElementById('dp-input');
+        if (dpVal > 0) {
+            setDpActive(true);
+            dpInput.value = dpVal.toLocaleString('id-ID');
+        } else {
+            setDpActive(false);
+            dpInput.value = '';
+        }
+
+        setSaranText(est.saranText || '');
 
         const jasaBody = document.querySelector('#table-jasa tbody');
         jasaBody.querySelectorAll('tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
@@ -1840,6 +2001,9 @@ function toggleAccordion() {
             document.getElementById('nama-pelanggan').value = '';
             document.getElementById('type-kendaraan').value = '';
             document.getElementById('tgl-pembuatan').value = '';
+            document.getElementById('dp-input').value = '';
+            setDpActive(false);
+            setSaranText('');
             document.querySelectorAll('#table-jasa tbody tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
             document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)').forEach(r => r.remove());
             addRow('table-jasa');
@@ -1891,6 +2055,7 @@ function toggleAccordion() {
 
     const partRows = document.querySelectorAll('#table-part tbody tr:not(.row-total):not(.row-discount)');
     const tablePart = document.getElementById('table-part');
+    const titlePart = document.getElementById('section-tabel-part');
     
     let isPartEmpty = true;
     partRows.forEach(r => {
@@ -1900,8 +2065,10 @@ function toggleAccordion() {
 
     if (isPartEmpty) {
         if (tablePart) tablePart.classList.add('d-none-print');
+        if (titlePart) titlePart.classList.add('d-none-print');
     } else {
         if (tablePart) tablePart.classList.remove('d-none-print');
+        if (titlePart) titlePart.classList.remove('d-none-print');
     }
 
     window.print();
