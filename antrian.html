@@ -4,17 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Antrian Service Daya Toyota</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 98%; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;}
-        input, select, button { padding: 10px; margin: 10px 0; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
-        button:hover { background: #0056b3; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background-color: #f3f4f6;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(353,100%,88%,1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(210,100%,85%,1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(39,100%,85%,1) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(158,100%,88%,1) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #2d3748;
+        }
+        .container {
+            max-width: 98%;
+            margin: 0 auto 20px auto;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.6);
+            padding: 22px;
+            border-radius: 18px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+        }
+        input, select, button {
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        button {
+            background: linear-gradient(135deg, #0072ff 0%, #00c6ff 100%);
+            color: white;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        button:hover {
+            filter: brightness(0.95);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+        }
         
         .btn-booking { background: #28a745; width: 48%; display: inline-block; }
         .btn-non-booking { background: #17a2b8; width: 48%; display: inline-block; }
@@ -40,7 +85,7 @@
 
         .waiting-list-container { margin-top: 20px; text-align: left; }
         .waiting-grid { display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap; }
-        .waiting-col { flex: 1; min-width: 300px; background: #e9ecef; padding: 10px; border-radius: 8px; text-align: center; }
+        .waiting-col { flex: 1; min-width: 300px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 14px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
         .waiting-col h4 { margin-top: 0; margin-bottom: 10px; font-size: 15px; }
         
         .badge-waiting { display: block; padding: 8px; margin-bottom: 6px; border-radius: 5px; color: white; font-weight: bold; font-size: 14px; text-align: center; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
@@ -54,7 +99,7 @@
         .table-responsive { overflow-x: auto; margin-top: 15px; }
         .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .history-table th, .history-table td { border: 1px solid #999; padding: 4px 3px; vertical-align: top; text-align: center; word-wrap: break-word; }
-        .history-table th { background: #d1ecf1; color: #0c5460; font-weight: bold; font-size: 11px; }
+        .history-table th { background: linear-gradient(135deg, #0072ff 0%, #00c6ff 100%); color: #fff; font-weight: bold; font-size: 11px; }
         .history-table .sub-header th { font-size: 10px; background: #f8f9fa; color: #333; }
         
         .btn-hist-book { background: #28a745; color: white; border: none; padding: 4px; margin: 1px 0; border-radius: 4px; cursor: pointer; font-size: 10px; width: 100%; text-align: center; font-weight: bold; box-sizing: border-box; }
@@ -67,17 +112,17 @@
         #btn-enable-audio { background: #fd7e14; color: white; padding: 10px 20px; font-size: 15px; border-radius: 5px; border: none; cursor: pointer; margin-bottom: 10px; }
         #btn-enable-audio:hover { background: #e8590c; }
 
-        .booking-wrapper { background: #f8f9fa; border-radius: 10px; padding: 15px; margin: 15px 0 20px 0; border: 1px solid #dee2e6; }
+        .booking-wrapper { background: rgba(255,255,255,0.9); border-radius: 16px; padding: 18px; margin: 15px 0 20px 0; border: 1px solid #e2e8f0; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
         .booking-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
         .booking-header h3 { margin: 0; font-size: 18px; }
         .booking-header .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-danger-booking { background: #dc3545; color: white; padding: 6px 16px; font-size: 13px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-danger-booking { background: #dc3545; color: white; padding: 6px 16px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
         .btn-danger-booking:hover { background: #c82333; }
-        .btn-add-row-manual { background: #28a745; color: white; padding: 6px 16px; font-size: 13px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-add-row-manual { background: #28a745; color: white; padding: 6px 16px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
         .btn-add-row-manual:hover { background: #218838; }
-        .btn-download-report { background: #17a2b8; color: white; padding: 6px 16px; font-size: 13px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-download-report { background: #17a2b8; color: white; padding: 6px 16px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
         .btn-download-report:hover { background: #138496; }
-        .btn-save-all { background: #6f42c1; color: white; padding: 6px 16px; font-size: 13px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-save-all { background: #6f42c1; color: white; padding: 6px 16px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
         .btn-save-all:hover { background: #5a32a3; }
         
         .search-box { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
@@ -89,7 +134,7 @@
         .search-box .btn-filter:hover { background: #0056b3; }
 
         .booking-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .booking-table th { background: #007bff; color: white; padding: 6px 4px; border: 1px solid #0069d9; text-align: center; position: sticky; top: 0; z-index: 10; font-size: 11px; }
+        .booking-table th { background: linear-gradient(135deg, #0072ff 0%, #00c6ff 100%); color: white; padding: 8px 4px; border: 1px solid rgba(255,255,255,0.2); text-align: center; position: sticky; top: 0; z-index: 10; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
         .booking-table td { padding: 4px 3px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle; font-size: 12px; }
         .booking-table tr:nth-child(even) { background: #f8f9fa; }
         .booking-table tr:hover { background: #e3f0ff; }
@@ -114,11 +159,11 @@
         .empty-booking { color: #999; font-size: 14px; padding: 15px 0; text-align: center; }
 
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fefefe; margin: 3% auto; padding: 25px; border: 1px solid #888; width: 95%; max-width: 600px; border-radius: 10px; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background-color: #ffffff; margin: 3% auto; padding: 25px; border: 1px solid #e2e8f0; width: 95%; max-width: 600px; border-radius: 18px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
         .modal-close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .modal-close:hover { color: #000; }
 
-        .login-card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); max-width: 450px; margin: 50px auto; }
+        .login-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.6); padding: 40px; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.12); max-width: 450px; margin: 40px auto; }
         .login-card h2 { color: #d9534f; margin-bottom: 5px; }
         .login-card .subtitle { color: #666; font-size: 14px; margin-bottom: 25px; }
         .login-card select { width: 100%; padding: 14px; font-size: 18px; border-radius: 8px; border: 2px solid #ddd; background: white; cursor: pointer; }
@@ -293,15 +338,17 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background-color: #ffffff;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             color: #495057;
-            border: 1px solid #ced4da;
+            border: 1px solid rgba(255,255,255,0.7);
             padding: 8px 16px;
-            border-radius: 8px;
+            border-radius: 10px;
             text-decoration: none;
             font-size: 14px;
             font-weight: 600;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             transition: all 0.2s ease;
         }
 
@@ -311,6 +358,22 @@
             border-color: #adb5bd;
             transform: translateX(-3px);
         }
+
+        /* --- Senada dengan Portal --- */
+        .container h2 { color: #d9534f; margin: 0 0 15px 0; font-weight: 700; letter-spacing: 0.5px; }
+        .container h3 { color: #2d3748; font-weight: 700; }
+
+        .info-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .badge-call { background: #d1fae5; color: #065f46; }
+        .badge-wait { background: #fef3c7; color: #92400e; }
     </style>
 </head>
 <body>
@@ -1268,11 +1331,13 @@
 
     function updateTotalInfo() {
         let totalBooking = daftarBooking.length;
+        let sudahDipanggil = daftarBooking.filter(b => b.status === 'dipanggil' || b.status === 'selesai').length;
+        let belumDipanggil = totalBooking - sudahDipanggil;
         let infoEl = document.getElementById('total-booking-info');
         let infoCounterEl = document.getElementById('total-booking-info-counter');
-        let teksTotal = `(Total: ${totalBooking})`;
-        if (infoEl) infoEl.innerText = teksTotal;
-        if (infoCounterEl) infoCounterEl.innerText = teksTotal;
+        let teksTotal = `(Total: ${totalBooking}) <span class="info-badge badge-call">📞 Sudah Dipanggil: ${sudahDipanggil}</span> <span class="info-badge badge-wait">⏳ Belum Dipanggil: ${belumDipanggil}</span>`;
+        if (infoEl) infoEl.innerHTML = teksTotal;
+        if (infoCounterEl) infoCounterEl.innerHTML = teksTotal;
     }
 
     function deleteBooking(key) {
