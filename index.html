@@ -180,6 +180,21 @@
         .card-blue { background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); }
         .card-orange { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); }
         .card-red { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); }
+        /* --- KARTU STATISTIK ANTRIAN HARI INI (senada gradient) --- */
+        .card-green2 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .card-teal { background: linear-gradient(135deg, #00c9ff 0%, #00b09b 100%); }
+        .card-purple { background: linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%); }
+        .stat-card-sub {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffffff;
+            margin-top: 6px;
+            background: rgba(255,255,255,0.25);
+            padding: 3px 14px;
+            border-radius: 20px;
+        }
 
         .stat-card-title {
             font-size: 12px;
@@ -319,6 +334,24 @@
                 </div>
             </div>
 
+            <!-- KOTAK STATISTIK ANTRIAN HARI INI -->
+            <div class="stats-container">
+                <div class="stat-card card-green2">
+                    <div class="stat-card-title">Total Booking Hari Ini</div>
+                    <div class="stat-card-value" id="count-booking-hari-ini">0</div>
+                </div>
+                <div class="stat-card card-teal">
+                    <div class="stat-card-title">Tunggu Panggilan</div>
+                    <div class="stat-card-value" id="count-tunggu-booking">0</div>
+                    <div class="stat-card-sub">Booking</div>
+                </div>
+                <div class="stat-card card-purple">
+                    <div class="stat-card-title">Tunggu Panggilan</div>
+                    <div class="stat-card-value" id="count-tunggu-non">0</div>
+                    <div class="stat-card-sub">Non Booking</div>
+                </div>
+            </div>
+
             <!-- Tabel Antrian Saran Teknisi -->
             <div class="dashboard-card">
                 <h3>📥 Antrian Saran Teknisi (Belum Dibuat)</h3>
@@ -448,6 +481,56 @@
         }
 
         loadDashboardData();
+
+        // ===== DATA ANTRIAN (proyek Firebase terpisah: antrian-service-daya-toyota) =====
+        const antrianConfig = {
+            apiKey: "AIzaSyBGsylncIZxoRmJ9YD_f4CNc7R83QbBMg4",
+            authDomain: "antrian-service-daya-toyota.firebaseapp.com",
+            databaseURL: "https://antrian-service-daya-toyota-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "antrian-service-daya-toyota",
+            storageBucket: "antrian-service-daya-toyota.firebasestorage.app",
+            messagingSenderId: "421850738338",
+            appId: "1:421850738338:web:21d5d24822e7902923b1fb"
+        };
+        const antrianApp = initializeApp(antrianConfig, "antrianApp");
+        const dbAntrian = getDatabase(antrianApp);
+
+        function getTanggalHariIni() {
+            let d = new Date();
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            let year = d.getFullYear();
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+            return [year, month, day].join('-');
+        }
+
+        // 1. TOTAL BOOKING HARI INI (dari daftar booking, filter tanggal hari ini)
+        onValue(ref(dbAntrian, 'booking'), (snapshot) => {
+            let hariIni = getTanggalHariIni();
+            let totalHariIni = 0;
+            snapshot.forEach((child) => {
+                const b = child.val();
+                if (b && b.tanggal === hariIni) totalHariIni++;
+            });
+            const el = document.getElementById('count-booking-hari-ini');
+            if (el) animateValue('count-booking-hari-ini', el.innerText, totalHariIni, 500);
+        });
+
+        // 2. TUNGGU PANGGILAN - BOOKING & NON BOOKING (dari antrian menunggu)
+        onValue(ref(dbAntrian, 'antrian/menunggu'), (snapshot) => {
+            let booking = 0;
+            let nonBooking = 0;
+            snapshot.forEach((child) => {
+                const d = child.val();
+                if (d && d.jenis === 'Booking') booking++;
+                else nonBooking++;
+            });
+            const elB = document.getElementById('count-tunggu-booking');
+            const elN = document.getElementById('count-tunggu-non');
+            if (elB) animateValue('count-tunggu-booking', elB.innerText, booking, 500);
+            if (elN) animateValue('count-tunggu-non', elN.innerText, nonBooking, 500);
+        });
     </script>
 </body>
 </html>
