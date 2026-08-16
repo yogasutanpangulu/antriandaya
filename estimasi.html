@@ -271,6 +271,43 @@
             line-height: 1.6;
         }
 
+        /* --- REKENING PEMBAYARAN (IKUT TERCETAK, RINGKAS) --- */
+        .rekening-compact {
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px 10px;
+            border: 1px solid #999;
+            border-radius: 4px;
+            font-family: 'Arial', sans-serif;
+            font-size: 8pt;
+            color: #000;
+            background: #ffffff;
+            line-height: 1.5;
+        }
+        .rekening-compact .rek-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        .rekening-compact .rek-line {
+            display: flex;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .rekening-compact .rek-bank-name {
+            font-weight: bold;
+            min-width: 78px;
+        }
+        .rekening-compact .rek-norek {
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
+        }
+        @media (max-width: 560px) {
+            .rekening-compact .rek-line { white-space: normal; flex-wrap: wrap; }
+        }
+
         /* --- 6. MODERN PANELS & EXTRAS (TETAP MODERN) --- */
         .action-panel { margin-top: 25px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 15px; justify-content: center;}
         
@@ -755,10 +792,16 @@
             </table>
         </div>
 
-        <!-- DISCLAIMER HARGA -->
+        <!-- DISCLAIMER HARGA + REKENING (RINGKAS) -->
         <div class="disclaimer-note">
             <b>* Harga tidak mengikat, sewaktu-waktu dapat berubah.</b><br>
             <span id="disclaimer-estimasi"><b>* Estimasi dibuat berdasarkan kondisi kendaraan pada saat pemeriksaan.</b></span>
+        </div>
+
+        <div class="rekening-compact">
+            <div class="rek-title">💳 Pembayaran Via Transfer Bank:</div>
+            <div class="rek-line"><span class="rek-bank-name">Permata Bank</span><span>: Menara Kadin, Jakarta</span><span>&nbsp;•&nbsp;</span><span>No. Rek</span><span class="rek-norek">0701515161</span><span>&nbsp;•&nbsp;</span><span>a.n. PT DAYA ADICIPTA SANDIKA</span></div>
+            <div class="rek-line"><span class="rek-bank-name">BCA</span><span>: Bulevard Hijau, Bekasi</span><span>&nbsp;•&nbsp;</span><span>No. Rek</span><span class="rek-norek">5210359992</span><span>&nbsp;•&nbsp;</span><span>a.n. PT DAYA ADICIPTA SANDIKA</span></div>
         </div>
 
         <div class="clearfix" style="width: 100%;">
